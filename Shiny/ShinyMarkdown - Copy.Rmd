@@ -1,0 +1,95 @@
+---
+title: "Untitled"
+runtime: shiny
+output: 
+  html_document:
+    self-contained: no
+---
+
+Try to insert tabs with formulas on each tab. Do formulas appear correctly after changing tabs?
+
+```{r, echo=FALSE}
+library(rmarkdown)
+flowLayout(
+  numericInput("rows","How many rows?",5),
+  selectInput("letter", "Which letter?", LETTERS),
+  sliderInput("value", "What value?", 0, 100, 50)
+)
+```
+
+Some separation.
+
+```{r, echo=FALSE}
+fluidRow(
+  column(width=5,numericInput("n_breaks","How many rows?",5),selectInput("letter2", "Which letter?", LETTERS)),
+  column(width=5,offset=1,(sliderInput("value2", "What value?", 0, 100, 50)))
+)
+    observe({input$n_breaks;includeMarkdown(("txt.Rmd"))})
+```
+
+
+```{r,echo=FALSE,results='asis'}
+renderText({
+  text <- input$n_breaks
+  cat("BLAH")
+  includeMarkdown(render("txt.Rmd"))
+})
+
+```
+
+Something between here.
+
+```{r,echo=FALSE}
+
+
+renderText({
+  text <- "here is some text"
+  if(input$n_breaks==5) {
+    text <- paste("here is something $a^2+b^2=c^2$")  # HTML only compiles once, cannot be updated.
+    write(text,"txt.Rmd")
+  }
+  else {
+    text <- "file destroyed"
+    write(text,"txt.Rmd")
+  }
+  text
+})
+```
+
+space
+
+```{r,echo=FALSE}
+tabsetPanel(
+  tabPanel("First",
+    renderText({paste("This is a formula: $$a^2 + b^2 = c^2$$")}),
+    renderPlot({plot(1)})
+  ),
+  tabPanel("Second",
+    "This is some other text to print",
+    renderText({paste("This is a formula: $$a^2 + b^2 = c^2$$")}),
+    renderPlot({plot(1:10)})
+  )
+)
+```
+
+## Embedded Application
+
+It's also possible to embed an entire Shiny application within an R Markdown document using the `shinyAppDir` function. This example embeds a Shiny application located in another directory:
+
+```{r, echo=FALSE}
+shinyAppDir(
+  system.file("examples/06_tabsets", package="shiny"),
+  options=list(
+    width="100%", height=550
+  )
+)
+```
+
+Note the use of the `height` parameter to determine how much vertical space the embedded application should occupy.
+
+You can also use the `shinyApp` function to define an application inline rather then in an external directory.
+
+In all of R code chunks above the `echo = FALSE` attribute is used. This is to prevent the R code within the chunk from rendering in the document alongside the Shiny components.
+
+
+

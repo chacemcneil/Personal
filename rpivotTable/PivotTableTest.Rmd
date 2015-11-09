@@ -1,0 +1,24 @@
+---
+title: "Concentro Effect"
+output: html_document
+---
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE,results='hide'}
+library(xlsx)
+library(data.table)
+library(gtools)
+library(ggplot2)
+library(pROC)
+
+options(width=200)
+
+setwd("C:/Users/cmcneil/Documents/Projects/Miscellaneous")
+
+data(cars)
+
+library(rpivotTable)
+data(mtcars)
+
+rpivotTable(mtcars, rows="gear", col="cyl", aggregatorName="Average",vals="mpg", rendererName="Treemap")
+
+```
