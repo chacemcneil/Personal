@@ -13,4 +13,13 @@
  
  
  
+ ggplot(data.frame(x=1:15,y=rnorm(15,1:15)),aes(x,y)) + geom_point()
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+# End script
  

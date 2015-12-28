@@ -142,10 +142,11 @@
      B <- rbind(B,1)
    return(B)
  }
- getendsB <- function(size) {
-   G <- diag(1,size)
-   G <- ifelse(row(G) >= col(G),1,0)
-   return(rbind(cbind(G,0),cbind(0,t(G))))
+ getendsB <- function(size,wrap=T) {
+   B <- getB(size)
+   B <- B[B[,1] + B[,size+1]>0,]
+   B <- B[-nrow(B),]
+   return(B)
  }
  getlen <- function(size) return(size*(size+1)+1)
  
@@ -155,18 +156,24 @@
    sums <- B%*%used
    if(max(table(c(sums,N-sums)))>1 | sum(used) > N)
      return(NULL)
+   opts <- setdiff(1:N,sums)
+   inev <- getInevitable(vars[0:(ind-1)],N)
+   if(sum(! inev %in% opts)>0)
+     return(NULL)
    if(removeneg)
      sums <- c(sums,N-sums)
    if(sum(sums>N)>0)
      print(paste("Greater than N",paste(used,collapse=" ")))
    if(sum(used)>N)
      print(paste("Used are greater than N",paste(used,collapse=" ")))
+   if(sum(opts)+sum(used)<N)
+     print(paste("Total opts are insufficient",paste(used,collapse=" ")))
    opts <- setdiff(1:N,sums)
    return(opts)
  }
  getInevitable <- function(used,N) {
    # Gives values not included in prior sums, and restricts based on needed number of remaining terms (!?!)
-   B <- getendsB(length(used)-1)
+   B <- getendsB(length(used)-1,wrap=T)
    inev <- B%*%used +N-sum(used)
    return(c(inev,N-sum(used)))
  }
@@ -177,7 +184,7 @@
      return(NULL)
    }
    bad <- F
-   opts <- getOptions(vars[0:(ind-1)],N)
+   opts <- getOptions(vars[0:(ind-1)],N,removeneg=(ind<n))
    if(is.null(opts))
      bad <- T
    else {
@@ -198,10 +205,7 @@
      vars <- incr(vars,ind-1,N)
      if(is.null(vars))
        return(NULL)
-     opts <- getOptions(vars[0:(ind-1)],N)
-     inev <- getInevitable(vars[0:(ind-1)],N)
-     if(sum(! inev %in% opts)>0)
-       next
+     opts <- getOptions(vars[0:(ind-1)],N,removeneg=(ind<n))
      if(ind==n) {
        if((N-sum(vars)) %in% opts)
          opts <- N-sum(vars)
@@ -275,7 +279,7 @@
  
  diffs <- findseq(7,vars=c(1,2,10,15,4,7,9,5))
  diffs <- findseq(11,vars=c(1,2,4,8,10,9,10,8,9,11,17,24))
- diffs2 <- findseq(12)
+ diffs2 <- findseq(12,vars=c(1,2,4,8,30,16,10,11,13,15,17,19,21))
  
  getMatrix <- function(diffs) {
    # Is there a way to do this with a matrix operation?
@@ -398,6 +402,28 @@
  
  
  
+ maxrep <- function(seq,p,N) {
+   return(max(table((seq^p)%%N)))
+ }
+ modpow <- function(x,p,N) {
+   res <- 1
+   for (i in 1:p)
+     res <- (res*x) %% N
+   return(res)
+ }
+ 
+ n <- 11
+ N <- n*(n+1)+1
+ seq <- getB(n)%*%2^(0:n)
+ maxes <- NULL
+ for (i in 1:N) {
+   maxes[i] <- maxrep(modpow(getB(n)%*%i^(0:n),,N),i,N)
+   cat(paste0("\r",i))
+   if (maxes[i]==1)
+     break
+ }
+ min(maxes)
+ cbind(maxes[1:133],maxes[134:266])
  
  
  ### Bumping algorithm (not finished)
