@@ -3,14 +3,17 @@
  
  
  upd <- function() {
-   rm(lv,env,envir=.GlobalEnv)
+   if(exists("lv"))
+     rm(lv,envir=.GlobalEnv)
+   if(exists("env"))
+     rm(env,envir=.GlobalEnv)
    
    makeActiveBinding("env",environment,parent.env(environment()))
    makeActiveBinding("lv",function(x) .Last.value,env)
    
    options(width=250)
  }
- 
+ upd()
  
  ini <- function() {
    cat(paste(readLines("/home/cmcneil/.odbc.ini"),collapse="\n"))
@@ -149,49 +152,6 @@ shinyUI(
 #  }
  
  
- # Update savvy package so that password is not required
- if(exists("read.odbc")) {
-   read.odbc <- function (dbString, dbTable, dbQuery = paste("SELECT * FROM", dbTable), trimStrings = TRUE, ...) 
-   {
-     dbChannel <- odbcChannel2(dbString)
-     df <- sqlQuery(dbChannel, dbQuery, ...)
-     odbcClose(dbChannel)
-     if (class(df) != "data.frame") 
-       warning("Possible error detected. Print returned object for assistance with diagnosis.\n  Is the table you requested in the database you specified?")
-     if (trimStrings) {
-       facs <- names(which(sapply(df, is.factor)))
-       for (i in seq_along(facs)) levels(df[[i]]) <- str_trim(levels(df[[i]]))
-     }
-     df
-   }
-   
-   odbcChannel2 <- function(dbString, dbUser = Sys.getenv("USER"), domain = "SAVVYSHERPA") {
-     dsnNames <- names(odbcDataSources())
-     dbName <- grep(dbString, dsnNames, ignore.case = TRUE, value = TRUE)
-     if (length(dbName) == 0) 
-       stop("The string \"", dbString, "\" was not found in the list of available data sources.\nCheck your odbc.ini file, or call odbcDataSources() to see the available list.")
-     if (length(dbName) > 1) 
-       stop("The string \"", dbString, "\" matches more than one of the available data sources.\nCheck your odbc.ini file, or call odbcDataSources() to see the available list.")
-     dbFullUser <- paste(domain, "\\", dbUser, sep = "")
-     if (exists("passEnv")) {
-       if ((!exists("passEnv") && !exists("dbPassword", where = .GlobalEnv))) {
-         stop("Please use set_db_password() to set your database password.")
-       }
-       if (exists("passEnv")) 
-         dbPassword <- get("dbPassword", pos = passEnv)
-       channel <- odbcConnect(dbName, dbFullUser, pwd = dbPassword, 
-                              readOnlyOptimize = TRUE)
-     }
-     else {
-       channel <- odbcConnect(dbName, readOnlyOptimize = TRUE)
-     }
-     if (is.null(attr(channel, "id")) || attr(channel, "id") < 
-           0) 
-       stop("Unable to connect to database, do you have the proper permissions?")
-     channel
-   }
-   
- }
  
  
 # end script
