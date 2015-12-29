@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <script src="http://d3js.org/d3.v2.min.js" charset="utf-8"></script>
+
+<p height="1">
+<svg id="chart" width="300px" height="400px">
+  <title>Golden Watch</title>
+  <circle cx="150" cy="150" r="140" fill="ghostwhite" stroke="goldenrod" stroke-width="2" />
+  <circle cx="150" cy="150" r="130" fill="none" stroke="goldenrod" stroke-width="3" stroke-dasharray="2,11.613568" transform="rotate(-.12)" />
+  <line y2="-130" stroke="gold" stroke-width="1" transform="translate(150,150) rotate(0)">
+    <animateTransform attributeName="transform" type="rotate" repeatCount="indefinite" dur="60s" by="360" />
+  </line>
+  <line y2="-120" stroke="gold" stroke-width="2" transform="translate(150,150) rotate(0)">
+    <animateTransform attributeName="transform" type="rotate" repeatCount="indefinite" dur="60min" by="360" />
+  </line>
+  <line y2="-110" stroke="gold" stroke-width="3" transform="translate(150,150) rotate(0)">
+    <animateTransform attributeName="transform" type="rotate" repeatCount="indefinite" dur="12h" by="360" />
+  </line>
+</svg>
+</p>
+
+<script type="text/javascript">
+"use strict";
+var w = 300;
+
+var svg = d3.select("#chart")
+	    .attr("width", w)
+	    .attr("height", w);
+var g = svg.append("g");
+
+//var square = g.selectAll("rect").data([{"x":75,"y":50}]).enter().append("rect")
+//      .attr("x",function(d) {return d.x;})
+//      .attr("y",function(d) {return d.y;})
+//      .attr("width",50)
+//      .attr("height",50)
+//      .style("fill","red");
+
+var dat = [{"x":20,"y":20},{"x":80,"y":160},{"x":120,"y":160},{"x":180,"y":20}];
+
+//var path = g.append("path").attr("d","M 20,20 L "+ dat.map(function(d) {return [d.x,d.y].join(",");}).join(" "))
+//                .style("fill","none")
+//                .style("stroke","blue")
+//                .style("stroke-width",4);
+//path.append("animate").attr("attributeName","stroke").attr("to","green").attr("dur","10s").attr("repeatCount","indefinite");
+//
+//var path2 = g.append("path").attr("d","M 20,40 L "+ dat.map(function(d) {return [d.x,d.y+20].join(",");}).join(" "))
+//	                .style("fill","none")
+//	                .style("stroke","blue")
+//	                .style("stroke-width",4);
+//path2.transition().duration(10000).style("stroke","green");
+
+var animate = function (selection,attr,to,dur,repcnt) {
+  return selection.append("animate").attr("attributeName",attr).attr("to",to).attr("dur",(dur/1000)+"s").attr("repeatCount",repcnt);
+};
+
+//var path3 = g.append("path").attr("d","M 20,60 L "+ dat.map(function(d) {return [d.x,d.y+40].join(",");}).join(" "))
+//	                .style("fill","none")
+//	                .style("stroke","blue")
+//	                .style("stroke-width",4)
+//                      .style("stroke-dasharray","0,0,15,15")
+//                      .style("stroke-dashoffset",0);
+//path3.call(animate,"stroke-dasharray","15,15,0,0",1000,"indefinite");
+//path3.call(animate,"stroke-dashoffset",-30,1000,"indefinite");
+
+
+var keys = [];
+for (var i=0; i < 222; i++) {
+  keys[i] = 0;
+}
+
+var sh = 83;
+
+//var sq = square;
+//sq.data([{"x":75,"y":75}]).enter();
+
+d3.select("body").on("keydown", function() {
+                                  var ev = d3.event.keyCode;
+                                  if(keys[ev]==0)
+                                    keyPress(ev);
+                                  keys[ev] = 1;
+                                })
+                 .on("keyup",   function() {
+                                  var ev = d3.event.keyCode;
+                                  if(keys[ev]==1)
+                                    keyRelease(ev);
+                                  keys[ev] = 0;
+                                });
+
+function keyPress(keyCode) {
+  if(keyCode==sh)
+    new Project(g,pl.pos.x+10,pl.pos.y,[0,20,20,0],[2,2,-2,-2],pl.direction,.1);
+  //if(keyCode==83)
+    //Things.forEach(function(obj) {obj.pos.shift({"x":10,"y":10})})
+  
+  
+}
+
+function keyRelease(keyCode) {
+  
+}
+
+class Point {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+  }
+  
+  static distance(a, b) {
+    const dx = a.x - b.x;
+    const dy = a.y - b.y;
+    
+    return Math.sqrt(dx*dx + dy*dy);
+  }
+  
+  add (arr) {
+    return {"x":this.x+arr.x,"y":this.y+arr.y}
+  }
+  
+  shift (arr) {
+    this.x = this.x + arr.x;
+    this.y = this.y + arr.y;
+  }
+}
+
+var Things = [];
+
+class Thing {
+  constructor(parent,x,y,xs,ys) {
+    this.pos = new Point(x,y);
+    this.poly = [];
+    this.string = "";
+    for (var i =0; i < xs.length; i++) {
+      this.poly.push(new Point(xs[i],ys[i]));
+      this.string = this.string + " " + (xs[i]) + "," + (ys[i]);
+    }
+    this.x1 = xs.sort(function(a,b){return a-b})[0];
+    this.x2 = xs.sort(function(a,b){return b-a})[0];
+    this.y1 = ys.sort(function(a,b){return a-b})[0];
+    this.y2 = ys.sort(function(a,b){return b-1})[0];
+    this.obj = parent.append("polygon").attr("points",this.string).attr("transform","translate("+this.pos.x+","+this.pos.y+")");
+    this.class = "Thing";
+    Things.push(this);
+  }
+  
+  trymove(x,y,relative) {
+    if(relative===undefined)
+      relative = 1;
+    var curr = this,
+        oldx=this.pos.x,
+        oldy=this.pos.y;
+    this.move(x,y,relative,1);
+    var coll = this.isCollisionAny();
+    if(coll) {
+      this.move(oldx,oldy,0);
+    }
+    else
+      this.move(0,0,1,0);
+    return !coll;
+  }
+  
+  move(x,y,relative,tentative) {
+    if(relative===undefined)
+      relative = 1;
+    if(tentative===undefined)
+      tentative = 0;
+    if(!tentative) {
+      if (this.isCollisionAny())
+        delete this;
+    }
+    this.pos.x = this.pos.x*relative + x;
+    this.pos.y = this.pos.y*relative + y;
+    this.obj.attr("transform","translate("+this.pos.x+","+this.pos.y+")");
+    
+  }
+  
+  isPointInPoly(pt) {
+      pt.x = pt.x - this.pos.x;
+      pt.y = pt.y - this.pos.y;
+      for(var c = false, i = -1, l = this.poly.length, j = l - 1; ++i < l; j = i) {
+          ((this.poly[i].y <= pt.y && pt.y <= this.poly[j].y) || (this.poly[j].y <= pt.y && pt.y <= this.poly[i].y))
+          && (pt.x <  (this.poly[j].x - this.poly[i].x) * (pt.y - this.poly[i].y) / (this.poly[j].y - this.poly[i].y) + this.poly[i].x)
+          && (c = !c) 
+          //if (pt.x == (this.poly[j].x - this.poly[i].x) * (pt.y - this.poly[i].y) / (this.poly[j].y - this.poly[i].y) + this.poly[i].x) {
+          if (pt.x == (this.poly[j].x - this.poly[i].x) * (pt.y - this.poly[i].y) / (this.poly[j].y - this.poly[i].y) + this.poly[i].x) {
+            c = true;
+            break;
+          }
+      }
+      return (c);
+  }
+  
+  static isCollisionBox(thing1,thing2) {
+    return !(thing1===thing2 || thing1.y2+thing1.pos.y < thing2.y1+thing2.pos.y || thing1.y1+thing1.pos.y > thing2.y2+thing2.pos.y || thing1.x2+thing1.pos.x < thing2.x1+thing2.pos.x || thing1.x1+thing1.pos.x > thing2.x2+thing2.pos.x);
+  }
+  
+  static isCollision(thing1,thing2) {
+    var inbox = Thing.isCollisionBox(thing1,thing2);
+    if (inbox) {
+      for(i=0; i < thing1.poly.length; i++) {
+        if(thing2.isPointInPoly(thing1.poly[i].add(thing1.pos)) )
+          return 1;
+      }
+      for(i=0; i < thing2.poly.length; i++) {
+        if(thing1.isPointInPoly(thing2.poly[i].add(thing2.pos)) )
+          return 1;
+      }
+      return 0;
+    }
+    else
+      return 0;
+  }
+  
+  isCollisionAny() {
+    var coll = 0;
+    var curr = this,
+        oldx=this.pos.x,
+        oldy=this.pos.y;
+    for(i=0; i < Things.length; i++) {
+      //Things.forEach(function(obj) {
+        //if(Thing.isCollision(curr,obj)) {
+        if(Thing.isCollision(curr,Things[i])) {
+          coll = 1;
+          break;
+        }
+      //})
+    }
+    return coll;
+  }
+  
+  onStep () {
+    this.obj.attr("points",this.string).attr("transform","translate("+this.pos.x+","+this.pos.y+")");
+  }
+}
+
+class Main extends Thing {
+  constructor(parent,x,y,xs,ys,direction) {
+    super(parent,x,y,xs,ys);
+    if(direction===undefined)
+      this.direction = 90;
+    else
+      this.direction = direction;
+  }
+  
+  onStep () {
+    this.obj.attr("points",this.string).attr("transform","translate("+this.pos.x+","+this.pos.y+") rotate("+this.direction+")");
+  }
+}
+
+class Project extends Thing {
+  constructor(parent,x,y,xs,ys,direc,veloc) {
+    super(parent,x,y,xs,ys);
+    this.direc = direc;
+    this.veloc = veloc;
+  }
+  
+  onStep() {
+    this.move(Math.cos(this.direc)*this.veloc,Math.sin(this.direc)*this.veloc,1,0);
+  }
+}
+
+var p3 = new Thing (g,0,0,[1,100,1],[1,1,100]);
+var pl = new Main (g,200,200,[-10,10,10,-10],[-10,-10,10,10],0);
+
+var tick = new Event("tick"),
+    incr=1,
+    dispatch = d3.dispatch("tick");
+
+dispatch.on("tick",function() {
+  if(keys[37])
+    pl.trymove(-1,0,1);
+  if(keys[38])
+    pl.trymove(0,-1,1);
+  if(keys[39])
+    pl.trymove(1,0,1);
+  if(keys[40])
+    pl.trymove(0,1,1);
+  
+  Things.forEach(function(obj) {obj.onStep();});
+  setTimeout(dispatch.tick,10);
+});
+dispatch.tick();
+
+function project () {
+  return 1;
+}
+
+//var block2 = g.append("polygon").attr("points",p3.string).style("fill","yellow").style("stroke","yellow");
+
+var block = [{"x":3},{"x":4},{"x":5}].forEach(function(d) {return new Thing(g,d.x*30,180,[0,30,30,0],[0,0,30,30]);})
+
+console.log(Things);
+
+
+</script>
+</body>
+</html>
