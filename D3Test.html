@@ -22,11 +22,12 @@
 
 <script type="text/javascript">
 "use strict";
-var w = 300;
+var width = 600,
+    height = 300;
 
 var svg = d3.select("#chart")
-	    .attr("width", w)
-	    .attr("height", w);
+	    .attr("width", width)
+	    .attr("height", height);
 var g = svg.append("g");
 
 //var square = g.selectAll("rect").data([{"x":75,"y":50}]).enter().append("rect")
@@ -63,16 +64,30 @@ var animate = function (selection,attr,to,dur,repcnt) {
 //path3.call(animate,"stroke-dasharray","15,15,0,0",1000,"indefinite");
 //path3.call(animate,"stroke-dashoffset",-30,1000,"indefinite");
 
+// .. // .. // Begin
 
 var keys = [];
 for (var i=0; i < 222; i++) {
   keys[i] = 0;
 }
 
-var sh = 83;
+var sh = 83,
+    buffer = 30,
+    pi = 3.14159265,
+    canMove = 1,
+    canShoot = 1;
 
-//var sq = square;
-//sq.data([{"x":75,"y":75}]).enter();
+// Add bits
+var bits = [{"id":"bit1","file":"Sounds/chord.wav"},{"id":"bit2","file":"Sounds/chord.wav"}], sndbits= new Object();
+for (i=0; i < bits.length; i++) {
+  sndbits[bits[i].id] = document.createElement("AUDIO")
+  sndbits[bits[i].id].setAttribute("src",bits[i].file);
+}
+var aud = svg.selectAll("audio").data(bits).enter().append("audio")
+             .attr("id",function(d) {return d.id})
+             .attr("src",function(d) {return d.file}).attr("preload","auto");
+
+console.log("here");
 
 d3.select("body").on("keydown", function() {
                                   var ev = d3.event.keyCode;
@@ -88,12 +103,16 @@ d3.select("body").on("keydown", function() {
                                 });
 
 function keyPress(keyCode) {
-  if(keyCode==sh)
-    new Project(g,pl.pos.x+10,pl.pos.y,[0,20,20,0],[2,2,-2,-2],pl.direction,.1);
-  //if(keyCode==83)
-    //Things.forEach(function(obj) {obj.pos.shift({"x":10,"y":10})})
-  
-  
+  //console.log(g.selectAll("polygon"));
+  //g.selectAll("polygon").style("fill","red");
+  if(keyCode==sh & canShoot)
+    new Project(g,pl.pos.x+10+i,pl.pos.y,[0,20,20,0],[2,2,-2,-2],pl.direction,3.);
+  if(keyCode==84) {
+    console.log(Things.length);
+  }
+  if(keyCode==80) {
+    sndbits.bit1.play();
+  }
 }
 
 function keyRelease(keyCode) {
@@ -138,7 +157,8 @@ class Thing {
     this.x2 = xs.sort(function(a,b){return b-a})[0];
     this.y1 = ys.sort(function(a,b){return a-b})[0];
     this.y2 = ys.sort(function(a,b){return b-1})[0];
-    this.obj = parent.append("polygon").attr("points",this.string).attr("transform","translate("+this.pos.x+","+this.pos.y+")");
+    this.obj = parent.append("polygon").attr("points",this.string).attr("transform","translate("+this.pos.x+","+this.pos.y+")")
+                     .style("fill","#EEEEEE");
     this.class = "Thing";
     Things.push(this);
   }
@@ -164,30 +184,34 @@ class Thing {
       relative = 1;
     if(tentative===undefined)
       tentative = 0;
-    if(!tentative) {
-      if (this.isCollisionAny())
-        delete this;
-    }
+    
     this.pos.x = this.pos.x*relative + x;
     this.pos.y = this.pos.y*relative + y;
     this.obj.attr("transform","translate("+this.pos.x+","+this.pos.y+")");
     
+    if(!tentative) {
+      if (this.isCollisionAny())
+        this.remove();
+    }
   }
   
   isPointInPoly(pt) {
       pt.x = pt.x - this.pos.x;
       pt.y = pt.y - this.pos.y;
-      for(var c = false, i = -1, l = this.poly.length, j = l - 1; ++i < l; j = i) {
+      for(var c = false, d = false, i = -1, l = this.poly.length, j = l - 1; ++i < l; j = i) {
           ((this.poly[i].y <= pt.y && pt.y <= this.poly[j].y) || (this.poly[j].y <= pt.y && pt.y <= this.poly[i].y))
           && (pt.x <  (this.poly[j].x - this.poly[i].x) * (pt.y - this.poly[i].y) / (this.poly[j].y - this.poly[i].y) + this.poly[i].x)
-          && (c = !c) 
+          && (c = !c) ;
+          ((this.poly[i].y <= pt.y && pt.y <= this.poly[j].y) || (this.poly[j].y <= pt.y && pt.y <= this.poly[i].y))
+          && (pt.x <=(this.poly[j].x - this.poly[i].x) * (pt.y - this.poly[i].y) / (this.poly[j].y - this.poly[i].y) + this.poly[i].x)
+          && (d = !d) 
           //if (pt.x == (this.poly[j].x - this.poly[i].x) * (pt.y - this.poly[i].y) / (this.poly[j].y - this.poly[i].y) + this.poly[i].x) {
-          if (pt.x == (this.poly[j].x - this.poly[i].x) * (pt.y - this.poly[i].y) / (this.poly[j].y - this.poly[i].y) + this.poly[i].x) {
-            c = true;
-            break;
-          }
+          //if (pt.x == (this.poly[j].x - this.poly[i].x) * (pt.y - this.poly[i].y) / (this.poly[j].y - this.poly[i].y) + this.poly[i].x) {
+          //  c = true;
+          //  break;
+          //}
       }
-      return (c);
+      return (c||d);
   }
   
   static isCollisionBox(thing1,thing2) {
@@ -230,6 +254,14 @@ class Thing {
   
   onStep () {
     this.obj.attr("points",this.string).attr("transform","translate("+this.pos.x+","+this.pos.y+")");
+    if (this.pos.x < 0 - buffer || this.pos.x > width + buffer || this.pos.y < 0 - buffer || this.pos.y > height + buffer) {
+      this.remove()
+    }
+  }
+  
+  remove() {
+    this.obj.remove();
+    Things.splice(Things.indexOf(this),1);
   }
 }
 
@@ -240,10 +272,22 @@ class Main extends Thing {
       this.direction = 90;
     else
       this.direction = direction;
+    this.class = "Main";
+    this.image = g.append("image").attr("x",this.x1).attr("y",this.y1).attr("width",this.x2-this.x1).attr("height",this.y2-this.y1)
+                     .attr("xlink:href","globe.jpg").attr("transform","translate("+this.pos.x+","+this.pos.y+")");
+    //<image x="0" y="0" width="236" height="200" xlink:href="globe.jpg" />
   }
   
   onStep () {
-    this.obj.attr("points",this.string).attr("transform","translate("+this.pos.x+","+this.pos.y+") rotate("+this.direction+")");
+    this.image.attr("points",this.string).attr("transform","translate("+this.pos.x+","+this.pos.y+") rotate("+this.direction+")");
+    
+  }
+  
+  remove() {
+    super.remove();
+    canMove = 0;
+    canShoot = 0;
+    pl = 0;
   }
 }
 
@@ -255,43 +299,112 @@ class Project extends Thing {
   }
   
   onStep() {
-    this.move(Math.cos(this.direc)*this.veloc,Math.sin(this.direc)*this.veloc,1,0);
+    super.onStep();
+    this.move(Math.cos(this.direc*pi/180)*this.veloc,Math.sin(this.direc*pi/180)*this.veloc,1,0);
   }
 }
 
-var p3 = new Thing (g,0,0,[1,100,1],[1,1,100]);
-var pl = new Main (g,200,200,[-10,10,10,-10],[-10,-10,10,10],0);
+var p3 = new Thing (g,50,10,[80,100,0,0],[0,0,100,80]);
+var pl = new Main (g,100,100,[-10,10,10,-10],[-10,-10,10,10],270);
 
 var tick = new Event("tick"),
-    incr=1,
+    incr=20,
+    moveincr = 2,
     dispatch = d3.dispatch("tick");
 
+var hands = [{}]
+
+class Clock {
+  constructor(parent,time,x,y,rad) {
+    this.time = time;
+    this.pos = new Point(x,y);
+    this.rad = rad;
+    this.obj = parent.append("circle").attr("cx",0).attr("cy",0).attr("r",rad).data(hands).enter().append("rect").
+    this.obj.attr("transform","translate("+x+","+y+")")
+  }
+  
+  onStep() {
+    this.time = this.time + 1;
+    this.obj.attr("transform","translate("+this.pos.x+","+this.pos.y+")")
+  }
+}
+
 dispatch.on("tick",function() {
-  if(keys[37])
-    pl.trymove(-1,0,1);
-  if(keys[38])
-    pl.trymove(0,-1,1);
-  if(keys[39])
-    pl.trymove(1,0,1);
-  if(keys[40])
-    pl.trymove(0,1,1);
+  if(canMove) {
+    if(keys[37])
+      if(!pl.trymove(-moveincr,0,1)) {
+        pl.trymove(-moveincr,-moveincr,1)
+        pl.trymove(-moveincr,moveincr,1)
+      }
+    if(keys[38])
+      if(!pl.trymove(0,-moveincr,1)) {
+        pl.trymove(-moveincr,-moveincr,1)
+        pl.trymove(moveincr,-moveincr,1)
+      }
+    if(keys[39])
+      if(!pl.trymove(moveincr,0,1)) {
+        pl.trymove(moveincr,-moveincr,1)
+        pl.trymove(moveincr,moveincr,1)
+      }
+    if(keys[40])
+      if(!pl.trymove(0,moveincr,1)) {
+        pl.trymove(-moveincr,moveincr,1)
+        pl.trymove(moveincr,moveincr,1)
+      }
+  }
   
   Things.forEach(function(obj) {obj.onStep();});
-  setTimeout(dispatch.tick,10);
+  setTimeout(dispatch.tick,incr);
 });
 dispatch.tick();
 
-function project () {
-  return 1;
-}
 
 //var block2 = g.append("polygon").attr("points",p3.string).style("fill","yellow").style("stroke","yellow");
 
 var block = [{"x":3},{"x":4},{"x":5}].forEach(function(d) {return new Thing(g,d.x*30,180,[0,30,30,0],[0,0,30,30]);})
 
+g.append("image");
+
+var Menys = [];
+class Meny extends Thing {
+  constructor(parent,x,y,xs,ys) {
+    super(parent,x,y,xs,ys);
+    Menys.push(this);
+    this.class = "Meny"
+    this.obj.style("fill","red")
+  }
+  
+  remove() {
+    super.remove();
+    Menys.splice(Menys.indexOf(this),1)
+  }
+}
+
+var getClassOf = Function.prototype.call.bind(Object.prototype.toString);
+
+// Initial printout
+console.log(p3.class)
+console.log(getClassOf(pl))
 console.log(Things);
 
+// Next steps:
+//  Add objects
+//  Complex collisions (e.g. bouncing)
+//  Create simple example
+//  Simple way of creating many arrangements (.txt file, GUI, )
+//  Goals (Count instances, check properties)
+//  Events should probably just be all class function calls
+//  Test scalability (Instanciate lots of objects) --> Too many slows it down quickly.
+//  Slide diagonally -- Done.
+//  Add sounds
+//  Change direction with keypresses
 
 </script>
+<h1>SVG embedded bitmaps in HTML</h1>
+
+    <h2>Example 3: Local image</h2>
+    <svg id="example3" height="200" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+        <image x="0" y="0" width="236" height="200" xlink:href="globe.jpg" />
+    </svg>
 </body>
 </html>
