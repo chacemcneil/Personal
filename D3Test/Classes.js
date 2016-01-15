@@ -93,7 +93,7 @@ class Point {
 }
 
 class Thing {
-  constructor(parent,x,y,xs,ys) {
+  constructor(parent,x,y,xs,ys,type) {
     this.pos = new Point(x,y);
     this.poly = [];
     this.string = "";
@@ -110,16 +110,18 @@ class Thing {
     this.class = "Thing";
     this.cell = Cells[Math.floor(y/cellheight)][Math.floor(x/cellwidth)];
     this.cell.movein(this);
+    this.type = (type === undefined) ? "conv" : type;
+    
     Things.push(this);
   }
   
   checkCell () {
-    var tmp = Cells[Math.floor(this.pos.y/cellheight)][Math.floor(this.pos.x/cellwidth)]
-    if(this.cell !== tmp) {
-      if(tmp === undefined)
+    if(this.pos.x < 0 || this.pos.x > width || this.pos.y < 0 || this.pos.y > height) {
         return this.remove();
+    }
+    else {
       this.cell.moveout(this);
-      this.cell = tmp;
+      this.cell = Cells[Math.floor(this.pos.y/cellheight)][Math.floor(this.pos.x/cellwidth)];
       this.cell.movein(this);
     }
   }
@@ -131,7 +133,7 @@ class Thing {
         oldx=this.pos.x,
         oldy=this.pos.y;
     this.move(x,y,relative,1);
-    var coll = this.isCollisionAny();
+    var coll = this.isCollisionAny(Cells[Math.floor(this.pos.y/cellheight)][Math.floor(this.pos.x/cellwidth)]);
     if(coll) {
       this.move(oldx,oldy,0);
     }
@@ -152,8 +154,9 @@ class Thing {
     
     if(!tentative) {
       this.checkCell();
-      if (this.isCollisionAny() & false)
-        this.remove();
+      if (this.isCollisionAny() & false) {
+        //this.remove();
+      }
     }
   }
   
@@ -177,6 +180,10 @@ class Thing {
   }
   
   static isCollisionBox(thing1,thing2) {
+    if (thing1===thing2)
+      return false;
+    //else
+      //return ab_ab(thing1,thing2);
     return !(thing1===thing2 || thing1.y2+thing1.pos.y < thing2.y1+thing2.pos.y || thing1.y1+thing1.pos.y > thing2.y2+thing2.pos.y || 
              thing1.x2+thing1.pos.x < thing2.x1+thing2.pos.x || thing1.x1+thing1.pos.x > thing2.x2+thing2.pos.x);
   }
@@ -198,38 +205,38 @@ class Thing {
       return 0;
   }
   
-  isCollisionAny() {
-    var oldx=this.pos.x,
-        oldy=this.pos.y;
+  isCollisionAny(cell) {
+    if(cell === undefined)
+      cell = this.cell;
     for(var cl = 0; cl<9; cl++) {
       var curcell;
       switch (cl) {
         case 0:
-          curcell = this.cell;
+          curcell = cell;
           break;
         case 1:
-          curcell = this.cell.nul;
+          curcell = cell.nul;
           break;
         case 2:
-          curcell = this.cell.nu;
+          curcell = cell.nu;
           break;
         case 3:
-          curcell = this.cell.nur;
+          curcell = cell.nur;
           break;
         case 4:
-          curcell = this.cell.nr;
+          curcell = cell.nr;
           break;
         case 5:
-          curcell = this.cell.ndr;
+          curcell = cell.ndr;
           break;
         case 6:
-          curcell = this.cell.nd;
+          curcell = cell.nd;
           break;
         case 7:
-          curcell = this.cell.ndl;
+          curcell = cell.ndl;
           break;
         case 8:
-          curcell = this.cell.nl;
+          curcell = cell.nl;
           break;
       }
       if(curcell !== null) {
@@ -237,17 +244,12 @@ class Thing {
         var node = poss.start
         while(node !== null) {
           if(Thing.isCollision(this,node.thing)) {
-            return 1;
+            return node.thing;
           }
           node = node.next;
         }
       }
     }
-    //for(var i=0; i < Things.length; i++) {
-    //    if(Thing.isCollision(curr,Things[i])) {
-    //      return 1;
-    //    }
-    //}
     return 0;
   }
   
@@ -332,18 +334,24 @@ class Bll extends Meny {
     this.yvel = (yvel === undefined) ? Math.random()+2 : yvel;
     console.log(this.xvel,xvel)
     this.grav = 1;
-    this.bnce = .7;
+    this.bnce = .9;
     this.fric = .3;
   }
   
   onStep () {
     this.obj.attr("points",this.string).attr("transform","translate("+this.pos.x+","+this.pos.y+")");
-    this.yvel += this.grav*.5;
+    this.yvel += this.grav*.2;
     if (Math.abs(this.yvel) < .1) this.yvel = 0;
-    if(!this.trymove(this.xvel,this.yvel,1,0)) {
-      this.xvel -= this.fric*this.xvel;
-      this.yvel = -this.yvel*this.bnce;
-      console.log(this.yvel,this.xvel);
+    if (Math.abs(this.xvel) < .001) this.xvel = 0;
+    var rep = Math.ceil(Math.max(Math.abs(this.xvel)/cellwidth,Math.abs(this.yvel)/cellheight)*2)
+    for (var i=0; i<rep; i++) {
+      console.log(rep)
+      if(!this.trymove(this.xvel/rep,this.yvel/rep,1,0)) {
+        console.log(this.yvel,this.xvel);
+        this.xvel -= this.fric*this.xvel;
+        this.yvel = -this.yvel*this.bnce;
+        break;
+      }
     }
   }
 }

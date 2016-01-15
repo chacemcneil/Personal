@@ -7,13 +7,14 @@
 
 <script src="Classes.js"></script>
 <script src="ReadData.js"></script>
+<script src="ColFun.js"></script>
 
 <script type="text/javascript">
 "use strict";
 
 var cellwidth = 25, cellheight = 25, rows = 24, cols = 48;
-var width = cellwidth*cols,
-    height = cellheight*rows;
+var width = cellwidth*(cols-1),
+    height = cellheight*(rows-1);
 
 var svg = d3.select("#chart").append("svg")
 	    .attr("width", width+"px")
@@ -107,6 +108,22 @@ function keyPress(keyCode) {
     //sndbits.bit1.play();
     console.log(pl.cell)
   }
+  if(keyCode == 37) {
+    b1.xvel -= 5
+  }
+  if(keyCode == 38) {
+    b1.yvel -= 5
+  }
+  if(keyCode == 39) {
+    b1.xvel += 5
+  }
+  if(keyCode == 40) {
+    b1.yvel += 5
+  }
+  if(keyCode == 17) {
+    b1.yvel = b1.yvel*2
+    b1.xvel = b1.xvel*2
+  }
 }
 
 function keyRelease(keyCode) {
@@ -155,8 +172,8 @@ function block (str) {
     var char = ptstr[i];
     
     if(char=="-") {
-      xs.push(xtmp/npts*cellwidth)
-      ys.push(ytmp/npts*cellheight)
+      xs.push(xtmp/npts*cellwidth - cellwidth/2)
+      ys.push(ytmp/npts*cellheight - cellheight/2)
       xtmp = ytmp = npts = 0;
       continue;
     }
@@ -167,21 +184,22 @@ function block (str) {
       ytmp++;
   }
   if(npts > 0) {
-    xs.push(xtmp/npts*cellwidth)
-    ys.push(ytmp/npts*cellheight)
+    xs.push(xtmp/npts*cellwidth - cellwidth/2)
+    ys.push(ytmp/npts*cellheight - cellheight/2)
   }
+  console.log(xs,ys)
   return {"xs":xs,"ys":ys};
 }
 
 
-new Bll(g,40,40,20);
+var b1 = new Bll(g,40,40,20);
 var pl = new Main (g,40,200,[-10,10,10,-10],[-10,-10,10,10],270);
 
 bs.forEach(function(d) { if(d.b != "") return new Block(g,d.r,d.c,block(d.b)); })
-
+console.log(bs)
 
 var tick = new Event("tick"),
-    incr=20,
+    incr=10,
     moveincr = 2,
     dispatch = d3.dispatch("tick"),
     tryslide = 1;
