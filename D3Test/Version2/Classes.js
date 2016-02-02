@@ -1,6 +1,8 @@
 "use strict";
 
 var getClassOf = Function.prototype.call.bind(Object.prototype.toString);
+var which = 0;
+var pi = 3.14159265;
 
 var Things = [];
 
@@ -8,6 +10,7 @@ class ThingList {
   constructor(data) {
     this.start = null;
     this.end   = null;
+    this.length = 0;
   }
   
   makeNode () {
@@ -24,23 +27,29 @@ class ThingList {
       this.end = this.end.next;
     }
     this.end.thing = thing;
+    this.length += 1;
   }
   
   remove (thing) {
     var current = this.start;
+    if (current===null) {
+      return 0;
+    }
     if (current.thing === thing) {
       this.start = current.next;
       if(current===this.end) {
         this.end = null;
       }
+      this.length -= 1;
       return(1);
     }
     while (current.next !== null) {
       if(current.next.thing === thing) {
-        current.next = current.next.next;
         if(current.next===this.end) {
           this.end = current;
         }
+        current.next = current.next.next;
+        this.length -= 1;
         return(1);
       }
       current = current.next
@@ -69,38 +78,6 @@ class Cell {
   moveout(thing) {
     this.ThingList.remove(thing)
   }
-  
-  checkCollision() {
-    var curthing = this.ThingList.start;
-    while(curthing!==null) {
-      var oththing = curthing.next;
-      while(oththing!==null) {
-        sepvec(curthing,oththing);
-      }
-      oththing = (this.nul===null) ? null : this.nul.start;
-      while(oththing!==null) {
-        sepvec(curthing,oththing);
-      }
-      oththing = (this.nu===null)  ? null : this.nu.start;
-      while(oththing!==null) {
-        sepvec(curthing,oththing);
-      }
-      oththing = (this.nur===null) ? null : this.nur.start;
-      while(oththing!==null) {
-        sepvec(curthing,oththing);
-      }
-      oththing = (this.nr===null)  ? null : this.nr.start;
-      while(oththing!==null) {
-        sepvec(curthing,oththing);
-      }
-      
-      curthing = curthing.next;
-    }
-  }
-  
-  checkCollisionList(curthing,oththing) {
-    return ;
-  }
 }
 
 class Point {
@@ -110,6 +87,7 @@ class Point {
   }
   
   static distance(a, b) {
+    console.log("point distance")
     const dx = a.x - b.x;
     const dy = a.y - b.y;
     
@@ -117,25 +95,35 @@ class Point {
   }
   
   add (arr) {
+    console.log("point add")
     return {"x":this.x+arr.x,"y":this.y+arr.y}
   }
   
   shift (arr) {
+    console.log("point shift")
     this.x = this.x + arr.x;
     this.y = this.y + arr.y;
   }
 }
 
 class Thing {
-  constructor(parent,x,y,xvel,yvel,direc,grav,fric,bnce,mov,type,pars,rotation) {
-    this.pos = new Point(x,y);
-    this.xvel = (xvel === undefined) ? Math.random()+2 : xvel;
-    this.yvel = (yvel === undefined) ? Math.random()+2 : yvel;
-    this.direc = (direc === undefined) ? -90 : direc;
-    this.grav = (grav === undefined) ? 0 : grav;
-    this.fric = (fric === undefined) ? 0 : fric;
-    this.bnce = (bnce === undefined) ? 0 : bnce;
-    this.mov = (mov===undefined) ? 0 : mov;
+  constructor(parent,orient,physics,type,pars,rotation) {
+    if(Array.isArray(orient)) {
+      orient = {x:orient[0],y:orient[1],xvel:orient[2],yvel:orient[3],direc:orient[4]};
+    }
+    if(Array.isArray(physics)) {
+      physics = {grav:physics[0],fric:physics[1],bnce:physics[2],mov:physics[3],drag:physics[4]};
+    }
+    this.x = orient.x;
+    this.y = orient.y;
+    this.xvel  = (orient.xvel  === undefined) ? 0 : orient.xvel;
+    this.yvel  = (orient.yvel  === undefined) ? 0 : orient.yvel;
+    this.direc = (orient.direc === undefined) ? -90 : orient.direc; // Default direction: up
+    this.grav = (physics.grav === undefined) ? 0 : physics.grav;
+    this.fric = (physics.fric === undefined) ? 0 : physics.fric;
+    this.bnce = (physics.bnce === undefined) ? 0 : physics.bnce;
+    this.mov  = (physics.mov  === undefined) ? 0 : physics.mov;
+    this.drag = (physics.drag === undefined) ? 0 : physics.drag;
     this.rot = (rotation===undefined) ? 0 : rotation;
     switch(type) {
       case "rect":
@@ -144,8 +132,8 @@ class Thing {
         this.obj = parent.append("rect").attr("x",0-this.hw).attr("y",0-this.hh).attr("width",2*this.hw).attr("height",2*this.hh);
         break;
       case "circ":
-        this.rad = pars.rad;
-        this.obj = parent.append("circle").attr("cx",this.pos.x).attr("cy",this.pos.y).attr("r",this.rad);
+        this.r = pars.r;
+        this.obj = parent.append("circle").attr("cx",0).attr("cy",0).attr("r",this.r);
         break;
       case "poly":
         this.poly = [];
@@ -161,9 +149,11 @@ class Thing {
         this.obj = parent.append("polygon").attr("points",this.string)
         break;
     }
-    this.obj.attr("transform","translate("+this.pos.x+","+this.pos.y+")").style("fill","#EEFFFF");
+    var fill = (pars.color===undefined) ? "#EEFFFF" : pars.color;
+    this.id = (pars.id===undefined) ? Math.ceil(Math.random(1)*1000) : pars.id;
+    this.obj.attr("transform","translate("+this.x+","+this.y+")").style("fill",fill);
     this.class = "Thing";
-    this.cell = Cells[Math.floor(y/cellheight)][Math.floor(x/cellwidth)];
+    this.cell = Cells[Math.floor(this.y/cellheight)][Math.floor(this.x/cellwidth)];
     this.cell.movein(this);
     this.type = (type === undefined) ? "conv" : type;
     
@@ -171,13 +161,14 @@ class Thing {
   }
   
   checkCell () {
-    if(this.pos.x < 0 || this.pos.x > width || this.pos.y < 0 || this.pos.y > height) {
+    if(this.x < 0 || this.x > width || this.y < 0 || this.y > height) {
         this.remove();
         return 0;
     }
     else {
-      var tmp = Cells[Math.floor(this.pos.y/cellheight)][Math.floor(this.pos.x/cellwidth)];
+      var tmp = Cells[Math.floor(this.y/cellheight)][Math.floor(this.x/cellwidth)];
       if (tmp !== this.cell) {
+        (tmp===null) ? console.log("temp is null") :1;
         this.cell.moveout(this);
         this.cell = tmp;
         this.cell.movein(this);
@@ -190,10 +181,11 @@ class Thing {
     if(relative===undefined)
       relative = 1;
     var curr = this,
-        oldx=this.pos.x,
-        oldy=this.pos.y;
+        oldx=this.x,
+        oldy=this.y;
     if(this.move(x,y,relative,0))
-      var coll = this.isCollisionAny(Cells[Math.floor(this.pos.y/cellheight)][Math.floor(this.pos.x/cellwidth)]);
+      var coll = this.findCollisions(Cells[Math.floor(this.y/cellheight)][Math.floor(this.x/cellwidth)]);
+      
     //if(coll) {
     //  this.move(coll.x,coll.y,0);
     //}
@@ -208,21 +200,18 @@ class Thing {
     if(tentative===undefined)
       tentative = 0;
     
-    this.pos.x = this.pos.x*relative + x;
-    this.pos.y = this.pos.y*relative + y;
-    this.obj.attr("transform","translate("+this.pos.x+","+this.pos.y+")");
+    this.x = this.x*relative + x;
+    this.y = this.y*relative + y;
+    this.obj.attr("transform","translate("+this.x+","+this.y+")");
     
-    if(!tentative) {
-      return(this.checkCell())
-      if (false & this.isCollisionAny()) {
-        //this.remove();
-      }
-    }
+    var res = this.checkCell()
+    return(res)
   }
   
   isPointInPoly(pt) {
-      pt.x = pt.x - this.pos.x;
-      pt.y = pt.y - this.pos.y;
+    console.log("point add")
+      pt.x = pt.x - this.x;
+      pt.y = pt.y - this.y;
       for(var c = false, d = false, i = -1, l = this.poly.length, j = l - 1; ++i < l; j = i) {
           ((this.poly[i].y <= pt.y && pt.y <= this.poly[j].y) || (this.poly[j].y <= pt.y && pt.y <= this.poly[i].y))
           && (pt.x <  (this.poly[j].x - this.poly[i].x) * (pt.y - this.poly[i].y) / (this.poly[j].y - this.poly[i].y) + this.poly[i].x)
@@ -239,35 +228,12 @@ class Thing {
       return (c||d);
   }
   
-  static isCollisionBox(thing1,thing2) {
-    if (thing1===thing2)
-      return false;
-    //else
-      //return ab_ab(thing1,thing2);
-    return !(thing1===thing2 || thing1.y2+thing1.pos.y < thing2.y1+thing2.pos.y || thing1.y1+thing1.pos.y > thing2.y2+thing2.pos.y || 
-             thing1.x2+thing1.pos.x < thing2.x1+thing2.pos.x || thing1.x1+thing1.pos.x > thing2.x2+thing2.pos.x);
-  }
-  
-  static isCollision(thing1,thing2) {
-    var inbox = Thing.isCollisionBox(thing1,thing2);
-    if (inbox) {
-      for(var i=0; i < thing1.poly.length; i++) {
-        if(thing2.isPointInPoly(thing1.poly[i].add(thing1.pos)) )
-          return 1;
-      }
-      for(var i=0; i < thing2.poly.length; i++) {
-        if(thing1.isPointInPoly(thing2.poly[i].add(thing2.pos)) )
-          return 1;
-      }
-      return 0;
-    }
-    else
-      return 0;
-  }
-  
-  isCollisionAny(cell) {
+  findCollisions(cell,fyi) {
     if(cell===undefined)
       cell = this.cell;
+    if(fyi===undefined)
+      fyi = false;
+    var col = 0;
     for(var cl = 0; cl<9; cl++) {
       var curcell;
       switch (cl) {
@@ -281,10 +247,10 @@ class Thing {
           curcell = cell.nr;
           break;
         case 3:
-          curcell = cell.nl;
+          curcell = cell.nd;
           break;
         case 4:
-          curcell = cell.nd;
+          curcell = cell.nl;
           break;
         case 5:
           curcell = cell.nul;
@@ -303,24 +269,34 @@ class Thing {
         var poss = curcell.ThingList
         var node = poss.start
         while(node !== null) {
-          var col = rect_rect(this,node.thing);
-          if(col) {
-            this.collide(node.thing,col);
-            return node.thing;
+          if(this!==node.thing) {
+            //var vec = rect_rect(this,node.thing);
+            var vec = getcolfun(this.type,node.thing.type)(this,node.thing);
+            if(vec) {
+              //console.log(vec)
+              col += 1
+              if(!fyi)
+                this.collide(node.thing,vec);
+              //return node.thing;
+            }
           }
           node = node.next;
         }
       }
     }
-    return 0;
+    return col;
   }
   
   collide () {
+    console.log("nothing")
     return ;
   }
   
   onStep () {
-    this.obj.attr("points",this.string).attr("transform","translate("+this.pos.x+","+this.pos.y+")");
+    this.obj.attr("transform","translate("+this.x+","+this.y+")");
+    if(this.type=="circ") {
+      //return;
+    }
     if(!this.grounded)
       this.yvel += this.grav*.2;
     if (Math.abs(this.yvel) < .1 && false) {
@@ -328,33 +304,28 @@ class Thing {
       this.grounded = 1;
     }
     if (Math.abs(this.xvel) < .001) this.xvel = 0;
-    var rep = Math.ceil(Math.max(Math.abs(this.xvel)/cellwidth,Math.abs(this.yvel)/cellheight)*10);
+    var rep = Math.ceil(Math.max(Math.abs(this.xvel)/cellwidth,Math.abs(this.yvel)/cellheight)*20);
     for (var i=0; i<rep; i++) {
       if(Things.indexOf(this) > -1) {
-        var coll = this.trymove(this.xvel/rep,this.yvel/rep,1,0);
+        var coll = this.trymove(this.xvel/rep,this.yvel/rep,1);
       }
     }
   }
   
   remove() {
+    console.log("remove1",Things.length)
     this.obj.remove();
-    console.log("remove");
     //this.cell.moveout(this);
-    console.log("moveout");
     Things.splice(Things.indexOf(this),1);
+    console.log("remove2",Things.length)
   }
 }
 
 class Main extends Thing {
-  constructor(parent,x,y,xvel,yvel,direc,grav,fric,bnce,mov,type,pars) {
-    super(parent,x,y,xvel,yvel,direc,grav,fric,bnce,mov,type,pars);
+  constructor(parent,orient,physics,type,pars) {
+    super(parent,orient,physics,type,pars);
     this.class = "Main";
     //this.image = g.append("image").attr("x",this.x1).attr("y",this.y1).attr("width",this.x2-this.x1).attr("height",this.y2-this.y1)
-  }
-  
-  onStep () {
-    super.onStep()
-    
   }
   
   remove() {
@@ -366,39 +337,34 @@ class Main extends Thing {
 }
 
 class Project extends Thing {
-  constructor(parent,x,y,xvel,yvel,direc,grav,fric,bnce,mov,type,pars) {
-    console.log(this.class);
-    super(parent,x,y,xvel,yvel,direc,grav,fric,bnce,mov,type,pars);
-    console.log(this.class);
+  constructor(parent,orient,physics,type,pars) {
+    super(parent,orient,physics,type,pars);
     this.class = "Project"
-    console.log(this.class);
   }
   
-  onStep() {
-    super.onStep();
-    this.move(Math.cos(this.direc*pi/180)*this.veloc,Math.sin(this.direc*pi/180)*this.veloc,1,0);
+  collide(thing,vec) {
+    this.remove();
   }
 }
 
 class Block extends Thing {
-  constructor(parent,x,y,xvel,yvel,direc,grav,fric,bnce,mov,type,pars) {
-    super(parent,x,y,xvel,yvel,direc,grav,fric,bnce,mov,type,pars);
+  constructor(parent,orient,physics,type,pars) {
+    super(parent,orient,physics,type,pars);
     this.class = "Block";
   }
 }
 
 class Bll extends Thing {
-  constructor(parent,x,y,xvel,yvel,direc,grav,fric,bnce,mov,type,pars) {
-    super(parent,x,y,xvel,yvel,direc,grav,fric,bnce,mov,type,pars) //{hh:cellheight/2,hw:cellwidth/2}
+  constructor(parent,orient,physics,type,pars) {
+    super(parent,orient,physics,type,pars) //{hh:cellheight/2,hw:cellwidth/2}
     this.class = "Bll"
     this.grounded = 0;
   }
   
   collide (thing,vec) {
-    //console.log(this.class," collide with ",thing.class,vec)
-    console.log("pre-collide",this.xvel,this.yvel,vec)
     this.move(vec.x,vec.y,1);
     switch(thing.class) {
+      case "Main":
       case "Block":
         //this.xvel = -this.xvel;
         //this.yvel = -this.yvel;
@@ -419,7 +385,6 @@ class Bll extends Thing {
         thing.yvel = b1.y + f2.y;
         break;
     }
-    console.log("post-collide",this.xvel,this.yvel)
     return ;
   }
   
