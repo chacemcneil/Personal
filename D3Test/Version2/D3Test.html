@@ -148,16 +148,7 @@ function keyRelease(keyCode) {
   
 }
 
-// All Class definitions
-
-
-
-
-
-
-
-
-
+// Initialize cells with neighbors
 var Cells = new Array(rows);
 for (var i=0; i<=rows; i++) {
   Cells[i] = new Array(cols);
@@ -177,7 +168,6 @@ for (var i=0; i<=rows; i++) {
     Cells[i][j].ndr = (i<rows & j<cols) ? Cells[i+1][j+1] : null;
   }
 }
-//console.log("All cells",Cells[0][0]);
 
 function block (str) {
   var ptstr = str.split(""),
@@ -210,25 +200,29 @@ function block (str) {
 }
 
 
-//new Bll (g,160,40,0,0,0,1,0,1,1,"rect",{hh:8.3333333333333685644107,hw:cellwidth/2,color:"#FFEEEE"});
-//new Bll (g,100,40,0,0,0,1,0,1,1,"rect",{hh:8.3333333333333170500623,hw:cellwidth/2,color:"#FFEEEE"});
-//new Bll (g,231,240,0,1,0,1,0,1,1,"rect",{hh:cellheight/3,hw:cellwidth/3,color:"#FFEEEE"});
-//new Bll (g,231,40,0,1,0,1,0,1,1,"rect",{hh:cellheight/3,hw:cellwidth/3,color:"#EEFFEE"});
+//new Bll (g,[160,40,0,0,0],[1,0,1,1],"rect",{hh:8.3333333333333685644107,hw:cellwidth/2,color:"#FFEEEE"});
+//new Bll (g,[100,40,0,0,0],[1,0,1,1],"rect",{hh:8.3333333333333170500623,hw:cellwidth/2,color:"#FFEEEE"});
+//new Bll (g,[231,240,0,1,0],[1,0,1,1],"rect",{hh:cellheight/3,hw:cellwidth/3,color:"#FFEEEE"});
+//new Bll (g,[231,40,0,1,0],[1,0,1,1],"rect",{hh:cellheight/3,hw:cellwidth/3,color:"#EEFFEE"});
 var pl = new Main (g,[340,100,0,0,0],[0,1,0,.5],"rect",{hh:cellheight/2,hw:cellwidth/2,color:"#EEFFEE"});
-//var pl = new Main (g,1,1,0,0,0,0,1,0,.5,"rect",{hh:cellheight/2,hw:cellwidth/2,color:"#EEFFEE"});
+//var pl = new Main (g,[1,1,0,0,0],[0,1,0,.5],"rect",{hh:cellheight/2,hw:cellwidth/2,color:"#EEFFEE"});
 
 new Bll (g,[131,240,0,-3,0],[0,0,1,1],"circ",{r:cellwidth/3,color:"#FFEEEE"});
 new Bll (g,[130, 40,0,-3,0],[0,0,1,1],"circ",{r:cellwidth/3,color:"#EEFFEE"});
 new Bll (g,[ 30, 40,1,-3,0],[0,0,1,1],"circ",{r:cellwidth/3,color:"#EEEEFF"});
+new Bll (g,[330, 40,1,-3,0],[0,0,1,1],"circ",{r:cellwidth/3,color:"#EEEEFF"});
+new Bll (g,[ 30,140,1, 2,0],[0,0,1,1],"circ",{r:cellwidth/3,color:"#EEEEFF"});
+new Bll (g,[330,140,1, 2,0],[0,0,1,1],"circ",{r:cellwidth/3,color:"#EEEEFF"});
 
 //console.log([1,3,4,5],{x:1,y:3,xvel:4,yvel:5})
 //console.log([1,3,4,5][4],{x:1,y:3,xvel:4,yvel:5}.z)
 //console.log(Array.isArray([1,3,4,5]),Array.isArray({x:1,y:3,xvel:4,yvel:5}))
 
 // Issues:
-//  There seems to be slight changes in total energy (sum of squared velocities) over time.
+//  There seems to be slight changes in total energy (sum of squared velocities) over time if gravity used.
 //  boxes with gravity end up wonky (strange collisions, "stick then shoot")
 //  Does not incorporate polygons, only rects and circles.
+
 
 for (var i=0; i <= cols; i++) {
   for (var j=0; j <= rows; j++) {

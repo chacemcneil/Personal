@@ -136,16 +136,24 @@ class Thing {
         this.obj = parent.append("circle").attr("cx",0).attr("cy",0).attr("r",this.r);
         break;
       case "poly":
-        this.poly = [];
+        this.points = [];
         this.string = "";
-        for(var i =0; i < xs.length; i++) {
-          this.poly.push(new Point(xs[i],ys[i]));
-          this.string = this.string + " " + (xs[i]) + "," + (ys[i]);
+        var prev = {x:pars.xs[pars.xs.length-1],y:pars.ys[pars.ys.length-1]};
+        this.area = 0;
+        for(var i =0; i < pars.xs.length; i++) {
+          var next = {x:pars.xs[i],y:pars.ys[i]};
+          this.area += (next.x-prev.x)*(next.y+prev.y);
+          prev = next;
+          this.points.push(next);
+          this.string = this.string + " " + (pars.xs[i]) + "," + (pars.ys[i]);
         }
-        this.x1 = xs.slice().sort(function(a,b){return a-b})[0];
-        this.x2 = xs.slice().sort(function(a,b){return b-a})[0];
-        this.y1 = ys.slice().sort(function(a,b){return a-b})[0];
-        this.y2 = ys.slice().sort(function(a,b){return b-a})[0];
+        if(this.area < 0) {
+          this.points.reverse()
+        }
+        //this.x1 = pars.xs.slice().sort(function(a,b){return a-b})[0];
+        //this.x2 = pars.xs.slice().sort(function(a,b){return b-a})[0];
+        //this.y1 = pars.ys.slice().sort(function(a,b){return a-b})[0];
+        //this.y2 = pars.ys.slice().sort(function(a,b){return b-a})[0];
         this.obj = parent.append("polygon").attr("points",this.string)
         break;
     }
@@ -325,7 +333,8 @@ class Main extends Thing {
   constructor(parent,orient,physics,type,pars) {
     super(parent,orient,physics,type,pars);
     this.class = "Main";
-    //this.image = g.append("image").attr("x",this.x1).attr("y",this.y1).attr("width",this.x2-this.x1).attr("height",this.y2-this.y1)
+    //this.image = g.append("image").attr("x",this.x-this.hw).attr("y",this.y-this.hh)
+    //                              .attr("width",2*this.hw).attr("height",2*this.hh)
   }
   
   remove() {

@@ -25,6 +25,10 @@ function projectvec (vec1x,vec1y,vec2x,vec2y) {
   return {x:f*vec2x, y:f*vec2y};
 }
 
+function rightvec (vecx,vecy) {
+  return {x:-vecy,y:vecx};
+}
+
 // requires x,y (center pt), hw,hh (half-width and half-height)
 function rect_rect (one,two) {
   var h = Math.max(one.hw + two.hw - Math.abs(one.x - two.x),0),
@@ -135,6 +139,62 @@ function circ_circ (one,two) {
   }
 }
 
+function isClockwise(one,two,three) {
+  return (one.x*three.y + two.x*one.y + three.x*two.y) - (one.x*two.y + two.x*three.y + three.x*one.y) > 0;
+}
+
+function circ_poly (circ,poly) {
+  // find which region the cx,cy is in, currently assuming clockwise polygons
+  var outside = 0;
+  for (var i=0, j=poly.length-1; i<poly.length; j=i++) {
+    var edge = {x:poly.points[i].x-poly.points[j].x,y:poly.points[i].y-poly.points[j].y},
+        norm = rightvec(edge.x,edge.y),
+        one  = {x:circ.x-poly.points[j].x,y:circ.y-poly.points[i].y},
+        two  = {x:circ.x-poly.points[j].x,y:circ.y-poly.points[i].y},
+        a = one.x*one.x + one.y*one.y,
+        b = two.x*two.x + two.y*two.y,
+        c = edge.x*edge.x + edge.y*edge.y;
+    if(isClockwise(poly.points[j],{x:circ.x,y:circ.y},poly.points[i])) {
+      outside = 1;
+      if(Math.abs(a-b) <= c) {
+        
+        break;
+      }
+    }
+    if(a > b+c) {
+      
+    }
+  }
+  // calculate distance accordingly
+  
+  return ;
+}
+
+function poly_circ (poly,circ) {
+  var res = circ_poly(circ,poly)
+  if (res==0)
+    return res;
+  return {x:-res.x,y:-res.y};
+}
+
+function poly_rect (poly,rect) {
+  
+  return ;
+}
+
+function rect_poly (rect,poly) {
+  
+  return ;
+}
+
+function poly_poly (one,two) {
+  
+  return;
+}
+
+
+
+///// Below functions not currently used.
 
 function sepvec (one,two) {
   // Get separation vector (smallest vector to bring objects apart)
@@ -144,9 +204,6 @@ function sepvec (one,two) {
 }
 
 
-function py_py (one,two) {
-  return 0;
-}
 
 function proj (thing,vec) {
   var cp = (thing.x*vec.y+thing.y*vec.x)/(vec.x*vec.x+vec.y*vec.y);
