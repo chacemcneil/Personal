@@ -37,7 +37,7 @@ function rect_rect (one,two) {
     return 0;
   }
   else {
-    var res = (h < v) ? {x:h*Math.sign(one.x-two.x),y:0} : {x:0,y:v*Math.sign(one.y-two.y)};
+    var res = (h < v) ? {x:(h+margin)*Math.sign(one.x-two.x),y:0} : {x:0,y:(v+margin)*Math.sign(one.y-two.y)};
     return res;
   }
 }
@@ -111,7 +111,7 @@ function circ_rect (circ,rect) {
     return 0;
   }
   if (ix!=0 && iy!=0) {
-    console.log("corner bounce",Math.floor(circ.x/cellwidth),Math.floor(rect.x/cellwidth))
+    //console.log("corner bounce",Math.floor(circ.x/cellwidth),Math.floor(rect.x/cellwidth))
   }
   return {x:dx,y:dy};
 }

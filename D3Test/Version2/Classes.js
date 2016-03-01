@@ -305,19 +305,36 @@ class Thing {
     if(this.type=="circ") {
       //return;
     }
-    if(!this.grounded)
-      this.yvel += this.grav*.2;
     if (Math.abs(this.yvel) < .1 && false) {
       this.yvel = 0;
       this.grounded = 1;
     }
     if (Math.abs(this.xvel) < .001) this.xvel = 0;
-    var rep = Math.ceil(Math.max(Math.abs(this.xvel)/cellwidth,Math.abs(this.yvel)/cellheight)*20);
+    //var xmove = this.xvel,
+        //ymove = this.yvel - this.grav/2,
+    //var ymove = (this.grav==0) ? this.yvel : -2/(this.grav)*(v1*v1-this.yvel*this.yvel);
+    //var ymove = (this.grav==0) ? this.yvel : -2/(this.grav)*(this.yvel*this.yvel-(this.yvel+this.grav)*(this.yvel+this.grav));
+    var ymove = (this.grav==0) ? this.yvel : -2/this.grav*(-this.grav*this.grav-2*this.yvel*this.grav);
+    var rep = Math.ceil(Math.max(Math.abs(this.xvel)/cellwidth,Math.abs(ymove)/cellheight)*10);
     for (var i=0; i<rep; i++) {
       if(Things.indexOf(this) > -1) {
-        var coll = this.trymove(this.xvel/rep,this.yvel/rep,1);
+        var v1 = this.yvel;
+        if(!this.grounded)
+          this.yvel = this.yvel + this.grav/rep;
+        
+        var ymove = (this.grav==0) ? this.yvel/rep : -(v1*v1-this.yvel*this.yvel)/this.grav/2;
+        if(ymove != this.yvel) {
+          //console.log(this.yvel,ymove)
+        }
+        //var coll = this.trymove(this.xvel/rep,this.yvel/rep,1);
+        var coll = this.trymove(this.xvel/rep,ymove,1);
+        //console.log(xmove,ymove,this.xvel,this.yvel);
+        if(!coll) {
+          this.yvel = this.yvel - this.grav/rep;
+        }
       }
     }
+    //this.yvel = this.yvel*rep;
   }
   
   remove() {
@@ -379,7 +396,7 @@ class Bll extends Thing {
         //this.yvel = -this.yvel;
         //break;
         var b1 = projectvec(this.xvel,this.yvel,vec.x,vec.y),
-            f1 = projectvec(this.xvel,this.yvel,-vec.y,vec.x);
+            f1 = projectvec(this.xvel,this.yvel,vec.y,-vec.x);
         this.xvel = -b1.x + f1.x;
         this.yvel = -b1.y + f1.y;
         break;
