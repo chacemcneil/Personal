@@ -100,13 +100,12 @@ function keyPress(keyCode) {
     // Press S
     //for (var i=0; i < 10; i++)
     console.log("ssssssssss");
-    new Project(g,pl.x+25,pl.y,6,0,-0,0,1,0,0,"rect",{hh:5,hw:5,color:"#FFDDFF"});
+    new Project(g,[pl.x+25,pl.y,6,0,-0],[0,1,0,1,0],"rect",{hh:5,hw:5,color:"#FFDDFF"});
   }
   if(keyCode==69) {
     // Press E
     //for (var i=0; i < 10; i++)
-    console.log("Energy: ",Things.map(function(obj,i,a) {return (obj.xvel*obj.xvel + obj.yvel*obj.yvel)/2 + obj.grav*(1000-obj.y);})
-                                 .reduce(function(pre,d,i,a) {return pre + d},0))
+    printEnergy();
   }
   if(keyCode==84) {
     // Press T
@@ -123,18 +122,18 @@ function keyPress(keyCode) {
   for (var i=0; i < Things.length; i++) {
     var b1 = Things[i];
     if(b1.class=="Main") {
-      if(keyCode == 37) {
-        b1.xvel -= 5
-      }
-      if(keyCode == 38) {
-        b1.yvel -= 5
-      }
-      if(keyCode == 39) {
-        b1.xvel += 5
-      }
-      if(keyCode == 40) {
-        b1.yvel += 5
-      }
+//      if(keyCode == 37) {
+//        b1.xvel -= 5
+//      }
+//      if(keyCode == 38) {
+//        b1.yvel -= 5
+//      }
+//      if(keyCode == 39) {
+//        b1.xvel += 5
+//      }
+//      if(keyCode == 40) {
+//        b1.yvel += 5
+//      }
       if(keyCode == 81) { // Press Q
         b1.yvel = b1.yvel*2
         b1.xvel = b1.xvel*2
@@ -145,7 +144,12 @@ function keyPress(keyCode) {
 }
 
 function keyRelease(keyCode) {
-  
+  return 0;
+}
+
+function printEnergy () {
+  console.log("Energy: ",Things.map(function(obj,i,a) {return (obj.xvel*obj.xvel + obj.yvel*obj.yvel)/2 + obj.grav*(1000-obj.y);})
+                                 .reduce(function(pre,d,i,a) {return pre + d},0));
 }
 
 // Initialize cells with neighbors
@@ -200,20 +204,28 @@ function block (str) {
 }
 
 
-//new Bll (g,[160,40,0,0,0],[1,0,1,1],"rect",{hh:8.3333333333333685644107,hw:cellwidth/2,color:"#FFEEEE"});
-//new Bll (g,[100,40,0,0,0],[1,0,1,1],"rect",{hh:8.3333333333333170500623,hw:cellwidth/2,color:"#FFEEEE"});
-//new Bll (g,[431,240,2,1,0],[1,0,1,1],"rect",{hh:cellheight/3,hw:cellwidth/3,color:"#FFEEEE"});
+//new Bll (g,[160,40,0,0,0],[.1,0,1,1],"rect",{hh:8.3333333333333685644107,hw:cellwidth/2,color:"#FFEEEE"});
+//new Bll (g,[100,40,0,0,0],[.1,0,1,1],"rect",{hh:8.3333333333333170500623,hw:cellwidth/2,color:"#FFEEEE"});
+//new Bll (g,[431,240,0,1,0],[.1,0,1,1],"rect",{hh:cellheight/3,hw:cellwidth/3,color:"#FFEEEE"});
+//new Bll (g,[231,140,0,1,0],[.1,0,1,1],"rect",{hh:cellheight/3,hw:cellwidth/3,color:"#EEFFEE"});
+//new Bll (g,[131,270,2,1,0],[.1,0,1,1],"circ",{r:cellwidth/3,color:"#FFDDEE"});
+//new Bll (g,[331,170,0,1,0],[.1,0,1,1],"circ",{r:cellwidth/2,color:"#DDFFEE"});
+//new Bll (g,[160,40,0,0,0],[.1,0,1,1],"rect",{hh:8.3333333333333685644107,hw:cellwidth/2,color:"#FFEEEE"});
+//new Bll (g,[100,40,0,0,0],[.1,0,1,1],"rect",{hh:8.3333333333333170500623,hw:cellwidth/2,color:"#FFEEEE"});
+//new Bll (g,[361,240,-2,1,0],[.1,0,1,1],"rect",{hh:cellheight/3,hw:cellwidth/3,color:"#FFEEEE"});
 new Bll (g,[231,140,0,1,0],[.1,0,1,1],"rect",{hh:cellheight/3,hw:cellwidth/3,color:"#EEFFEE"});
+new Bll (g,[131,270,2,1,0],[.1,0,1,1],"circ",{r:cellwidth/3,color:"#FFDDEE"});
+new Bll (g,[331,170,0,1,0],[.1,0,1,1],"circ",{r:cellwidth/2,color:"#DDFFEE"});
 var pl = new Main (g,[340,100,0,0,0],[0,1,0,.5],"rect",{hh:cellheight/2,hw:cellwidth/2,color:"#EEFFEE"});
 //var pl = new Main (g,[1,1,0,0,0],[0,1,0,.5],"rect",{hh:cellheight/2,hw:cellwidth/2,color:"#EEFFEE"});
 
 // First is orient: [x,y,xvel,yvel,direc]; Second is physics: [grav,fric,bnce,mov(moveable),drag]
 //new Bll (g,[131,240,0,-3,0],[0,0,1,1],"circ",{r:cellwidth/3,color:"#FFEEEE"});
 //new Bll (g,[130, 40,0,-3,0],[0,0,1,1],"circ",{r:cellwidth/3,color:"#EEFFEE"});
-new Bll (g,[ 30, 40,1,-3,0],[0,0,1,1],"circ",{r:cellwidth/3,color:"#EEEEFF"});
-new Bll (g,[330, 40,1,-3,0],[0,0,1,1],"circ",{r:cellwidth/3,color:"#EEEEFF"});
+//new Bll (g,[ 30, 40,1,-3,0],[0,0,1,1],"circ",{r:cellwidth/3,color:"#EEEEFF"});
+//new Bll (g,[330, 40,1,-3,0],[0,0,1,1],"circ",{r:cellwidth/3,color:"#EEEEFF"});
 //new Bll (g,[ 30,140,1, 2,0],[0,0,1,1],"circ",{r:cellwidth/3,color:"#EEEEFF"});
-new Bll (g,[330,140,1, 2,0],[0,0,1,1],"circ",{r:cellwidth/3,color:"#EEEEFF"});
+//new Bll (g,[330,140,1, 2,0],[0,0,1,1],"circ",{r:cellwidth/3,color:"#EEEEFF"});
 
 //console.log([1,3,4,5],{x:1,y:3,xvel:4,yvel:5})
 //console.log([1,3,4,5][4],{x:1,y:3,xvel:4,yvel:5}.z)

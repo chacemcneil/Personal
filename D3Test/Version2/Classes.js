@@ -283,8 +283,10 @@ class Thing {
             if(vec) {
               //console.log(vec)
               col += 1
-              if(!fyi)
+              if(!fyi) { // Ignore if only checking for a collision, rather than colliding
                 this.collide(node.thing,vec);
+                node.thing.collided(this,{x:-vec.x,y:-vec.y});
+              }
               //return node.thing;
             }
           }
@@ -300,6 +302,11 @@ class Thing {
     return ;
   }
   
+  collided () {
+    //console.log("nothing")
+    return ;
+  }
+  
   onStep () {
     this.obj.attr("transform","translate("+this.x+","+this.y+")");
     if(this.type=="circ") {
@@ -309,7 +316,10 @@ class Thing {
       this.yvel = 0;
       this.grounded = 1;
     }
-    if (Math.abs(this.xvel) < .001) this.xvel = 0;
+    if (Math.abs(this.xvel) < .001 && this.xvel != 0) {
+      console.log("Zeroed")
+      this.xvel = 0;
+    }
     //var xmove = this.xvel,
         //ymove = this.yvel - this.grav/2,
     //var ymove = (this.grav==0) ? this.yvel : -2/(this.grav)*(v1*v1-this.yvel*this.yvel);
@@ -323,6 +333,7 @@ class Thing {
           this.yvel = this.yvel + this.grav/rep;
         
         var ymove = (this.grav==0) ? this.yvel/rep : -(v1*v1-this.yvel*this.yvel)/this.grav/2;
+        //console.log(rep,this.grav,this.yvel,ymove);
         if(ymove != this.yvel) {
           //console.log(this.yvel,ymove)
         }
@@ -330,7 +341,7 @@ class Thing {
         var coll = this.trymove(this.xvel/rep,ymove,1);
         //console.log(xmove,ymove,this.xvel,this.yvel);
         if(!coll) {
-          this.yvel = this.yvel - this.grav/rep;
+          //this.yvel = this.yvel - this.grav/rep;
         }
       }
     }
@@ -340,7 +351,7 @@ class Thing {
   remove() {
     console.log("remove1",Things.length)
     this.obj.remove();
-    //this.cell.moveout(this);
+    this.cell.moveout(this);
     Things.splice(Things.indexOf(this),1);
     console.log("remove2",Things.length)
   }
@@ -352,6 +363,11 @@ class Main extends Thing {
     this.class = "Main";
     //this.image = g.append("image").attr("x",this.x-this.hw).attr("y",this.y-this.hh)
     //                              .attr("width",2*this.hw).attr("height",2*this.hh)
+  }
+  
+  collide(thing,vec) {
+    this.x += vec.x;
+    this.y += vec.y;
   }
   
   remove() {
@@ -370,6 +386,18 @@ class Project extends Thing {
   
   collide(thing,vec) {
     this.remove();
+    if(thing.class=="Bll")
+      thing.remove();
+  }
+  
+  collided(thing,vec) {
+    this.remove();
+    if(thing.class=="Bll")
+      thing.remove();
+  }
+  
+  remove() {
+    super.remove()
   }
 }
 
@@ -389,6 +417,10 @@ class Bll extends Thing {
   
   collide (thing,vec) {
     this.move(vec.x,vec.y,1);
+    if(this.grav!=0) {
+      //console.log(Math.sqrt(this.yvel*this.yvel + 2*this.grav*vec.y),vec.y,this.yvel);
+      this.yvel = Math.sqrt(Math.max(this.yvel*this.yvel + 2*this.grav*vec.y,0))*Math.sign(this.yvel);
+    }
     switch(thing.class) {
       case "Main":
       case "Block":
