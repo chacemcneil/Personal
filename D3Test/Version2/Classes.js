@@ -408,6 +408,15 @@ class Block extends Thing {
   }
 }
 
+class Trmp extends Block {
+  constructor(parent,orient,physics,type,pars) {
+    super(parent,orient,physics,type,pars);
+    this.class = "Trmp";
+    this.color = "#DDFFFF";
+    this.bnce  = 1.1;
+  }
+}
+
 class Bll extends Thing {
   constructor(parent,orient,physics,type,pars) {
     super(parent,orient,physics,type,pars) //{hh:cellheight/2,hw:cellwidth/2}
@@ -429,8 +438,17 @@ class Bll extends Thing {
         //break;
         var b1 = projectvec(this.xvel,this.yvel,vec.x,vec.y),
             f1 = projectvec(this.xvel,this.yvel,vec.y,-vec.x);
-        this.xvel = -b1.x + f1.x;
-        this.yvel = -b1.y + f1.y;
+        this.xvel = -this.bnce*b1.x + (1-this.fric)*f1.x;
+        this.yvel = -this.bnce*b1.y + (1-this.fric)*f1.y;
+        break;
+      case "Trmp":
+        //this.xvel = -this.xvel;
+        //this.yvel = -this.yvel;
+        //break;
+        var b1 = projectvec(this.xvel,this.yvel,vec.x,vec.y),
+            f1 = projectvec(this.xvel,this.yvel,vec.y,-vec.x);
+        this.xvel = -thing.bnce*b1.x + f1.x;
+        this.yvel = -thing.bnce*b1.y + f1.y;
         break;
       case "Bll":
         var b1 = projectvec(this.xvel,this.yvel,vec.x,vec.y),
@@ -447,4 +465,28 @@ class Bll extends Thing {
   }
   
   
+}
+
+function Make (parent,data) {
+  for (var i = 0; i < data.x.length; i++) {
+    switch(data.class[i]) {
+      case "Block":
+        var Creator = Block;
+        break;
+      case "Project":
+        var Creator = Project;
+        break;
+      case "Trmp":
+        var Creator = Trmp;
+        break;
+      case "Main":
+        var Creator = Main;
+        break;
+      case "Bll":
+        var Creator = Bll;
+        break;
+    }
+    new Creator(parent,[data.x[i],data.y[i],data.xvel[i],data.yvel[i],data.direc[i]],[data.grav[i],data.fric[i],data.bnce[i],data.mov[i],data.drag[i]],data.type[i],
+                {hh:data.hh[i],hw:data.hw[i],r:data.r[i],color:data.color[i]})
+  }
 }

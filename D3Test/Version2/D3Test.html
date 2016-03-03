@@ -2,12 +2,14 @@
 <html>
   <body width = 1300>
     <script src="http://d3js.org/d3.v2.min.js" charset="utf-8"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
 <p id="chart"></p>
 
 
 <script src="ColFun.js"></script>
 <script src="Classes.js"></script>
 <script src="ReadData.js"></script>
+<script src="rm1.js"></script>
 
 <script type="text/javascript">
 "use strict";
@@ -213,9 +215,9 @@ function block (str) {
 //new Bll (g,[160,40,0,0,0],[.1,0,1,1],"rect",{hh:8.3333333333333685644107,hw:cellwidth/2,color:"#FFEEEE"});
 //new Bll (g,[100,40,0,0,0],[.1,0,1,1],"rect",{hh:8.3333333333333170500623,hw:cellwidth/2,color:"#FFEEEE"});
 //new Bll (g,[361,240,-2,1,0],[.1,0,1,1],"rect",{hh:cellheight/3,hw:cellwidth/3,color:"#FFEEEE"});
-new Bll (g,[231,140,0,1,0],[.1,0,1,1],"rect",{hh:cellheight/3,hw:cellwidth/3,color:"#EEFFEE"});
-new Bll (g,[131,270,2,1,0],[.1,0,1,1],"circ",{r:cellwidth/3,color:"#FFDDEE"});
-new Bll (g,[331,170,0,1,0],[.1,0,1,1],"circ",{r:cellwidth/2,color:"#DDFFEE"});
+//new Bll (g,[231,140,0,1,0],[.1,0,1,1],"rect",{hh:cellheight/3,hw:cellwidth/3,color:"#EEFFEE"});
+//new Bll (g,[131,270,2,1,0],[.1,0,1,1],"circ",{r:cellwidth/3,color:"#FFDDEE"});
+//new Bll (g,[331,170,0,1,0],[.1,0,1,1],"circ",{r:cellwidth/2,color:"#DDFFEE"});
 var pl = new Main (g,[340,100,0,0,0],[0,1,0,.5],"rect",{hh:cellheight/2,hw:cellwidth/2,color:"#EEFFEE"});
 //var pl = new Main (g,[1,1,0,0,0],[0,1,0,.5],"rect",{hh:cellheight/2,hw:cellwidth/2,color:"#EEFFEE"});
 
@@ -237,13 +239,18 @@ var pl = new Main (g,[340,100,0,0,0],[0,1,0,.5],"rect",{hh:cellheight/2,hw:cellw
 //  Does not incorporate polygons, only rects and circles.
 
 
-for (var i=0; i <= cols; i++) {
-  for (var j=0; j <= rows; j++) {
-    if(i==0 || i==cols || j==0 || j==rows)
-      new Block(g,{x:i*cellwidth+cellwidth/2.0,y:j*cellheight+cellheight/2.0},[0,1,0,0],"rect",
-                  {hh:cellheight/2,hw:cellwidth/2});
-  }
-}
+var obs = {"x":[12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,37.5,37.5,62.5,62.5,87.5,87.5,112.5,112.5,137.5,137.5,162.5,162.5,187.5,187.5,212.5,212.5,237.5,237.5,262.5,262.5,287.5,287.5,312.5,312.5,337.5,337.5,362.5,362.5,387.5,387.5,412.5,412.5,437.5,437.5,462.5,462.5,487.5,487.5,512.5,512.5,512.5,512.5,512.5,512.5,512.5,512.5,512.5,512.5,512.5,512.5,512.5,512.5,512.5,512.5,512.5,512.5,512.5,512.5,512.5,80,160,240,320],"y":[12.5,37.5,62.5,87.5,112.5,137.5,162.5,187.5,212.5,237.5,262.5,287.5,312.5,337.5,362.5,387.5,412.5,437.5,462.5,487.5,512.5,12.5,512.5,12.5,512.5,12.5,512.5,12.5,512.5,12.5,512.5,12.5,512.5,12.5,512.5,12.5,512.5,12.5,512.5,12.5,512.5,12.5,512.5,12.5,512.5,12.5,512.5,12.5,512.5,12.5,512.5,12.5,512.5,12.5,512.5,12.5,512.5,12.5,512.5,12.5,37.5,62.5,87.5,112.5,137.5,162.5,187.5,212.5,237.5,262.5,287.5,312.5,337.5,362.5,387.5,412.5,437.5,462.5,487.5,512.5,120,160,200,240],"xvel":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1,0,1,2],"yvel":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"direc":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"grav":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.1,0.1,0.1,0.1],"fric":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"bnce":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.98,0.98,0.98,0.98],"mov":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"drag":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"type":["rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","rect","circ","rect","circ"],"hw":[12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5],"hh":[12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5,12.5],"r":["NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA",8.33333333333333,8.33333333333333,8.33333333333333,8.33333333333333],"color":["#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#FFFFDD","#DDFFFF","#FFFFDD","#DDFFFF","#FFFFDD","#DDFFFF","#FFFFDD","#DDFFFF","#FFFFDD","#DDFFFF","#FFFFDD","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#DDFFFF","#FFEEFF","#FFEEFF","#FFEEFF","#FFEEFF"],"class":["Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Trmp","Block","Trmp","Block","Trmp","Block","Trmp","Block","Trmp","Block","Trmp","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Block","Bll","Bll","Bll","Bll"]}
+;
+
+//for (var i=0; i <= cols; i++) {
+//  for (var j=0; j <= rows; j++) {
+//    if(i==0 || i==cols || j==0 || j==rows)
+//      new Block(g,{x:i*cellwidth+cellwidth/2.0,y:j*cellheight+cellheight/2.0},[0,1,0,0],"rect",
+//                  {hh:cellheight/2,hw:cellwidth/2});
+//  }
+//}
+
+Make(g,objects);
 
 var tick = new Event("tick"),
     incr=10,
