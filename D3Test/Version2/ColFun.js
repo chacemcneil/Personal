@@ -18,7 +18,7 @@ function getcolfun (type1,type2) {
 function projectvec (vec1x,vec1y,vec2x,vec2y) {
   // project vec1 onto vec2
   if(vec2x==0 && vec2y==0) {
-    console.log("div by 0")
+    //console.log("div by 0")
     return {x:0, y:0};
   }
   var f = (vec1x*vec2x + vec1y*vec2y)/(vec2x*vec2x + vec2y*vec2y);
