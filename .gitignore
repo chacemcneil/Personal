@@ -1,0 +1,5 @@
+*.Rhistory
+D3Test/Blocks.json
+*.jpg
+D3Test/Sounds/ding.wav
+*.wav
