@@ -27,21 +27,61 @@
    addresses
  }
  
- addLatLong <- function(dat,address="Address") {
-   require(ggmap)
-   if(! "data.table" %in% class(dat))
-     dat <- data.table(dat)
-   unq.add <- unique(dat[,address,with=F])                       # Find unique addresses (for efficiency)
-   unq.add <- formatAddress(unq.add,                             # Format street addresses
-                            stpregex="(\\bSTE\\b|\\bSUITE\\b|#)(\\s*)?[0987654321]*")
-   setkeyv(unq.add,address)                                      # Set Address as key value
-   
-   unq.add <- cbind(unq.add,geocode(unq.add[[address]]))         # Use geocode() to get lat/lon coordinates (still slow)
-   
-   setkeyv(dat,address)                                          # Set Address as key value for merge
-   dat <- merge(dat,unq.add,all.x=T)                             # Join lat/lon to data
+ addLatLong <- function(dat,address="Address",latlon=NULL) {
+   dat <- dat[,.SD]
+   setnames(dat,address,"Address")
+   if(!is.null(latlon)) {
+     # Only retrieve lat/lon for places not already included (save unnecessary queries)
+     setnames(dat,latlon,c("lat","lon"))
+     comp <- dat[!is.na(lat)]
+     empt <- dat[is.na(lat)][,lat:=NULL][,lon:=NULL]
+     dat <- rbind(comp,addLatLong(empt))
+   }
+   else {
+     require(ggmap)
+     if(! "data.table" %in% class(dat))
+       dat <- data.table(dat)
+     dat$Address <- formatAddress(dat$Address,                             # Format street addresses
+                                     stpregex="(\\bSTE\\b|\\bSUITE\\b|#)(\\s*)?[[:alnum:] ]*")
+     
+     unq.add <- unique(dat[,address,with=F])                       # Find unique addresses (for efficiency)
+     setkeyv(unq.add,address)                                      # Set Address as key value
+     
+     unq.add <- cbind(unq.add,geocode(unq.add$Address))            # Use geocode() to get lat/lon coordinates (still slow)
+     
+     setkeyv(dat,"Address")                                        # Set Address as key value for merge
+     dat <- merge(dat,unq.add,all.x=T)                             # Join lat/lon to data
+   }
    dat
  }
+ 
+ geoDistance <- function(lat1,lon1,lat2,lon2,degreeinputs=T,method=c("equirectangular","cosines","haversine")) {
+   method <- match.arg(method)
+   RadEarth <- 6.371e6  # Radius of Earth in Meters
+   if(degreeinputs) {
+     lat1rad <- pi/180*lat1
+     lat2rad <- pi/180*lat2
+     lon1rad <- pi/180*lon1
+     lon2rad <- pi/180*lon2
+   }
+   
+   if(method == "equirectangular") {
+     latmid <- (lat1rad + lat2rad)/2
+     x = (lon2rad-lon1rad)*cos(latmid)
+     y = lat2rad-lat1rad
+     d = RadEarth*sqrt(x^2+y^2)      # distance in meters
+   }
+   else if(method == "cosines") {
+     d <- RadEarth*acos(sin(lat1rad)*sin(lat2rad)+cos(lat1rad)*cos(lat2rad)*cos(lon2rad-lon1rad))
+   }
+   else if(method == "haversine") {
+     a = sin((lat2rad-lat1rad)/2)^2 + cos(lat1rad)*cos(lat2rad)*sin((lon2rad-lon1rad)/2)^2
+     c = 2*atan2(sqrt(a),sqrt(1-a))
+     d = RadEarth*c                     # distance in meters
+   }
+   d/1600         # in miles
+ }
+ # geoDistance(40.2989,-111.7193,40.49927,-111.8907)
  
  #addLatLong(data.table(Address="6500 Shingle Creek Pkwy"))
  

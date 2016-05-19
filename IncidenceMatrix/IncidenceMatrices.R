@@ -314,6 +314,19 @@
  }
  testIncidence(mat)
  
+ makeA <- function(vec) {
+   n <- length(vec)-1
+   B <- getB(n,along=3)
+   A <- add(B,vec,along=c(1,3))
+   return(t(A))
+ }
+ pow <- function(A,n) {
+   B <- diag(1,nrow(A))
+   if(n>0)
+     for (i in 1:n)
+       B <- B%*%A
+   return(B)
+ }
  
  # Generating vectors of points
  vecs <- list(1,
@@ -338,21 +351,8 @@
  N <- n*(n+1)+1
  mat1 <- rbind(cbind(-1,diag(1,n)[,n:1]),0)
  S <- diag(1,n+1)[,c(2:(n+1),1)]
- pow <- function(A,n) {
-   B <- diag(1,nrow(A))
-   if(n>0)
-     for (i in 1:n)
-       B <- B%*%A
-   return(B)
- }
  SS <- do.call(abind,c(lapply(0:n,pow,A=S),along=3))
  mSS <- do.call(abind,c(lapply(1:dim(SS)[3],function(i) mat1%*%SS[,,i]),along=3))
- add <- function(Arr,vec,along=1:(length(dim(Arr))-1)) {
-   if (length(dim(Arr))==2)
-     return(Arr%*%vec)
-   else
-     return(apply(Arr,MARGIN=along,function(A) A%*%vec))
- }
  # Find vector a 
  # Calculate test statistic
  stat <- matrix(0,N,n)
@@ -376,12 +376,6 @@
    stat2[i] <- sum((as.numeric(names(tab2))-1)^2*tab2)
  }
  plot(stat1,stat2)
- makeA <- function(vec) {
-   n <- length(vec)-1
-   B <- getB(n,along=3)
-   A <- add(B,vec,along=c(1,3))
-   return(t(A))
- }
  
  n=4
  N <- n*(n+1)+1
