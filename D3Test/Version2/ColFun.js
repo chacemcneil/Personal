@@ -12,6 +12,16 @@ function getcolfun (type1,type2) {
     var fun = circ_rect;
   else if (type1=="circ" && type2=="circ")
     var fun = circ_circ;
+  else if (type1=="poly" && type2=="poly")
+    var fun = poly_poly;
+  else if (type1=="circ" && type2=="poly")
+    var fun = circ_poly;
+  else if (type1=="poly" && type2=="circ")
+    var fun = poly_circ;
+  else if (type1=="rect" && type2=="poly")
+    var fun = rect_poly;
+  else if (type1=="poly" && type2=="rect")
+    var fun = poly_rect;
   return fun;
 }
 
@@ -142,27 +152,34 @@ function circ_circ (one,two) {
 function isClockwise(one,two,three) {
   return (one.x*three.y + two.x*one.y + three.x*two.y) - (one.x*two.y + two.x*three.y + three.x*one.y) > 0;
 }
+function isClockwise2(onex,oney,twox,twoy,threex,threey) {
+  return (onex*threey + twox*oney + threex*twoy) - (onex*twoy + twox*threey + threex*oney) > 0;
+}
 
 function circ_poly (circ,poly) {
   // find which region the cx,cy is in, currently assuming clockwise polygons
   var outside = 0;
-  for (var i=0, j=poly.length-1; i<poly.length; j=i++) {
+  for (var i=0, j=poly.points.length-1; i<poly.points.length; j=i++) {
+  console.log("inside_out",circ.x,circ.y,poly.x,poly.y);
     var edge = {x:poly.points[i].x-poly.points[j].x,y:poly.points[i].y-poly.points[j].y},
         norm = rightvec(edge.x,edge.y),
-        one  = {x:circ.x-poly.points[j].x,y:circ.y-poly.points[i].y},
-        two  = {x:circ.x-poly.points[j].x,y:circ.y-poly.points[i].y},
+        one  = {x:circ.x-poly.points[i].x-poly.x,y:circ.y-poly.points[i].y-poly.y},
+        two  = {x:circ.x-poly.points[j].x-poly.x,y:circ.y-poly.points[j].y-poly.y},
         a = one.x*one.x + one.y*one.y,
         b = two.x*two.x + two.y*two.y,
         c = edge.x*edge.x + edge.y*edge.y;
-    if(isClockwise(poly.points[j],{x:circ.x,y:circ.y},poly.points[i])) {
-      outside = 1;
+    //if(isClockwise({x:poly.points[j].x+poly.x,y:poly.points[j].y+poly.y},{x:circ.x,y:circ.y},{x:poly.points[i].x+poly.x,y:poly.points[i].y+poly.y})) {
+    if(isClockwise2(poly.points[j].x+poly.x,poly.points[j].y+poly.y,circ.x,circ.y,poly.points[i].x+poly.x,poly.points[i].y+poly.y)) {
       if(Math.abs(a-b) <= c) {
-        
-        break;
+        var sep = projectvec(one.x,one.y,norm.x,norm.y);
+        //break;
+      } else if(a > b+c) {
+        var sep = two;
+      } else {
+        var sep = one;
       }
-    }
-    if(a > b+c) {
-      
+      var dist = Math.sqrt(sep.x*sep.x + sep.y*sep.y);
+      return (dist > circ.r) ? 0 : {x:sep.x*(circ.r-dist)/dist,y:sep.y*(circ.r-dist)/dist};
     }
   }
   // calculate distance accordingly

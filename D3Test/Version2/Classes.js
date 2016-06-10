@@ -279,6 +279,7 @@ class Thing {
         while(node !== null) {
           if(this!==node.thing) {
             //var vec = rect_rect(this,node.thing);
+            //console.log(node.thing);
             var vec = getcolfun(this.type,node.thing.type)(this,node.thing);
             if(vec) {
               //console.log(vec)
