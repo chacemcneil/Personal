@@ -1,0 +1,224 @@
+<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml">
+<meta charset="utf-8">
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+<body>
+
+<script>
+
+var width195  = 1100,
+    height195 = 900;
+
+var color195 = d3.scale.category20();
+
+var force195 = d3.layout.force()
+                           .charge(-120)
+                           //.linkDistance(80)
+                           //.linkDistance(function(d) {return 100/d.strength;})
+                           .size([width195, height195])
+                           .linkStrength(function(link) {return link.strength/10;});
+
+var svg195 = d3.select("body").append("svg")
+                                 .attr("width", width195)
+                                 .attr("height", height195)
+                                 .on("mousedown",mouseclick195);
+
+//var arw = svg.append("marker").attr("markerWidth",6).attr("markerHeight",10).attr("refX",5).attr("refY",5).attr("orient","auto").append("path").attr("d","M 0 0 5 5 0 10 Z").style("fill","black");
+var isDirected = 0;
+
+graph195=
+{"nodes":[{"Status":0.333333333333333,"Code":4,"index":1},
+{"Status":0.666666666666667,"Code":5,"index":2},
+{"Status":1,"Code":6,"index":3}],"links":[{"source":0,"target":1,"strength":1},
+{"source":1,"target":2,"strength":2},
+{"source":2,"target":0,"strength":3}]}
+;
+
+force195.nodes(graph195.nodes)
+          .links(graph195.links)
+          .start();
+
+if (isDirected) {
+    // build the arrow.
+    svg195.append("svg:defs").selectAll("marker")
+        .data(["end"])      // Different link/path types can be defined here
+      .enter().append("svg:marker")    // This section adds in the arrows
+        .attr("id", String)
+        .attr("viewBox", "0 -5 10 10")
+        .attr("refX", 10)
+        .attr("refY", -1.5)
+        .attr("markerWidth", 6)
+        .attr("markerHeight", 6)
+        .attr("orient", "auto")
+      .append("svg:path")
+        .attr("d", "M 0,-5 L 10,-1 0,5 3,0");
+    
+    // add the links and the arrows
+    var link195 = svg195.append("svg:g").selectAll("path")
+                              .data(graph195.links)
+                              .enter().append("svg:path")
+                              //    .attr("class", function(d) { return "link " + d.type; })
+                              .attr("class", "link")
+                              .attr("marker-end", "url(#end)")
+                              .style("stroke-width", 5)
+                              .style("stroke", "gray")
+                              .on("mouseover",mouseover195)
+                              .attr("fill","none")
+                              //.on("mouseover",mouseover195);
+                              ;
+} else {
+    var link195 = svg195.selectAll(".link")
+                              .data(graph195.links)
+                              .enter().append("line")
+                              .attr("class", "link")
+                              .style("stroke-width", 5)
+                              .style("stroke", "gray")
+                              .on("mouseover",mouseover195)
+                              //.on("mouseover",mouseover195);
+}
+
+var node195 = svg195.selectAll(".node")
+                          .data(graph195.nodes)
+                          .enter().append("circle")
+                          .attr("class", "node")
+                          .attr("r",10)
+                          .style("stroke","white")
+                          .style("stroke-width",1.5)
+                          .style("fill", "blue")
+                          .on("mouseover",mouseover195)
+                          .on("mouseout",mouseout195)
+                          //.on("mouseover",mouseover195)
+                          //.on("mouseout", mouseout195)
+                          .call(force195.drag);
+
+focus195  = svg195.append("g")
+                        .attr("class","focus")
+                        .style("display",null);
+
+plaque195 = focus195.append("rect")
+                          .attr("rx",3)
+                          .attr("ry",3)
+                          .attr("style","fill:lightblue;stroke:gray;stroke-width:2;fill-opacity:0.6;stroke-opacity:0.7;");
+
+function mouseover195(d) {
+    node195.transition().duration(300).style("stroke","white")
+                                                  .style("stroke-width",1.5)
+                                                  .style("fill","blue")
+                                                  .attr("r",10);
+    link195.transition().duration(300).style("stroke","gray")
+                                                  .style("stroke-width",5);
+    var mousecoords = d3.mouse(this);
+    var obj = d3.select(this);
+    focus195.selectAll("text").remove();
+    if(obj.attr("class")=="link") {
+    focus195.transition().duration(300)
+               .attr("transform","translate(" + ((Math.round(obj.attr("x1"))+Math.round(obj.attr("x2")))/2+12) + "," + 
+                                                ((Math.round(obj.attr("y1"))+Math.round(obj.attr("y2")))/2+-12) + ")");
+        plaque195.transition().duration(300).attr("height",0)
+                                              .attr("y",-0)
+                                              .style("fill","green")
+                                              .attr("width",-Inf);
+        focus195.append("text").attr("opacity",0).transition().duration(300).delay(300)
+                          .attr("opacity",1)
+                          .attr("dx",15)
+                          .attr("dy",-20*0+15)
+                          .attr("stroke","black")
+                          .text("NA");focus195.append("text").attr("opacity",0).transition().duration(300).delay(300)
+                          .attr("opacity",1)
+                          .attr("dx",-Inf)
+                          .attr("dy",-20*0+15)
+                          .attr("stroke","black")
+                          .text(NULL);
+focus195.append("text").attr("opacity",0).transition().duration(300).delay(300)
+                          .attr("opacity",1)
+                          .attr("dx",15)
+                          .attr("dy",-20*1+15)
+                          .attr("stroke","black")
+                          .text("");focus195.append("text").attr("opacity",0).transition().duration(300).delay(300)
+                          .attr("opacity",1)
+                          .attr("dx",-Inf)
+                          .attr("dy",-20*1+15)
+                          .attr("stroke","black")
+                          .text();
+        obj.transition().duration(300).style("stroke","red")
+                                                      .style("stroke-width",6);
+    } else {
+    focus195.transition().duration(300)
+               .attr("transform","translate(" + (Math.round(obj.attr("cx"))+12) + "," + (Math.round(obj.attr("cy"))+-12) + ")");
+        plaque195.transition().duration(300).attr("height",40)
+                                              .attr("y",-40)
+                                              .style("fill","lightblue")
+                                              .attr("width",205);
+        focus195.append("text").attr("opacity",0).transition().duration(300).delay(300)
+                          .attr("opacity",1)
+                          .attr("dx",15)
+                          .attr("dy",-20*2+15)
+                          .attr("stroke","black")
+                          .text("Status: ");focus195.append("text").attr("opacity",0).transition().duration(300).delay(300)
+                          .attr("opacity",1)
+                          .attr("dx",71)
+                          .attr("dy",-20*2+15)
+                          .attr("stroke","black")
+                          .text(d.Status);
+focus195.append("text").attr("opacity",0).transition().duration(300).delay(300)
+                          .attr("opacity",1)
+                          .attr("dx",15)
+                          .attr("dy",-20*1+15)
+                          .attr("stroke","black")
+                          .text("Code: ");focus195.append("text").attr("opacity",0).transition().duration(300).delay(300)
+                          .attr("opacity",1)
+                          .attr("dx",71)
+                          .attr("dy",-20*1+15)
+                          .attr("stroke","black")
+                          .text(d.Code);
+        obj.transition().duration(300).attr("r",20)
+                                                      .style("stroke-width", 2)
+                                                      .style("fill", "lightblue")
+                                                      .style("stroke", "red").ease("sine");
+    }
+}
+
+function mouseout195(d) {
+    var obj = d3.select(this);
+    obj.transition().duration(300).attr("r",10);
+}
+
+function mouseclick195() {
+    node195.transition().duration(300).style("stroke","white")
+                                                  .style("stroke-width",1.5)
+                                                  .style("fill","blue");
+    link195.transition().duration(300).style("stroke","gray")
+                                                  .style("stroke-width",5);
+    focus195.selectAll("text").remove();
+    focus195.attr("transform","translate(" + (-width195-10) + "," + (-height195-10) + ")");
+}
+
+force195.on("tick", function() {
+    
+    node195.attr("cx", function(d) { return d.x; })
+              .attr("cy", function(d) { return d.y; });
+
+    if (isDirected) {
+      link195.attr("d", function(d) {
+          var dx = d.target.x - d.source.x,
+              dy = d.target.y - d.source.y,
+              dr = Math.sqrt(dx * dx + dy * dy);
+          return "M" + 
+              d.source.x + "," + 
+              d.source.y + "A" + 
+              dr + "," + dr + " 0 0,1 " + 
+              d.target.x + "," + 
+              d.target.y;
+      });
+      link195.attr("x1", function(d) { return d.source.x; })
+                .attr("y1", function(d) { return d.source.y; })
+                .attr("x2", function(d) { return d.target.x; })
+                .attr("y2", function(d) { return d.target.y; });
+    } else {
+      link195.attr("x1", function(d) { return d.source.x; })
+                .attr("y1", function(d) { return d.source.y; })
+                .attr("x2", function(d) { return d.target.x; })
+                .attr("y2", function(d) { return d.target.y; });
+    }
+});
