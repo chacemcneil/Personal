@@ -3,9 +3,11 @@
  library(extrafont)
  library(ggplot2)
  
- font_import()                   # Imports all fonts the computer has
- font_import(paths=.libPaths())  # Imports fonts from R packages
- 
+ # These should only need to be run once per R instance ... which is good cause it takes a while.
+ if (readline(prompt="Fonts only need to be imported once. Would you like to import? (y/n): ")=="y") {
+   font_import()                   # Imports all fonts the computer has
+   font_import(paths=.libPaths())  # Imports fonts from R packages
+ }
  
  
  df <- data.table(font=fonts(),x=seq_along(fonts()),y=seq_along(fonts()))

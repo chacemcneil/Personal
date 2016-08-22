@@ -1,0 +1,115 @@
+---
+title: "Maps"
+output: html_document
+---
+
+## Testing mapping functions
+
+```{r, echo=FALSE,message=FALSE,warning=FALSE}
+# Plotting methods
+library(data.table)
+library(googleVis)
+library(plotGoogleMaps)
+library(ggmap)
+library(ggplot2)
+library(leafletR)
+library(RgoogleMaps)
+
+
+source("/work/cmcneil/projects/miscellaneous/Personal/General Code/MarkdownFunctions.R")
+
+
+# Standard data to test (try to turn Category into color and Speed_kt into size)
+data(Andrew)  # from googleVis
+dt <- data.table(Andrew)
+dt$Color <- c("red","blue","green")[as.numeric(dt$Category)]
+setnames(dt,"Date/Time UTC","DateTime")
+dt$Index <- 1:nrow(dt)
+```
+
+Different options:
+`r html_list(c("gvisMap from googleVis",
+               "leaflet from leafletR",
+               "plotGoogleMaps from plotGoogleMaps",
+               "ggmap from ggmap"))`
+               
+Desired functionality:
+`r html_list(c("Interactive",
+               "Aesthetics",
+               "Markdown compatible",
+               "Riley2 compatible",
+               "Dynamic"),
+             details=list(c("Zoom, scroll, explore area"),
+                          c("size, color, shape","points, lines, areas"),
+                          NULL,
+                          NULL,
+                          c("Like D3 or Shiny")),kind="dl")`
+
+### gvisMap from googleVis
+
+Pros: `r html_list(c("Interactive google maps"))`
+Cons: `r html_list(c("No aesthetics control","No markdown","Riley doesn't work","Not dynamic"))`
+
+```{r,echo=FALSE,message=FALSE,results='asis'}
+google.location <- paste(dt$Lat, dt$Long, sep = ":")
+dt.google <- data.frame(dt, google.location)
+g.inter.map <- gvisMap(data = dt.google, locationvar = "google.location",tipvar = "Tip",
+                       options=list(enableScrollWheel=T))
+(g.inter.map$html$chart)
+```
+
+### leaflet from leafletR
+
+Pros: `r html_list(c("Interactive"))`
+Cons: `r html_list(c("Does not use Google maps","Not easy","No markdown","Runs on Riley, but does not show in window. Writes separate html file","Not dynamic"))`
+
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE,results='asis'}
+cat(paste(readLines(leaflet(data=toGeoJSON(dt,name="Andrew")))[23:53],collapse="\n"))
+
+```
+
+### plotGoogleMaps from plotGoogleMaps
+
+Pros: `r html_list(c("Interactive","Only control color"))`
+Cons: `r html_list(c("Not easy","No markdown","Runs on Riley, but does not show in window.","Not dynamic"))`
+
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE,results='asis'}
+df <- as.data.frame(dt)
+coordinates(df) <- ~Long+Lat
+proj4string(df) <- CRS('+proj=longlat')
+#proj4string(df) <- CRS('+init=epsg:28992')
+
+cat(plotGoogleMaps(df,zcol="Category",fillOpacity=0.9,colPalette=c("red","green","yellow"),openMap=F)[-1])
+
+```
+
+### ggmap from ggmap
+
+Pros: `r html_list(c("Full aesthetics control","Markdown compatible","Riley2 works"))`
+Cons: `r html_list(c("Interactive","Dynamic"))`
+
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE,results='asis'}
+#ggmap(get_map(location=c(median(dt$Long),median(dt$Lat)),zoom=12)) + geom_point(data=dt,aes(Long,Lat,col=Category,size=Speed_kt))
+
+```
+
+
+### D3 from scratch?
+
+Pros: `r html_list(c("Interactive","Dynamic","Full aesthetics control","Markdown compatible","Riley2 works"))`
+Cons: `r html_list(c("Building from scratch."))`
+
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE,results='asis'}
+#ggmap(get_map(location=c(median(dt$Long),median(dt$Lat)),zoom=12)) + geom_point(data=dt,aes(Long,Lat,col=Category,size=Speed_kt))
+
+```
+
+
+
+
+
+

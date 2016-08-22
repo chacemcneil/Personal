@@ -1,8 +1,11 @@
 # Some useful functions
+ tmp <- .Last.value
  library(data.table)
  library(ggplot2)
  library(grid)
  library(gridExtra)
+ library(pROC)
+ library(RODBC)
  
  
  upd <- function(width=260) {
@@ -24,10 +27,29 @@
    file.edit("/home/cmcneil/.odbc.ini")
  }
  
- ept <- function(txt) {
+ rsavvy <- function() {
+   read.odbc <<- function(db, dbTable = NULL, dbQuery = NULL, ...) {
+     con <- odbcConnect(db)
+     if(is.null(dbTable)) {
+       tab <- sqlQuery(con, query = dbQuery, ...)
+     } else {
+       tab <- sqlQuery(con, paste("SELECT * FROM", dbTable), ...)
+     }
+     odbcClose(con)
+     tab
+   }
+ }
+ 
+ ept <- function(txt,env=NULL,drop=T) {
    # Evaluate parsed text
-   env <- parent.frame()
-   eval(parse(text=txt),envir=env)
+   # Example: ept("sum(1:10)") --> 55
+   if(is.null(env))
+     env <- parent.frame()
+   dt <- data.table()[,lapply(txt, function(str) eval(parse(text=str),envir=env))]
+   names(dt) <- txt
+   if(length(txt)==1 & drop == T)
+     dt <- dt[[1]]
+   dt
  }
  
  merge.list <- function (...,priority=c("first","last")) {
@@ -86,6 +108,100 @@
    return(summary)
  }
  
+ ssgray   <- rgb(166, 166, 166, max = 255)
+ ssblue   <- rgb(79, 129, 189, max = 255)
+ ssyellow <- rgb(254, 190, 1, max = 255)
+ ssgreen  <- rgb(155, 187, 89, max = 255)
+ ssred    <- rgb(192, 80, 77, max = 255)
+ sspurple <- rgb(128, 100, 162, max = 255)
+ ssteal   <- rgb(75, 172, 198, max = 255)
+ sscols <- c(ssgray, ssblue, ssyellow, ssgreen, ssred, sspurple, ssteal)
+ 
+ ss_theme <- theme_bw() + theme(panel.border = element_blank(), 
+                                axis.line = element_line(ssgray),
+                                panel.grid.major.y = element_line("dashed", size = .5, colour = ssgray),  
+                                panel.grid.minor.y = element_line("dashed", size = .5, colour = ssgray),  
+                                panel.grid.major.x = element_line(size = .5, colour = ssgray))
+ 
+ is.color <- function (x) ## Adapted from network:is.color 
+ {
+   xic <- rep(FALSE, length(x))
+   #xc <- sapply(x, is.character)
+   x <- as.character(x)
+   xic <- (x %in% colors()) | ( (nchar(x) %in% c(7, 9)) & 
+                                (substr(x, 1, 1) == "#") & 
+                                sapply(strsplit(substr(x,2,nchar(x)),""),function(x) all(toupper(x) %in% c(0:9,LETTERS[1:6]))) )
+   xic[is.na(x)] <- NA
+   xic
+ }
+ 
+ hex <- function(col)  {
+   rgb <- col2rgb(col)/255
+   hex <- rgb(red=rgb["red",],green=rgb["green",],blue=rgb["blue",],alpha=1)
+   hex
+ }
+ 
+ darken <- function(col,factor=1/3) {
+   rgb <- col2rgb(col)*(1-factor)/255
+   newcol <- rgb(red=rgb["red",],green=rgb["green",],blue=rgb["blue",],alpha=1)
+   newcol
+ }
+ 
+ lighten <- function(col,factor=1/3) {
+   rgb <- 1- (1-col2rgb(col)/255)*(1-factor)
+   newcol <- rgb(red=rgb["red",],green=rgb["green",],blue=rgb["blue",],alpha=1)
+   newcol
+ }
+ 
+ choose.colors <- function (plot.it=F,locate=0)
+ {
+   if(!plot.it)
+   {
+     return(colors()) # so far, not different from colors()
+   } # close on if
+   else
+   {
+     ytop    <- rep(seq(1/26,1,by=1/26),each=26)[1:657]
+     ybottom <- rep(seq(0,1-1/26,by=1/26),each=26)[1:657]
+     xleft   <- rep(seq(0,1-1/26,by=1/26),times=26)[1:657]
+     xright  <- rep(seq(1/26,1,by=1/26),times=26)[1:657]
+     pall    <- round(col2rgb(colors())/256)
+     pall    <- colSums(pall) ; pall2 <- character(0)
+     pall2[pall>0]   <- "black"
+     pall2[pall==0]  <- "white"
+     
+     par(mar=c(0,0,1,0))
+     
+     plot.new()
+     title(main="Palette of colors()")
+     rect(xleft,ybottom,xright,ytop,col=colors())
+     text(x=xleft+((1/26)/2)
+          ,y=ytop-((1/26)/2)
+          ,labels = 1:657
+          ,cex=0.55
+          ,col=pall2)
+     
+   } # close on else
+   if(locate==0) print("Palette of colors()")
+   else
+   {
+     colmat    <- matrix(c(1:657,rep(NA,26^2-657)),byrow=T,ncol=26,nrow=26)
+     cols        <- NA
+     i        <- NA
+     for(i in 1:locate)
+     {
+       h    <- locator(1)
+       if(any(h$x<0,h$y<0,h$x>1,h$y>1)) stop("locator out of bounds!")
+       else
+       {
+         cc        <- floor(h$x/(1/26))+1
+         rr        <- floor(h$y/(1/26))+1            
+         cols[i]    <- colors()[colmat[rr,cc]]
+       } # close on else
+     } # close on i
+     return(cols)
+   } # close on else
+ } # close on else+function
  
  locateIndex <- function(dat,gg=F,print=T,n=1,...) {
    require(ggplot2)
@@ -112,6 +228,20 @@
    if(print)
      print(dat[ind,])
    return(ind)
+ }
+ 
+ dcast <- function(...) {dcast.data.table(...)}
+ 
+ roc.dt <- function (rc, cost.fn=1, cost.fp=1) {
+   dt <- data.table(Sens   = rc$sensitivities,
+                    Spec   = rc$specificities,
+                    Thresh = rc$thresholds )
+   dt[,TP   := sapply(Thresh,function(th) sum(rc$cases    > th))]
+   dt[,TN   := sapply(Thresh,function(th) sum(rc$controls < th))]
+   dt[,FP   := sapply(Thresh,function(th) sum(rc$controls > th))]
+   dt[,FN   := sapply(Thresh,function(th) sum(rc$cases    < th))]
+   dt[,Cost := FP * cost.fp + FN * cost.fn]
+   dt
  }
  
  #locateIndex(df <- data.frame(x=rnorm(100),y=rnorm(100)))
@@ -263,8 +393,8 @@
 #    return(password)
 #  }
  
+ invisible(tmp)
  
  
- 
-# end script
+# End script
  
