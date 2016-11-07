@@ -8,10 +8,12 @@
  ## Functions
  power <- function(fvec) {
    power <- Mod(fvec)^2/length(fvec)
+   power
  }
  # mfvec <- mel(fvec)
  # fvec  <- mel(mfvec,inv=T)
- melbank <- function(pvec,fs,numbanks=26,minfreq=100,maxfreq=8000,transform=F,mfvec2=NULL) {
+ melbank <- function(pvec, fs = 44100, numbanks = 26, minfreq = 100, maxfreq = 8000, transform = F, mfvec2 = NULL) {
+   # 
    mfseq <- seq(mel(minfreq),mel(maxfreq),length.out=numbanks+2)
    fseq  <- mel(mfseq,inverse=T)
    mf <- mfseq[2:(numbanks+1)]
@@ -26,7 +28,7 @@
    if(!transform)
      return(mfvec)
    B <- A%*%(mfvec2/mfvec)
-   return(B*pvec)
+   B*pvec
  }
  DCT <- function(vec,inverse=F) {
    # Discrete Cosine Transform
@@ -38,20 +40,20 @@
      E[,1] <- 1/2
      E <- E*2/n
    }
-   return(E%*%vec)
+   E%*%vec
  }
  rescale <- function(fvec,pvec) {
    # Scales the frequency vector fvec so that the Modulus matches pvec
    pvec.orig <- power(fvec)
-   return(fvec*(pvec/pvec.orig))
+   fvec*(pvec/pvec.orig)
  }
  
- calcmfcc <- function(vec,fs,DCT=T,bin=T,...) {
+ calcmfcc <- function(vec, fs, DCT = T, bin = T, ...) {
    # Find mel frequency cepstral coefficients
    fvec <- fft(vec)
    pvec <- power(fvec)
    if(bin)
-     mfbin <- melbank(pvec,fs=fs,...)
+     mfbin <- melbank(pvec, fs=fs, ...)
    else
      mfbin <- mel(pvec)
    lmfbin <- log(mfbin)
@@ -59,7 +61,7 @@
      mfcc <- DCT(lmfbin)
    else
      mfcc <- Re(fft(lmfbin))
-   return(mfcc)
+   mfcc
  }
  
  altermfcc <- function(vec,fs,mfcc,...) {
@@ -71,7 +73,7 @@
    pvec2 <- melbank(pvec,fs=fs,transform=T,mfvec2=mfbin2)
    fvec2 <- rescale(fvec,pvec2)
    vec2  <- Re(fft(fvec2,inverse=T))/length(fvec2)
-   return(vec2)
+   vec2
  }
  altermfcc2 <- function(vec,fs,mfcc,...) {
    # Alter mel frequency cepstral coefficients
@@ -83,21 +85,22 @@
    #pvec2[-1] <- pvec2[-1] + rev(pvec2[-1])
    fvec2 <- rescale(fvec,pvec2)
    vec2  <- Re(fft(fvec2,inverse=T))/length(fvec2)
-   return(vec2)
+   vec2
  }
  ## Process
  
  # Read signal
  
- wav <- readWave("c:/users/cmcneil/Documents/Projects/Miscellaneous/Speech/Sample.wav")
+ #wav <- readWave("c:/users/cmcneil/Documents/Projects/Miscellaneous/Speech/Sample.wav")
+ wav <- readWave("c:/users/cmcneil/Documents/Projects/Miscellaneous/SoundFiles/Sample.wav")
  veclong <- wav@left*100
  vec <- veclong
  vec <- veclong[6e4:1.5e5]
  vec <- veclong[8.1e4:8.3e4]
  
-  mfcc <- calcmfcc(vec,44100)
+ mfcc <- calcmfcc(vec,44100)
  
- mfcc2 <- mfcc  # this should yeild the original
+ mfcc2 <- mfcc
  mfcc2 <- mfcc2
  mfcc2 <- c(mfcc[1],10,3,-2,0,4,mfcc[7:26])
  mfcc2 <- mfcc[c(1,5:2,9:6,10:26)]*2
@@ -108,6 +111,9 @@
  
  
  
+ 
+ 
+ ceps(veclong[6e4:1.5e5], 44100)
  
  
  
