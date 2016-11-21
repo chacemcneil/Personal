@@ -232,16 +232,95 @@
  
  dcast <- function(...) {dcast.data.table(...)}
  
- roc.dt <- function (rc, cost.fn=1, cost.fp=1) {
+ roc.dt <- function (rc, cost.fn = 1, cost.fp = 1, plot = T) {
    dt <- data.table(Sens   = rc$sensitivities,
                     Spec   = rc$specificities,
                     Thresh = rc$thresholds )
-   dt[,TP   := sapply(Thresh,function(th) sum(rc$cases    > th))]
-   dt[,TN   := sapply(Thresh,function(th) sum(rc$controls < th))]
-   dt[,FP   := sapply(Thresh,function(th) sum(rc$controls > th))]
-   dt[,FN   := sapply(Thresh,function(th) sum(rc$cases    < th))]
+   dt[,TP   := sapply(Thresh, function(th) sum(rc$cases    > th))]
+   dt[,TN   := sapply(Thresh, function(th) sum(rc$controls < th))]
+   dt[,FP   := sapply(Thresh, function(th) sum(rc$controls > th))]
+   dt[,FN   := sapply(Thresh, function(th) sum(rc$cases    < th))]
    dt[,Cost := FP * cost.fp + FN * cost.fn]
+   if (plot)
+     print(ggroc(rc))
    dt
+ }
+ 
+ ggroc <- function(rc, labels = NULL, print.auc = T, mark.sens = NULL, mark.spec = NULL) {
+   dat <- data.table(Sensitivity = rc$sensitivities,
+                     Specificity = rc$specificities,
+                     Threshold   = rc$thresholds )
+   
+   numcontrols <- length(rc$controls)
+   numcases    <- length(rc$cases)
+   
+   p <- ggplot()
+   if(!is.null(mark.sens))
+     p <- p + geom_vline(aes(xintercept = ifelse(is.null(mark.spec), NULL, 1-mark.spec)), linetype = 2, col = "slateblue")
+   if(!is.null(mark.spec))
+     p <- p + geom_hline(aes(yintercept = mark.sens),linetype=2,col="slateblue")
+   p <- p + 
+     geom_abline(aes(intercept = 0, slope = 1), col = "gray50") + 
+     geom_line(data = dat, aes(1 - Specificity, Sensitivity)) + 
+     labs(title = ifelse(print.auc, paste0("AUC: ", round(rc$auc, 3)), ""), x = "\nSpecificity", y = "Sensitivity\n", yy = "Cases") +
+     theme(panel.grid.minor = element_blank(), 
+           axis.text = element_text(size = 15), 
+           plot.title = element_text(size = 20), 
+           axis.title.x = element_text(size = 20), 
+           axis.title.y = element_text(size = 20))
+   left <- ggplot_build(p)$panel$ranges[[1]]$x.range[1]
+   bttm <- ggplot_build(p)$panel$ranges[[1]]$y.range[1]
+   p <- p + 
+     geom_vline(xintercept = pretty(c(0, numcontrols))/numcontrols, col = "gray70", lty = 2) +
+     scale_x_continuous(breaks = c(left, (0:5)/5, left, pretty(c(0, numcontrols))/numcontrols),
+                        labels = c("", paste0((5:0)/5*100, "%"),
+                                   "\nControls            ", paste0("\n", scales::comma(pretty(c(0, numcontrols)))) ),
+                        limits = 0:1 ) +
+     geom_hline(yintercept = pretty(c(0, numcases))/numcases, col = "gray70", lty = 2) +
+     scale_y_continuous(breaks = c(bttm, (0:5)/5, bttm, pretty(c(0, numcases))/numcases),
+                        labels = c("", paste0((0:5)/5*100, "%"),
+                                   "\nCases       ", paste0(scales::comma(pretty(c(0, numcases))), "           ") ),
+                        limits = 0:1 ) + 
+     geom_hline(aes(yintercept = 0), size = 1) + 
+     geom_vline(aes(xintercept = 0), size = 1)
+   p
+ }
+ 
+ ggroc2 <- function(..., labels = NULL, print.auc = T, mark.sens = NULL, mark.spec = NULL) {
+   rcs <- list(...)
+   if(is.null(labels))
+     labels = 1:length(rcs)
+   names(rcs) <- labels
+   dat <- do.call(rbind, lapply(seq_along(rcs), function(i) data.table(Sensitivity = rcs[[i]]$sensitivities,
+                                                                       Specificity = rcs[[i]]$specificities,
+                                                                       Threshold   = rcs[[i]]$thresholds,
+                                                                       Name        = labels[i],
+                                                                       AUC         = rcs[[i]]$auc )))
+   
+   #numcontrols <- length(rc$controls)
+   #numcases    <- length(rc$cases)
+   
+   p <- ggplot()
+   if(!is.null(mark.sens))
+     p <- p + geom_vline(aes(xintercept = ifelse(is.null(mark.spec), NULL, 1-mark.spec)), linetype = 2, col = "slateblue")
+   if(!is.null(mark.spec))
+     p <- p + geom_hline(aes(yintercept = mark.sens),linetype=2,col="slateblue")
+   p <- p + 
+     geom_abline(aes(intercept = 0, slope = 1), col = "gray50") + 
+     geom_line(data = dat, aes(1 - Specificity, Sensitivity, col = paste("AUC: ", round(AUC, 3)))) + 
+     labs(x = "\nSpecificity", y = "Sensitivity\n", col = "") +
+     theme(panel.grid.minor = element_blank(), 
+           axis.text = element_text(size=15), 
+           plot.title = element_text(size = 20), 
+           axis.title.x = element_text(size = 20), 
+           axis.title.y = element_text(size = 20),
+           legend.text = element_text(size = 15))
+   left <- ggplot_build(p)$panel$ranges[[1]]$x.range[1]
+   bttm <- ggplot_build(p)$panel$ranges[[1]]$y.range[1]
+   p <- p + 
+     geom_hline(aes(yintercept = 0), size = 1) + 
+     geom_vline(aes(xintercept = 0), size = 1)
+   p
  }
  
  # Adding to ggplot2
