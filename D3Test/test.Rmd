@@ -195,8 +195,10 @@ plot(cars)
       }, 1000);
     
       initialize();
-      cities = [{"latitude": "51.5112139", "long_name": "London, UK", "added": "2013-07-30T07:53:51", "location": "London", "longitude": "-0.1198244"},
-                {"latitude": "38.9072309", "long_name": "Washington, DC, USA", "added": "2013-07-30T07:54:42", "location": "Washington", "longitude": "-77.0364641"}];
+      cities = [{"latitude": "51.5112139", "long_name": "London, UK", "added": "2013-07-30T07:53:51", 
+                 "location": "London", "longitude": "-0.1198244"},
+                {"latitude": "38.9072309", "long_name": "Washington, DC, USA", "added": "2013-07-30T07:54:42", 
+                 "location": "Washington", "longitude": "-77.0364641"}];
       
       temp_res='';
       for (var i=0; i < temp_a.length; i++) {
