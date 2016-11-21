@@ -4,6 +4,7 @@
  library(ggplot2)
  library(grid)
  library(gridExtra)
+ library(Rmpfr)
  
  mand <- function (z, FUN = function(x, x0) {x^2 + x0}, max.iter = 100, rmax = 2, verbose = T) {
    # Calculates the number of sequence iterations (maximum of max.iter) required for the modulus to exceed a certain radius (rmax).
@@ -114,47 +115,41 @@
  
  # Can these be animated or manually zoomed.
  
- N <- 625
+ N <- 1325
  #xc <- -0.735010285109
  #yc <-  0.36025390802475
- xc <- mpfr("-0.735010285107191208245667883017794884563", 150)
- yc <- mpfr( "0.360253908024380480417495867164380395402", 150)
- wpx <- 80  # 250
- hpx <- 60  # 200
- xscale = mpfr(2, 50) * mpfr(.9, 60)^675
- yscale = mpfr(2, 50) * mpfr(.9, 60)^675
+ xc <- mpfr("-0.735010285107191208245667883018055590009127920122111448264421", 210)
+ yc <- mpfr( "0.360253908024380480417495867164111064063092802667010666726759", 210)
+ wpx <- 250
+ hpx <- 200
+ xscale = mpfr(2, 80) #* mpfr(.9, 80)^1325
+ yscale = mpfr(2, 80) #* mpfr(.9, 80)^1325
  plots <- NULL
-#  cgrid <- expand.grid(seq(as.numeric(xc - xscale), as.numeric(xc + xscale), length.out = wpx), 
-#                       seq(as.numeric(yc - yscale), as.numeric(yc + yscale), length.out = hpx))
+ #  cgrid <- expand.grid(seq(as.numeric(xc - xscale), as.numeric(xc + xscale), length.out = wpx), 
+ #                       seq(as.numeric(yc - yscale), as.numeric(yc + yscale), length.out = hpx))
  cgrid <- expand.grid(seq(0, 1, length.out = wpx), 
                       seq(0, 1, length.out = hpx) )
  for (i in 1:N) {
-   cat("\rIteration: ", round(i))
+   cat("\rDepth: ", round(i), "\n")
    count <- data.table(expand.grid(seqMpfr(xc - xscale, xc + xscale, length.out = wpx), 
                                    seqMpfr(yc - yscale, yc + yscale, length.out = hpx)))[
-                                     , Count := mand2(.SD, verbose = T, max.iter = 250) ]
+                                     , Count := mand2(.SD, verbose = T, max.iter = 600) ]
    max(count$Count); sum(count$Count == max(count$Count))
-   invisible(count[Count==max(Count)][1, print(c(Var1, Var2), digits = 40)])
-   #count[,paste0(signif((which(Count == max(Count)) %/% hpx) / wpx *2, 3), ",", signif((which(Count == max(Count)) %% hpx) / hpx *2, 3))]
-   #xc - xscale + .35*xscale; yc - yscale + yscale*.422
+   invisible(count[Count==max(Count)][1, print(c(Var1, Var2), digits = 70)])
+   # table(count$Count)
+   # count[,paste0(signif((which(Count == max(Count)) %/% hpx) / wpx *2, 3), ",", signif((which(Count == max(Count)) %% hpx) / hpx *2, 3))]
+   # xc - xscale + .35*xscale; yc - yscale + yscale*.422
    
    png(paste("images/Mandelbrot", i, ".png", sep=""), 800, 600)
    print(
      ggplot(cgrid, aes(Var1, Var2, col = log(count$Count))) + geom_point() + 
-     scale_x_continuous(breaks = NULL) + scale_y_continuous(breaks = NULL) + guides(col = F)
+       scale_x_continuous(breaks = NULL) + scale_y_continuous(breaks = NULL) + guides(col = F)
    )
    dev.off()
    xscale/wpx
    xscale <- xscale * 0.9
    yscale <- yscale * 0.9
    #log(xscale/2)/log(0.9)
- }
- for (i in 1:N) {
-   cat("\rIteration: ", i)
-   filename = 
-   png(filename)
-   print(plots[[i]])
-   dev.off()
  }
  
  

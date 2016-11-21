@@ -244,6 +244,35 @@
    dt
  }
  
+ # Adding to ggplot2
+ 
+ ggen <- environment(ggplot)
+ 
+ GeomViolin2 <- with(ggen, proto(GeomViolin))
+ with(GeomViolin2, {
+   draw <- function (., data, ...) 
+   {
+     data <- transform(data, xminv = x - ifelse(group %%2 == 1, 1, 0)*violinwidth * (x - xmin), 
+                       xmaxv = x + ifelse(group %%2 == 0, 1, 0)*violinwidth * (xmax - x))
+     newdata <- rbind(arrange(transform(data, x = xminv), y),
+                      arrange(transform(data, x = xmaxv), -y))
+     newdata <- rbind(newdata, newdata[1, ])
+     ggname(.$my_name(), GeomPolygon$draw(newdata, ...))
+   }
+   objname <- "violin2"
+ })
+ 
+ geom_violin2 <- function(mapping = NULL, data = NULL, stat = "ydensity", position = "identity", 
+                          trim = TRUE, scale = "area", ...) {
+   # This function has been manually added to the ggplot2 environment.
+   GeomViolin2$new(mapping = mapping, data = data, stat = stat, position = position, trim = trim, scale = scale)
+ }
+ environment(geom_violin2) <- ggen
+ 
+ #ggplot(mtcars, aes(factor(cyl), mpg, fill = as.factor(vs))) + geom_violin2() #+ coord_flip() + facet_grid(.~cyl)
+ #ggplot(mtcars, aes(factor(cyl), mpg, fill = "blue")) + geom_violin() #+ coord_flip() + facet_grid(.~cyl)
+ #ggplot(data.frame(x = 1:100, y = sample(1:2, 100, replace = T)), aes(factor(y), x)) + geom_violin()
+ 
  #locateIndex(df <- data.frame(x=rnorm(100),y=rnorm(100)))
  
 #  grid.align <- function (...,nrow=NULL,ncol=NULL, newpage=T,byrow=T,freecol=T,freerow=T) {
