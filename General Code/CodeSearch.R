@@ -2,7 +2,7 @@
  
  getwd()
  
- code_search <- function(pattern, filepattern = ".R$", removeEmpty = T, replace = NULL, directory = getwd(), value = F, ...) {
+ code_search <- function(pattern, filepattern = "\\.R$", removeEmpty = T, replace = NULL, directory = getwd(), value = F, ...) {
    files <- dir(directory, ...)
    files <- files[grep(filepattern, files)]
    files <- paste(directory, files, sep = "/")
@@ -26,7 +26,7 @@
    results
  }
  
- name <- "xyz"
+ name <- "Explore"
  results <- code_search (name, directory = gsub("Projects.*", "Projects", getwd()), recursive = T, value = T)
  
  code_search (name, directory = gsub("Projects.*", "Projects", getwd()), recursive = T, replace = "")
@@ -37,8 +37,12 @@
  tmp <- names(results)
  file.edit(tmp)
  
+ results <- code_search("D10_PCP", filepattern = "\\.R", directory = "..", recursive = T)
+ length(results)
+ i <- 1
+ file.edit(names(results)[i]); results[i]; (i <- i + 1)
  
- 
+ ?edit
  
  
 # End script
