@@ -227,7 +227,7 @@
    }
    points(dat[ind,],col="red",pch=19)
    if(print)
-     print(dat[ind,])
+     print(dat[icnd,])
    return(ind)
  }
  
@@ -334,19 +334,15 @@
  for(i in names(GeomViolin)) {
    GeomViolin2[[i]] <- GeomViolin[[i]]
  }
- #class(GeomViolin2) <- class(GeomViolin)
  class(GeomViolin2) <- c("GeomViolin2", "Geom", "ggproto")
- #GeomViolin2 <- proto()
  GeomViolin2$draw_group <- function (self, data, ..., draw_quantiles = NULL)
  {
-   browser()
    data <- transform(data, xminv = x - ifelse(group %%2 == 1, 1, 0)*violinwidth * (x - xmin), 
                      xmaxv = x + ifelse(group %%2 == 0, 1, 0)*violinwidth * (xmax - x),
                      group = 1)
    newdata <- rbind(plyr::arrange(transform(data, x = xminv), y),
                     plyr::arrange(transform(data, x = xmaxv), -y))
    newdata <- rbind(newdata, newdata[1, ])
-   #ggname(.$my_name(), GeomPolygon$draw(newdata, ...))
    if (length(draw_quantiles) > 0 & !scales::zero_range(range(data$y))) {
      stopifnot(all(draw_quantiles >= 0), all(draw_quantiles <= 1))
      quantiles <- create_quantile_segment_frame(data, draw_quantiles)
@@ -360,13 +356,13 @@
      ggen$ggname("geom_violin2", GeomPolygon$draw_panel(newdata, ...))
    }
  }
- #GeomViolin2$objname <- "violin2"
  environment(GeomViolin2) <- ggen
  
  geom_violin2 <- function (mapping = NULL, data = NULL, stat = "ydensity", position = "identity", 
                            ..., draw_quantiles = NULL, trim = TRUE, scale = "area", 
                            na.rm = FALSE, show.legend = NA, inherit.aes = TRUE) 
  {
+   # This function has been manually added to be used with ggplot2.
    layer(data = data, mapping = mapping, stat = stat, geom = GeomViolin2, 
          position = position, show.legend = show.legend, inherit.aes = inherit.aes, 
          params = list(trim = trim, scale = scale, draw_quantiles = draw_quantiles, 
