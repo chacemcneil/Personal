@@ -1,4 +1,4 @@
-# Functions for plotting data on maps using plotGoogleMaps
+# Functions for plotting data on maps using plotGoogleMaps, d3 and svg
 # Attempt to write functions to use ggplot syntax
  library(data.table)
  library(ggmap)
@@ -33,50 +33,51 @@
              sapply(
                seq_along(styles[[i]]),
                function(j) {
-                 paste0(".",names(styles)[i]," ",names(styles[[i]])[[j]]," {\n",paste("  ",names(styles[[i]][[j]]),": ",styles[[i]][[j]],";",sep="",collapse="\n"),"\n}")
+                 paste0(".",names(styles)[i], " ", names(styles[[i]])[[j]], " {\n", paste("  ", names(styles[[i]][[j]]), ": ", styles[[i]][[j]],";", sep = "", collapse = "\n"), "\n}")
                }
              ),
              collapse="\n\n"
            )
          } else {
-           paste0(".",names(styles)[i]," {\n",paste("  ",names(styles[[i]]),": ",styles[[i]],";",sep="",collapse="\n"),"\n}")
+           paste0(".", names(styles)[i], " {\n", paste("  ", names(styles[[i]]), ": ", styles[[i]], ";",sep = "", collapse = "\n"), "\n}")
          }
        }
      ),
-     collapse="\n\n"
+     collapse = "\n\n"
    )
-   html <- paste("\n<style>",strings,"</style>\n",sep="\n")
+   html <- paste("\n<style>", strings, "</style>\n", sep = "\n")
    html
  }
  
- header <- function(styles=NULL) {
+ header <- function(styles = NULL) {
    html <- cgm_init()
    if (!is.null(styles)) {
      htmlstyles <- cgm_styles(styles)
-     html <- paste(html,htmlstyles,sep="\n")
+     html <- paste(html, htmlstyles, sep = "\n")
    }
    html
  }
  
  cgm_findbounds <- function(objects) {
-   if (is.null(objects$data)) {
+   # Find optimal center coordinates and zoom factor (this is not calculated precisely, zoom is not optimal)
+   if (all(sapply(objects, function(x) is.null(x$data)))) {
      #print("Null data")
      return(list(minlat=40,maxlat=45,minlon=-100,maxlon=0))
    }
-   minlat <- sapply(objects,function(obj) min(obj$data$lat))
-   minlon <- sapply(objects,function(obj) min(obj$data$lon))
-   maxlat <- sapply(objects,function(obj) max(obj$data$lat))
-   maxlon <- sapply(objects,function(obj) max(obj$data$lon))
+   minlat <- min(sapply(objects, function(obj) min(obj$data$lat)))
+   minlon <- min(sapply(objects, function(obj) min(obj$data$lon)))
+   maxlat <- max(sapply(objects, function(obj) max(obj$data$lat)))
+   maxlon <- max(sapply(objects, function(obj) max(obj$data$lon)))
    
-   midlon <- mean(c(minlon,maxlon))
-   midlat <- mean(c(minlat,maxlat))
+   midlon <- mean(c(minlon, maxlon))
+   midlat <- mean(c(minlat, maxlat))
    
    zoom <- min(10.8 - log2(maxlon-minlon), 9.3 - log2(maxlat-minlat))
    
-   bounds <- list(midlon-midlon,midlat=midlat,zoom=zoom,minlat=minlat,maxlat=maxlat,minlon=minlon,maxlon=maxlon)
+   bounds <- list(midlon = midlon, midlat = midlat, zoom = zoom, minlat = minlat, maxlat = maxlat, minlon = minlon, maxlon = maxlon)
  }
  
- cgm_js <- function(...,jsFUNs=NULL) {
+ cgm_js <- function(..., jsFUNs = NULL) {
    objects = list(...)
    # Find center coordinates and best zoom factor
    bounds <- cgm_findbounds(objects)
@@ -129,19 +130,28 @@
    html
  }
  
- map <- function(lon,lat,...) {
+ map <- function(lon, lat, ...) {
    map <- structure(as.list(match.call()[-1]), class = "uneval")
    map
  }
  
  #**
- defaults <- data.table(R=c("col","fill","stroke","size","group","alpha","strokealpha","fillalpha","lon","lat"),
-                      #SVG=c("stroke","fill","stroke_width","scale","symbol","opacity","stroke_opacity","fill_opacity","lon","lat"),
-                      Default=c("black","red",1,1,"circle",1,1,1,NA,NA),
-                      Call=c("style","style","style","attr","symbol","style","style","style","attr","attr"))
- defaults <- list(col="black",fill="red",stroke=1,size=1,group="circle",alpha=1,strokealpha=1,fillalpha=1,lon=NA,lat=NA)
+ defaults <- data.table(R = c("col", "fill", "stroke", "size", "group", "alpha", "strokealpha", "fillalpha", "lon", "lat"),
+                        #SVG=c("stroke","fill","stroke_width","scale","symbol","opacity","stroke_opacity","fill_opacity","lon","lat"),
+                        Default = c("black", "red", 1, 1, "circle", 1, 1, 1, NA, NA),
+                        Call = c("style", "style", "style", "attr", "symbol", "style", "style", "style", "attr", "attr"))
+ defaults <- list(col = "black",
+                  fill = "red",
+                  stroke = 1,
+                  size = 1,
+                  group = "circle",
+                  alpha = 1,
+                  strokealpha = 1,
+                  fillalpha = 1,
+                  lon = NA,
+                  lat = NA)
  
- get_value <- function(x,range,default=1,log=F) {
+ get_value <- function(x, range, default = 1, log = F) {
    tmp <- x
    ind <- which(!is.na(tmp))
    if(length(unique(tmp[ind])) > 1) {
@@ -156,7 +166,7 @@
    }
    as.numeric(tmp)
  }
- get_color <- function(x,pal,default="black",log=F) {
+ get_color <- function(x, pal, default = "black", log = F) {
    #pal <- opts$col_pal
    tmp <- x
    ind <- which(!is.na(tmp))
@@ -177,7 +187,7 @@
    tmp
  }
  
- add_point <- function(data,mapping,opts=list()) {
+ add_point <- function(data, mapping, opts = list()) {
    # mapping should be created using map() function.
    
    #data <- dat1
@@ -200,14 +210,14 @@
    opts <- merge.list(opts,list(size_range   = c(1,2), 
                                 stroke_range = c(1,4), 
                                 alpha_range  = c(.3,1),
-                                symbols      = c("circle","upTri","square","dnTri","cross","dimnd"),
+                                symbols      = c("circle", "upTri", "square", "dnTri", "cross", "dimnd"),
                                 col_palette  = switch(class(dt$col),
                                                       integer   = ,
-                                                      numeric   = colorRampPalette(c("blue","white","red"))(50),
+                                                      numeric   = colorRampPalette(c("blue", "white", "red"))(50),
                                                       factor    = lighten(rainbow(nlevels(dt$col)))),
                                 fill_palette = switch(class(dt$fill),
                                                       integer   = ,
-                                                      numeric   = colorRampPalette(c("blue","white","red"))(50),
+                                                      numeric   = colorRampPalette(c("blue", "white", "red"))(50),
                                                       factor    = lighten(rainbow(nlevels(dt$fill)))),
                                 size_log   = F,
                                 stroke_log = F,
@@ -259,7 +269,8 @@
                  ".style('fill',function(d) {return d.value.fill;})",
                  ".style('stroke-opacity',function(d) {return d.value.strokealpha})",
                  ".style('fill-opacity',function(d) {return d.value.fillalpha})",
-                 ".attr('transform',function(d) {return 'translate('+padding+','+padding+') scale('+d.value.size+')' ;})")
+                 ".attr('transform',function(d) {return 'translate('+padding+','+padding+') scale('+d.value.size+')' ;})",
+                 ".on('mouseover',function(d){ console.log(1); })" )
    
    json <- paste("[",paste(sapply(1:nrow(dt),function(i) toJSON(dt[i])),collapse=","),"]",sep="")
    

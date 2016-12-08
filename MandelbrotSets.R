@@ -26,6 +26,57 @@
    result
  }
  
+ N <- 250
+ #xc <- -0.735010285109
+ #yc <-  0.36025390802475
+ # Basic
+ xc <- -0.735010285107191208245667883018055590009127920122111448264421
+ yc <- 0.360250108024380480417495867164111064063092802667010666726759
+ # Sin
+ xc <- -0.5010285107192608245667883018055590009127920122111448264421
+ yc <- 0.221450764300480417495867164111064063092802667010666726759
+ wpx <- 250
+ hpx <- 200
+ xscale = 2 #* mpfr(.9, 80)^1325
+ yscale = 2 #* mpfr(.9, 80)^1325
+ plots <- NULL
+ #  cgrid <- expand.grid(seq(as.numeric(xc - xscale), as.numeric(xc + xscale), length.out = wpx), 
+ #                       seq(as.numeric(yc - yscale), as.numeric(yc + yscale), length.out = hpx))
+ cgrid <- expand.grid(seq(0, 1, length.out = wpx), 
+                      seq(0, 1, length.out = hpx) )
+ for (i in 1:N) {
+   cat("\rDepth: ", round(i), "\n")
+   count <- data.table(expand.grid(seq(xc - xscale, xc + xscale, length.out = wpx), 
+                                   seq(yc - yscale, yc + yscale, length.out = hpx)))[
+                                     , Count := mand2(.SD, verbose = T, max.iter = 100, FUN = f1) ]
+   #max(count$Count); sum(count$Count == max(count$Count))
+   #invisible(count[Count==max(Count)][1, print(c(Var1, Var2), digits = 70)])
+   # table(count$Count)
+   # count[,paste0(signif((which(Count == max(Count)) %/% hpx) / wpx *2, 3), ",", signif((which(Count == max(Count)) %% hpx) / hpx *2, 3))]
+   # xc - xscale + .35*xscale; yc - yscale + yscale*.422
+   
+   png(paste("images/MandelbrotOne", i, ".png", sep=""), 250, 200)
+   print(
+     ggplot(cgrid, aes(Var1, Var2, col = log(count$Count))) + geom_point() + 
+       scale_x_continuous(breaks = NULL) + scale_y_continuous(breaks = NULL) + guides(col = F)
+   )
+   dev.off()
+   #xscale/wpx
+   xscale <- xscale * 0.8
+   yscale <- yscale * 0.8
+   #log(xscale/2)/log(0.9)
+ }
+ 
+ saveHTML({}, img.name = "MandelbrotOne", htmlfile = "MandelbrotSin.html")
+ 
+ f1 <- function (x, x0) {
+   #x[, list(Re = Re^2 - Im^2 + x0$Re - 1, Im = 2*Re*Im + x0$Im)]
+   x[, list(Re = Re(sin((Re + 1i*Im)/(x0$Re + 1i*x0$Im))), Im = Im(sin((Re + 1i*Im)/(x0$Re + 1i*x0$Im))))]
+ }
+ 
+ 
+ ####################### Allowing for Greater Precision ########################
+ 
  mand2 <- function (z, y = NULL, FUN = NULL, max.iter = 100, rmax = 2, verbose = T) {
    # Calculates the number of sequence iterations (maximum of max.iter) required for the modulus to exceed a certain radius (rmax).
    # This second version operates with mpfr values to allow greater floating point precision, but mpfr does not allow complex z.
@@ -118,15 +169,15 @@
  N <- 1325
  #xc <- -0.735010285109
  #yc <-  0.36025390802475
- xc <- mpfr("-0.735010285107191208245667883018055590009127920122111448264421", 210)
- yc <- mpfr( "0.360253908024380480417495867164111064063092802667010666726759", 210)
+ xc <- mpfr("-0.735010285107191208245667883018055590009127920122111448264421", 40)
+ yc <- mpfr( "0.360253908024380480417495867164111064063092802667010666726759", 40)
  wpx <- 250
  hpx <- 200
- xscale = mpfr(2, 80) #* mpfr(.9, 80)^1325
- yscale = mpfr(2, 80) #* mpfr(.9, 80)^1325
+ xscale = mpfr(2, 20) #* mpfr(.9, 80)^1325
+ yscale = mpfr(2, 20) #* mpfr(.9, 80)^1325
  plots <- NULL
- #  cgrid <- expand.grid(seq(as.numeric(xc - xscale), as.numeric(xc + xscale), length.out = wpx), 
- #                       seq(as.numeric(yc - yscale), as.numeric(yc + yscale), length.out = hpx))
+#  cgrid <- expand.grid(seq(as.numeric(xc - xscale), as.numeric(xc + xscale), length.out = wpx), 
+#                       seq(as.numeric(yc - yscale), as.numeric(yc + yscale), length.out = hpx))
  cgrid <- expand.grid(seq(0, 1, length.out = wpx), 
                       seq(0, 1, length.out = hpx) )
  for (i in 1:N) {
@@ -143,7 +194,7 @@
    png(paste("images/Mandelbrot", i, ".png", sep=""), 800, 600)
    print(
      ggplot(cgrid, aes(Var1, Var2, col = log(count$Count))) + geom_point() + 
-       scale_x_continuous(breaks = NULL) + scale_y_continuous(breaks = NULL) + guides(col = F)
+     scale_x_continuous(breaks = NULL) + scale_y_continuous(breaks = NULL) + guides(col = F)
    )
    dev.off()
    xscale/wpx
@@ -151,7 +202,7 @@
    yscale <- yscale * 0.9
    #log(xscale/2)/log(0.9)
  }
- 
+  
  
  saveHTML({}, img.name = "Mandelbrot", htmlfile = "Mandelbrot.html")
  ?saveHTML

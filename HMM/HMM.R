@@ -40,15 +40,16 @@
  }
  
  
- hmm <- dthmm(obs,Pi,delta=Pi[1,],distn="norm",pm=list(mean=(ms <- rnorm(4,10,5)),sd=(ss <- rnorm(4,1,.1)) ) )
- hmm2 <- BaumWelch(simulate(hmm,nsim=2500),control=bwcontrol(maxiter=2000,tol=1e-6))
+ hmm <- dthmm(obs,Pi,delta=Pi[1,],distn="norm",pm=list(mean=(ms <- rnorm(4,10,3)),sd=(ss <- rnorm(4,.5,.1)) ) )
+ 
+ hmm2 <- BaumWelch(simulate(hmm, nsim = 2500), control = bwcontrol(maxiter = 10000, tol = 1e-6))
  hmm2$Pi
  hmm2$delta
  summary(hmm2)
  
  
  # Would a Gibbs sampler work?
- L <- Pi_i^n 1/sqrt(2pi*sig_i^2)exp(-1/2sig_i^2*(x_i-theta_i)^2)
+ L <- Pi_i^n/sqrt(2*pi*sig_i^2)*exp(-1/2/sig_i^2*(x_i-theta_i)^2)
  
  
  

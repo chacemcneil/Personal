@@ -1,9 +1,7 @@
 Title
 ========================================================
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring web pages (click the **Help** toolbar button for more details on using R Markdown).
-
-When you click the **Knit HTML** button a web page will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+This is a test.
 
 ```{r}
 summary(cars)
@@ -195,8 +193,10 @@ plot(cars)
       }, 1000);
     
       initialize();
-      cities = [{"latitude": "51.5112139", "long_name": "London, UK", "added": "2013-07-30T07:53:51", "location": "London", "longitude": "-0.1198244"},
-                {"latitude": "38.9072309", "long_name": "Washington, DC, USA", "added": "2013-07-30T07:54:42", "location": "Washington", "longitude": "-77.0364641"}];
+      cities = [{"latitude": "51.5112139", "long_name": "London, UK", "added": "2013-07-30T07:53:51", 
+                 "location": "London", "longitude": "-0.1198244"},
+                {"latitude": "38.9072309", "long_name": "Washington, DC, USA", "added": "2013-07-30T07:54:42", 
+                 "location": "Washington", "longitude": "-77.0364641"}];
       
       temp_res='';
       for (var i=0; i < temp_a.length; i++) {

@@ -249,170 +249,269 @@
    return(ind)
  }
  
+ #locateIndex(df <- data.frame(x=rnorm(100),y=rnorm(100)))
+ 
  dcast <- function(...) {dcast.data.table(...)}
  
- roc.dt <- function (rc, cost.fn=1, cost.fp=1) {
+ roc.dt <- function (rc, cost.fn = 1, cost.fp = 1, plot = T) {
    dt <- data.table(Sens   = rc$sensitivities,
                     Spec   = rc$specificities,
                     Thresh = rc$thresholds )
-   dt[,TP   := sapply(Thresh,function(th) sum(rc$cases    > th))]
-   dt[,TN   := sapply(Thresh,function(th) sum(rc$controls < th))]
-   dt[,FP   := sapply(Thresh,function(th) sum(rc$controls > th))]
-   dt[,FN   := sapply(Thresh,function(th) sum(rc$cases    < th))]
+   dt[,TP   := sapply(Thresh, function(th) sum(rc$cases    > th))]
+   dt[,TN   := sapply(Thresh, function(th) sum(rc$controls < th))]
+   dt[,FP   := sapply(Thresh, function(th) sum(rc$controls > th))]
+   dt[,FN   := sapply(Thresh, function(th) sum(rc$cases    < th))]
    dt[,Cost := FP * cost.fp + FN * cost.fn]
+   if (plot)
+     print(ggroc(rc))
    dt
+ }
+ 
+ ggroc <- function(rc, labels = NULL, print.auc = T, mark.sens = NULL, mark.spec = NULL) {
+   dat <- data.table(Sensitivity = rc$sensitivities,
+                     Specificity = rc$specificities,
+                     Threshold   = rc$thresholds )
+   
+   numcontrols <- length(rc$controls)
+   numcases    <- length(rc$cases)
+   
+   p <- ggplot()
+   if(!is.null(mark.sens))
+     p <- p + geom_vline(aes(xintercept = ifelse(is.null(mark.spec), NULL, 1-mark.spec)), linetype = 2, col = "slateblue")
+   if(!is.null(mark.spec))
+     p <- p + geom_hline(aes(yintercept = mark.sens),linetype=2,col="slateblue")
+   p <- p + 
+     geom_abline(aes(intercept = 0, slope = 1), col = "gray50") + 
+     geom_line(data = dat, aes(1 - Specificity, Sensitivity)) + 
+     labs(title = ifelse(print.auc, paste0("AUC: ", round(rc$auc, 3)), ""), x = "\nSpecificity", y = "Sensitivity\n", yy = "Cases") +
+     theme(panel.grid.minor = element_blank(), 
+           axis.text = element_text(size = 15), 
+           plot.title = element_text(size = 20), 
+           axis.title.x = element_text(size = 20), 
+           axis.title.y = element_text(size = 20))
+   left <- ggplot_build(p)$panel$ranges[[1]]$x.range[1]
+   bttm <- ggplot_build(p)$panel$ranges[[1]]$y.range[1]
+   p <- p + 
+     geom_vline(xintercept = pretty(c(0, numcontrols))/numcontrols, col = "gray70", lty = 2) +
+     scale_x_continuous(breaks = c(left, (0:5)/5, left, pretty(c(0, numcontrols))/numcontrols),
+                        labels = c("", paste0((5:0)/5*100, "%"),
+                                   "\nControls            ", paste0("\n", scales::comma(pretty(c(0, numcontrols)))) ),
+                        limits = 0:1 ) +
+     geom_hline(yintercept = pretty(c(0, numcases))/numcases, col = "gray70", lty = 2) +
+     scale_y_continuous(breaks = c(bttm, (0:5)/5, bttm, pretty(c(0, numcases))/numcases),
+                        labels = c("", paste0((0:5)/5*100, "%"),
+                                   "\nCases       ", paste0(scales::comma(pretty(c(0, numcases))), "           ") ),
+                        limits = 0:1 ) + 
+     geom_hline(aes(yintercept = 0), size = 1) + 
+     geom_vline(aes(xintercept = 0), size = 1)
+   p
+ }
+ 
+ ggroc2 <- function(..., labels = NULL, print.auc = T, mark.sens = NULL, mark.spec = NULL) {
+   rcs <- list(...)
+   if(is.null(labels))
+     labels = 1:length(rcs)
+   names(rcs) <- labels
+   dat <- do.call(rbind, lapply(seq_along(rcs), function(i) data.table(Sensitivity = rcs[[i]]$sensitivities,
+                                                                       Specificity = rcs[[i]]$specificities,
+                                                                       Threshold   = rcs[[i]]$thresholds,
+                                                                       Name        = labels[i],
+                                                                       AUC         = rcs[[i]]$auc )))
+   
+   #numcontrols <- length(rc$controls)
+   #numcases    <- length(rc$cases)
+   
+   p <- ggplot()
+   if(!is.null(mark.sens))
+     p <- p + geom_vline(aes(xintercept = ifelse(is.null(mark.spec), NULL, 1-mark.spec)), linetype = 2, col = "slateblue")
+   if(!is.null(mark.spec))
+     p <- p + geom_hline(aes(yintercept = mark.sens),linetype=2,col="slateblue")
+   p <- p + 
+     geom_abline(aes(intercept = 0, slope = 1), col = "gray50") + 
+     geom_line(data = dat, aes(1 - Specificity, Sensitivity, col = paste("AUC: ", round(AUC, 3)))) + 
+     labs(x = "\nSpecificity", y = "Sensitivity\n", col = "") +
+     theme(panel.grid.minor = element_blank(), 
+           axis.text = element_text(size=15), 
+           plot.title = element_text(size = 20), 
+           axis.title.x = element_text(size = 20), 
+           axis.title.y = element_text(size = 20),
+           legend.text = element_text(size = 15))
+   left <- ggplot_build(p)$panel$ranges[[1]]$x.range[1]
+   bttm <- ggplot_build(p)$panel$ranges[[1]]$y.range[1]
+   p <- p + 
+     geom_hline(aes(yintercept = 0), size = 1) + 
+     geom_vline(aes(xintercept = 0), size = 1)
+   p
  }
  
  # Adding to ggplot2
  
  ggen <- environment(ggplot)
  
-#  GeomViolin2 <- with(ggen, proto(GeomViolin))
-#  with(GeomViolin2, {
-#    draw <- function (., data, ...) 
-#    {
-#      data <- transform(data, xminv = x - ifelse(group %%2 == 1, 1, 0)*violinwidth * (x - xmin), 
-#                        xmaxv = x + ifelse(group %%2 == 0, 1, 0)*violinwidth * (xmax - x))
-#      newdata <- rbind(arrange(transform(data, x = xminv), y),
-#                       arrange(transform(data, x = xmaxv), -y))
-#      newdata <- rbind(newdata, newdata[1, ])
-#      ggname(.$my_name(), GeomPolygon$draw(newdata, ...))
-#    }
-#    objname <- "violin2"
-#  })
-#  
-#  geom_violin2 <- function(mapping = NULL, data = NULL, stat = "ydensity", position = "identity", 
-#                           trim = TRUE, scale = "area", ...) {
-#    # This function has been manually added to the ggplot2 environment.
-#    GeomViolin2$new(mapping = mapping, data = data, stat = stat, position = position, trim = trim, scale = scale)
-#  }
-#  environment(geom_violin2) <- ggen
+ GeomViolin2 <- ggproto(GeomViolin)
+ for(i in names(GeomViolin)) {
+   GeomViolin2[[i]] <- GeomViolin[[i]]
+ }
+ class(GeomViolin2) <- c("GeomViolin2", "Geom", "ggproto")
+ GeomViolin2$draw_group <- function (self, data, ..., draw_quantiles = NULL)
+ {
+   data <- transform(data, xminv = x - ifelse(group %%2 == 1, 1, 0)*violinwidth * (x - xmin), 
+                     xmaxv = x + ifelse(group %%2 == 0, 1, 0)*violinwidth * (xmax - x),
+                     group = 1)
+   newdata <- rbind(plyr::arrange(transform(data, x = xminv), y),
+                    plyr::arrange(transform(data, x = xmaxv), -y))
+   newdata <- rbind(newdata, newdata[1, ])
+   if (length(draw_quantiles) > 0 & !scales::zero_range(range(data$y))) {
+     stopifnot(all(draw_quantiles >= 0), all(draw_quantiles <= 1))
+     quantiles <- create_quantile_segment_frame(data, draw_quantiles)
+     aesthetics <- data[rep(1, nrow(quantiles)), setdiff(names(data), c("x", "y")), drop = FALSE]
+     aesthetics$alpha <- rep(1, nrow(quantiles))
+     both <- cbind(quantiles, aesthetics)
+     quantile_grob <- GeomPath$draw_panel(both, ...)
+     ggen$ggname("geom_violin2", grobTree(GeomPolygon$draw_panel(newdata, ...), quantile_grob))
+   }
+   else {
+     ggen$ggname("geom_violin2", GeomPolygon$draw_panel(newdata, ...))
+   }
+ }
+ environment(GeomViolin2) <- ggen
+ 
+ geom_violin2 <- function (mapping = NULL, data = NULL, stat = "ydensity", position = "identity", 
+                           ..., draw_quantiles = NULL, trim = TRUE, scale = "area", 
+                           na.rm = FALSE, show.legend = NA, inherit.aes = TRUE) 
+ {
+   # This function has been manually added to be used with ggplot2.
+   layer(data = data, mapping = mapping, stat = stat, geom = GeomViolin2, 
+         position = position, show.legend = show.legend, inherit.aes = inherit.aes, 
+         params = list(trim = trim, scale = scale, draw_quantiles = draw_quantiles, 
+                       na.rm = na.rm, ...))
+ }
+ environment(geom_violin2) <- ggen
  
  #ggplot(mtcars, aes(factor(cyl), mpg, fill = as.factor(vs))) + geom_violin2() #+ coord_flip() + facet_grid(.~cyl)
  #ggplot(mtcars, aes(factor(cyl), mpg, fill = "blue")) + geom_violin() #+ coord_flip() + facet_grid(.~cyl)
- #ggplot(data.frame(x = 1:100, y = sample(1:2, 100, replace = T)), aes(factor(y), x)) + geom_violin()
- 
- #locateIndex(df <- data.frame(x=rnorm(100),y=rnorm(100)))
- 
-#  grid.align <- function (...,nrow=NULL,ncol=NULL, newpage=T,byrow=T,freecol=T,freerow=T) {
-#    ps <- list(...)
-#    n  <- length(ps)
-#    if(is.null(nrow)) {
-#      if(is.null(ncol)) {
-#        nrow <- ceiling(sqrt(n))
-#        ncol <- ceiling(n/nrow)
-#      } else {
-#        nrow <- ceiling(n/ncol)
-#      }
-#    } else {
-#      if(is.null(ncol)) {
-#        ncol <- ceiling(n/nrow)
-#      } else {
-#        if (n > ncol*nrow)
-#          ps <- ps
-#      }
-#    }
-#    if (newpage)
-#      grid.newpage()
-#    gs <- lapply(ps,ggplotGrob)
-#    
-#    # For each row of plots, standardize ylim
-#    for (i in 1:nrow) {
-#      if (byrow)
-#        ind <- which(((1:n)-1) %/% nrow == i-1)
-#      else
-#        ind <- which(((1:n)-1) %% nrow == i-1)
-#      lims <- do.call(cbind,lapply(ps[ind],function(pl) {
-#        if (pl$scales$has_scale("y"))
-#          lim <- pl$scales$get_scales("y")$limits
-#        else {
-#          colname <- as.character(pl$layers[[1]]$mapping$y)
-#          if (length(colname)==0)
-#            colname <- as.character(pl$mapping$y)
-#          vals <- pl$data[[colname]]
-#          lim <- range(vals[is.finite(vals)])
-#        }
-#        lim
-#      }))
-#      miny <- min(lims[1,])
-#      maxy <- max(lims[2,])
-#      ps[ind] <- lapply(ps[ind],function(pl) {pl <- pl + ylim(c(miny,maxy)); pl})
-#    }
-#    # For each column of plots, standardize xlim
-#    for (i in 1:ncol) {
-#      if (byrow)
-#        ind <- which(((1:n)-1) %% ncol == i-1)
-#      else
-#        ind <- which(((1:n)-1) %/% ncol == i-1)
-#      lims <- do.call(cbind,lapply(ps[ind],function(pl) {
-#        if (pl$scales$has_scale("x"))
-#          lim <- pl$scales$get_scales("x")$limits
-#        else {
-#          colname <- as.character(pl$layers[[1]]$mapping$x)
-#          if (length(colname)==0)
-#            colname <- as.character(pl$mapping$x)
-#          vals <- pl$data[[colname]]
-#          lim <- range(vals[is.finite(vals)])
-#        }
-#        lim
-#      }))
-#      minx <- min(lims[1,])
-#      maxx <- max(lims[2,])
-#      ps[ind] <- lapply(ps[ind],function(pl) {pl <- pl + xlim(c(minx,maxx)); pl})
-#    }
-#    # Standardize point size (?)
-#    
-#    # For each row of plots, standardize the plot height and vertical position
-#    for (i in 1:nrow) {
-#      if (byrow)
-#        ind <- which(((1:n)-1) %/% nrow == i-1)
-#      else
-#        ind <- which(((1:n)-1) %% nrow == i-1)
-#      maxheight <- do.call(grid::unit.pmax,lapply(ps[ind],function(pl) ggplotGrob(pl)$height[2:5]))
-#      gs[ind] <- lapply(gs[ind], function(g) {g$height[2:5] <- maxheight; g})
-#    }
-#    # For each column of plots, standardize the plot width and horizontal powition
-#    for (i in 1:ncol) {
-#      if (byrow)
-#        ind <- which(((1:n)-1) %% ncol == i-1)
-#      else
-#        ind <- which(((1:n)-1) %/% ncol == i-1)
-#      maxwidth <- do.call(grid::unit.pmax,lapply(ps[ind],function(pl) ggplotGrob(pl)$width[2:5]))
-#      gs[ind] <- lapply(gs[ind], function(g) {g$width[2:5] <- maxwidth; g})
-#    }
-#    
-#    g <- do.call(arrangeGrob,c(gs,nrow=nrow,ncol=ncol))
-#    grid.draw(g)
-#    invisible(g)
-#  }
  
  
-#  getPassword <- function() {
-#    require(shiny)
-#    if(!file.exists("server.R")) {
-#      serverscript <- "
-# library(shiny)
-# shinyServer(function(input, output,session) {
-#     observe({
-#         input$button
-#         password <<- isolate(input$password)
-#     })
-# })
-#      "
-#      write(serverscript,file="server.R")
-#    }
-#    if(!file.exists("ui.R")) {
-#      uiscript <- "
-# library(shiny)
-# shinyUI(
-#     sidebarPanel(textInput(\"password\",\"Enter password: \"),actionButton(\"button\",\"Enter\"))
-# )
-#      "
-#      write(uiscript,file="ui.R")
-#    }
-#    runApp()
-#  }
  
+#   grid.align <- function (...,nrow=NULL,ncol=NULL, newpage=T,byrow=T,freecol=T,freerow=T) {
+#     ps <- list(...)
+#     n  <- length(ps)
+#     if(is.null(nrow)) {
+#       if(is.null(ncol)) {
+#         nrow <- ceiling(sqrt(n))
+#         ncol <- ceiling(n/nrow)
+#       } else {
+#         nrow <- ceiling(n/ncol)
+#       }
+#     } else {
+#       if(is.null(ncol)) {
+#         ncol <- ceiling(n/nrow)
+#       } else {
+#         if (n > ncol*nrow)
+#           ps <- ps
+#       }
+#     }
+#     if (newpage)
+#       grid.newpage()
+#     gs <- lapply(ps,ggplotGrob)
+#     
+#     # For each row of plots, standardize ylim
+#     for (i in 1:nrow) {
+#       if (byrow)
+#         ind <- which(((1:n)-1) %/% nrow == i-1)
+#       else
+#         ind <- which(((1:n)-1) %% nrow == i-1)
+#       lims <- do.call(cbind,lapply(ps[ind],function(pl) {
+#         if (pl$scales$has_scale("y"))
+#           lim <- pl$scales$get_scales("y")$limits
+#         else {
+#           colname <- as.character(pl$layers[[1]]$mapping$y)
+#           if (length(colname)==0)
+#             colname <- as.character(pl$mapping$y)
+#           vals <- pl$data[[colname]]
+#           lim <- range(vals[is.finite(vals)])
+#         }
+#         lim
+#       }))
+#       miny <- min(lims[1,])
+#       maxy <- max(lims[2,])
+#       ps[ind] <- lapply(ps[ind],function(pl) {pl <- pl + ylim(c(miny,maxy)); pl})
+#     }
+#     # For each column of plots, standardize xlim
+#     for (i in 1:ncol) {
+#       if (byrow)
+#         ind <- which(((1:n)-1) %% ncol == i-1)
+#       else
+#         ind <- which(((1:n)-1) %/% ncol == i-1)
+#       lims <- do.call(cbind,lapply(ps[ind],function(pl) {
+#         if (pl$scales$has_scale("x"))
+#           lim <- pl$scales$get_scales("x")$limits
+#         else {
+#           colname <- as.character(pl$layers[[1]]$mapping$x)
+#           if (length(colname)==0)
+#             colname <- as.character(pl$mapping$x)
+#           vals <- pl$data[[colname]]
+#           lim <- range(vals[is.finite(vals)])
+#         }
+#         lim
+#       }))
+#       minx <- min(lims[1,])
+#       maxx <- max(lims[2,])
+#       ps[ind] <- lapply(ps[ind],function(pl) {pl <- pl + xlim(c(minx,maxx)); pl})
+#     }
+#     # Standardize point size (?)
+#     
+#     # For each row of plots, standardize the plot height and vertical position
+#     for (i in 1:nrow) {
+#       if (byrow)
+#         ind <- which(((1:n)-1) %/% nrow == i-1)
+#       else
+#         ind <- which(((1:n)-1) %% nrow == i-1)
+#       maxheight <- do.call(grid::unit.pmax,lapply(ps[ind],function(pl) ggplotGrob(pl)$height[2:5]))
+#       gs[ind] <- lapply(gs[ind], function(g) {g$height[2:5] <- maxheight; g})
+#     }
+#     # For each column of plots, standardize the plot width and horizontal powition
+#     for (i in 1:ncol) {
+#       if (byrow)
+#         ind <- which(((1:n)-1) %% ncol == i-1)
+#       else
+#         ind <- which(((1:n)-1) %/% ncol == i-1)
+#       maxwidth <- do.call(grid::unit.pmax,lapply(ps[ind],function(pl) ggplotGrob(pl)$width[2:5]))
+#       gs[ind] <- lapply(gs[ind], function(g) {g$width[2:5] <- maxwidth; g})
+#     }
+#     
+#     g <- do.call(arrangeGrob,c(gs,nrow=nrow,ncol=ncol))
+#     grid.draw(g)
+#     invisible(g)
+#   }
+#  
+#  
+#   getPassword <- function() {
+#     require(shiny)
+#     if(!file.exists("server.R")) {
+#       serverscript <- "
+#  library(shiny)
+#  shinyServer(function(input, output,session) {
+#      observe({
+#          input$button
+#          password <<- isolate(input$password)
+#      })
+#  })
+#       "
+#       write(serverscript,file="server.R")
+#     }
+#     if(!file.exists("ui.R")) {
+#       uiscript <- "
+#  library(shiny)
+#  shinyUI(
+#      sidebarPanel(textInput(\"password\",\"Enter password: \"),actionButton(\"button\",\"Enter\"))
+#  )
+#       "
+#       write(uiscript,file="ui.R")
+#     }
+#     runApp()
+#   }
+#  
 #  getPassword <- function() {
 #    require(tcltk)
 #    tt <- tktoplevel() 
