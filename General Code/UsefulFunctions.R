@@ -1,10 +1,12 @@
 # Some useful functions
  tmp <- .Last.value
+ library(abind)
  library(data.table)
  library(ggplot2)
  library(grid)
  library(gridExtra)
  library(pROC)
+ library(proto)
  library(RODBC)
  
  
@@ -67,11 +69,28 @@
  #rfiles <- dir("../Miscellaneous/",pattern=".R$",full.names=T)
  #rcode  <- lapply(rfiles,readLines)
  
+ Table <- function(..., along = NULL, prop = FALSE) {
+   require(abind)
+   tab <- table(...)
+   if(is.null(along))
+     along <- 1:length(dim(tab))
+   if(length(dim(tab))==1) {
+     tab <- as.matrix(tab)
+     colnames(tab) <- "Count"
+   }
+   for (i in along) {
+     tab <- abind(tab, Total = apply(tab, MARGIN = setdiff(1:length(dim(tab)), i), sum), along = i)
+   }
+   if (prop)
+     tab <- prop.table(tab) * 2^(length(dim(tab)) - (length(dim(tab))==2 & dim(tab)[2]==1))
+   tab
+ }
+ 
  dfSummary <- function(...,table.names=NULL,track=T) {
    tabs <- list(...)
    if(is.null(names(tabs))) {
      if(is.null(table.names))
-       names(tabs) <- paste0("Table",1:length(tabs))
+       names(tabs) <- as.list(substitute(list(...)))[-1L]
      else
        names(tabs) <- table.names
    }
@@ -79,29 +98,29 @@
      if(track)
        cat(paste0("\rTable: ",names(tabs)[i]))
      dat <- tabs[[i]]
-     column <- data.table(TableName=names(tabs)[i],
-                          ColName=colnames(dat),
-                          Class=sapply(dat,function(x) paste(class(x),collapse=",")),
-                          Mode=sapply(dat,mode),
-                          NumNA=sapply(dat,function(col) sum(is.na(col))),
-                          PctNA=sapply(dat,function(col) mean(is.na(col))),
-                          NumUnq=sapply(dat,function(col) length(unique(col))),
-                          Length=nrow(dat),
-                          NumLevels=sapply(dat,function(x) length(levels(x))))
-     column[Mode=="numeric" & Class!="factor",Min                    :=sapply(dat[,ColName,with=F],min,na.rm=T)]
-     column[Mode=="numeric" & Class!="factor" & Class!="Date",Qrt1   :=sapply(dat[,ColName,with=F],quantile,.25,na.rm=T)]
-     column[Mode=="numeric" & Class!="factor",Median                 :=sapply(dat[,ColName,with=F],median,na.rm=T)]
-     column[Mode=="numeric" & Class!="factor",Mean                   :=sapply(dat[,ColName,with=F],mean,na.rm=T)]
-     column[Mode=="numeric" & Class!="factor" & Class!="Date",Qrt3   :=sapply(dat[,ColName,with=F],quantile,.75,na.rm=T)]
-     column[Mode=="numeric" & Class!="factor",Max                    :=sapply(dat[,ColName,with=F],max,na.rm=T)]
-     column[Mode=="numeric" & !Class %in% c("factor","Date","POSIXct,POSIXt"),Sum  :=sapply(dat[,ColName,with=F],sum,na.rm=T)]
-     column[Mode=="numeric" & Class!="factor",Nonzero:=sapply(dat[,ColName,with=F],function(x) sum(x!=0,na.rm=T))]
-     column[,Most:=sapply(dat,function(col) names(sort(table(col),decreasing=T))[1])]
-     column[,MostCount:=sapply(dat,function(col) sort(table(col),decreasing=T)[1])]
-     column[,MostUnique:=sapply(dat,function(col) diff(sort(table(col),decreasing=T)[1:2])!=0)]
-     column[,Least:=sapply(dat,function(col) names(sort(table(col)))[1])]
-     column[,LeastCount:=sapply(dat,function(col) sort(table(col))[1])]
-     column[,LeastUnique:=sapply(dat,function(col) diff(sort(table(col))[1:2])!=0)]
+     column <- data.table(TableName = names(tabs)[i],
+                          ColName   = colnames(dat),
+                          Class     = sapply(dat, function(x) paste(class(x),collapse=",")),
+                          Mode      = sapply(dat, mode),
+                          NumNA     = sapply(dat, function(col) sum(is.na(col))),
+                          PctNA     = sapply(dat, function(col) mean(is.na(col))),
+                          NumUnq    = sapply(dat, function(col) length(unique(col[!is.na(col)]))),
+                          Length    = nrow(dat),
+                          NumLevels = sapply(dat, function(x) length(levels(x))))
+     column[Mode == "numeric" & Class != "factor",                                 Min     := sapply(dat[, ColName, with = F], min, na.rm = T)]
+     column[Mode == "numeric" & Class != "factor" & Class!="Date",                 Qrt1    := sapply(dat[, ColName, with = F], quantile, .25, na.rm = T)]
+     column[Mode == "numeric" & Class != "factor",                                 Median  := sapply(dat[, ColName, with = F], median, na.rm = T)]
+     column[Mode == "numeric" & Class != "factor",                                 Mean    := sapply(dat[, ColName, with = F], mean, na.rm = T)]
+     column[Mode == "numeric" & Class != "factor" & Class!="Date",                 Qrt3    := sapply(dat[, ColName, with = F], quantile, .75, na.rm = T)]
+     column[Mode == "numeric" & Class != "factor",                                 Max     := sapply(dat[, ColName, with = F], max, na.rm = T)]
+     column[Mode == "numeric" & !Class %in% c("factor", "Date", "POSIXct,POSIXt"), Sum     := sapply(dat[, ColName, with = F], function(x) sum(as.numeric(x), na.rm = T))]
+     column[Mode == "numeric" & Class != "factor",                                 Nonzero := sapply(dat[, ColName, with = F], function(x) sum(x!=0, na.rm = T))]
+     column[, Most        := sapply(dat, function(col) names(sort(table(col), decreasing = T))[1])]
+     column[, MostCount   := sapply(dat, function(col) sort(table(col), decreasing = T)[1])]
+     column[, MostUnique  := sapply(dat, function(col) diff(sort(table(col), decreasing = T)[1:2])!=0) | NumUnq == 1]
+     column[, Least       := sapply(dat, function(col) names(sort(table(col)))[1])]
+     column[, LeastCount  := sapply(dat, function(col) sort(table(col))[1])]
+     column[, LeastUnique := sapply(dat, function(col) diff(sort(table(col))[1:2])!=0) | NumUnq == 1]
      return(column)
    }))
    cat("\n")
@@ -248,26 +267,26 @@
  
  ggen <- environment(ggplot)
  
- GeomViolin2 <- with(ggen, proto(GeomViolin))
- with(GeomViolin2, {
-   draw <- function (., data, ...) 
-   {
-     data <- transform(data, xminv = x - ifelse(group %%2 == 1, 1, 0)*violinwidth * (x - xmin), 
-                       xmaxv = x + ifelse(group %%2 == 0, 1, 0)*violinwidth * (xmax - x))
-     newdata <- rbind(arrange(transform(data, x = xminv), y),
-                      arrange(transform(data, x = xmaxv), -y))
-     newdata <- rbind(newdata, newdata[1, ])
-     ggname(.$my_name(), GeomPolygon$draw(newdata, ...))
-   }
-   objname <- "violin2"
- })
- 
- geom_violin2 <- function(mapping = NULL, data = NULL, stat = "ydensity", position = "identity", 
-                          trim = TRUE, scale = "area", ...) {
-   # This function has been manually added to the ggplot2 environment.
-   GeomViolin2$new(mapping = mapping, data = data, stat = stat, position = position, trim = trim, scale = scale)
- }
- environment(geom_violin2) <- ggen
+#  GeomViolin2 <- with(ggen, proto(GeomViolin))
+#  with(GeomViolin2, {
+#    draw <- function (., data, ...) 
+#    {
+#      data <- transform(data, xminv = x - ifelse(group %%2 == 1, 1, 0)*violinwidth * (x - xmin), 
+#                        xmaxv = x + ifelse(group %%2 == 0, 1, 0)*violinwidth * (xmax - x))
+#      newdata <- rbind(arrange(transform(data, x = xminv), y),
+#                       arrange(transform(data, x = xmaxv), -y))
+#      newdata <- rbind(newdata, newdata[1, ])
+#      ggname(.$my_name(), GeomPolygon$draw(newdata, ...))
+#    }
+#    objname <- "violin2"
+#  })
+#  
+#  geom_violin2 <- function(mapping = NULL, data = NULL, stat = "ydensity", position = "identity", 
+#                           trim = TRUE, scale = "area", ...) {
+#    # This function has been manually added to the ggplot2 environment.
+#    GeomViolin2$new(mapping = mapping, data = data, stat = stat, position = position, trim = trim, scale = scale)
+#  }
+#  environment(geom_violin2) <- ggen
  
  #ggplot(mtcars, aes(factor(cyl), mpg, fill = as.factor(vs))) + geom_violin2() #+ coord_flip() + facet_grid(.~cyl)
  #ggplot(mtcars, aes(factor(cyl), mpg, fill = "blue")) + geom_violin() #+ coord_flip() + facet_grid(.~cyl)
