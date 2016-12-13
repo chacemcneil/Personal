@@ -1,6 +1,7 @@
 # Useful things for markdown files
  library(data.table)
  library(ggplot2)
+ library(htmlTable)
  library(knitr)
  library(pROC)
  
@@ -68,6 +69,71 @@
  }
  
  
+ markdown_init <- function(filename, echo = T) {
+   ## initialize functions and options to manage figure/table labels, used for html markdown and notebooks.
+   #    Uses htmlTable for all tables.
+   
+   print(environment())
+   print(parent.env(environment()))
+   print(parent.frame())
+   env <- parent.env(environment())
+   with(env, print(current_input()))
+   with(environment(), {
+     ## Look through the script to find chunk labels
+     rmdCon <- file(filename, open = "r")
+     rmdLines <- readLines(rmdCon)
+     close(rmdCon)
+     rmdLines <- rmdLines[grep("^```\\{r\\s+([[:alnum:]_\\.]+)[,\\}]", rmdLines)]
+     chunk_labels <- gsub("^```\\{r\\s+([[:alnum:]_\\.]+)[,\\}].*$", "\\1", rmdLines)
+     if(chunk_labels[1] == "setup")
+       chunk_labels <- chunk_labels[-1]
+     
+     ## Add automatic figure captions (can be kept separate from table captions, but requires tables to be kept track of by htmlTable)
+     options(figure_counter = T, figures = chunk_labels)
+     capexpr <- expression({
+       lab <- opts_current$get("label")
+       if(grepl("^unnamed", lab) || !options()$figure_counter) {
+         if(is.null(opts_current$get("caption")))
+           cap <- ""
+         else
+           cap <- opts_current$get("caption")
+       } else {
+         if(is.null(opts_current$get("caption")))
+           cap <- paste("<b>Figure ", match(lab, options()$figures), "</b>")
+         else
+           cap <- paste("<b>Figure ", match(lab, options()$figures), ":</b> ", opts_current$get("caption"))
+       }
+       cap
+     })
+     idexpr <- expression(paste0('id="', opts_current$get("label"), '"'))
+     
+     ## Set expressions to be evaluated for each chunk
+     # fig.cap = capexpr     sets the caption for the figure. Use caption="Plot description" in chunk header.
+     # out.extra = idexpr    Puts an id attribute in the <img> tag matching the chunk label (<img id="label" ... />)
+     #                       This id is then used by htmlref to create a link to the image when referenced.
+     # echo                  determines whether code is shown, generally true for notebooks and false for markdown
+     # fig.align = "center"  centers all figures as well as their associated captions
+     opts_chunk$set(fig.cap = capexpr, out.extra = idexpr, fig.align = "center", echo = echo, fig.align = "center")
+     
+     ## Initialize counter and caption used by htmlTable
+     options(table_counter = TRUE, table_counter_str = "<b>Table %s:</b> ")
+     
+     # Function that creates html hyperlinks intended for inline figure and table references. When referencing tables created
+     #   by htmlTable, the strings must be created immediately after table creation, and then the strings can be put inline.
+     htmlref <<- function(label, offset = 0, pattern = NULL, link = T) {
+       opts_current$set(dependson = label)
+       if(is.null(pattern))
+         pattern <- ifelse(label %in% options()$figures, "Figure %s", "Table %s")
+       str <- ifelse(label %in% options()$figures,
+                     sprintf(pattern, match(label, options()$figures)),
+                     sprintf(pattern, tblNoLast() + offset) )
+       if(link)
+         str <- paste0("<a href = \"#", label, "\">", str, "</a>")
+       str
+     }
+     cat("<style>\ntable.gmisc_table {\n margin-left: auto;\n margin-right: auto;\n}\n</style>\n")
+   })
+ }
  
  
  

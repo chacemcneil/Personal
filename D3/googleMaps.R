@@ -5,19 +5,58 @@
  library(plotGoogleMaps)
  library(rjson)
  
+def_symbols <- "
+// DEFINE A COUPLE OF CUSTOM SYMBOLS
+var customSymbolTypes = d3.map({
+  'star': function(size) {
+    // returns a path-data string
+    return 'M0 0 H 10 V 10 L 0 0';
+  },
+  'cross2': function(size) {
+    // returns a path-data string
+  return 'M0 3.5 L 3.5,7 7,3.5 3.5,0 7,-3.5 3.5,-7 0,-3.5 -3.5,-7 -7,-3.5, -3.5,0 -7,3.5 -3.5,7 0,3.5';
+  }
+});
+
+
+// CREATE A CUSTOM SYMBOL FUNCTION MIRRORING THE BUILT-IN FUNCTIONALITY
+d3.svg.customSymbol = function() {
+  var type,
+      size = 64; // SET DEFAULT SIZE
+  function symbol(d,i) {
+    // GET THE SYMBOL FROM THE CUSTOM MAP
+    return customSymbolTypes.get(type.call(this,d,i))(size.call(this,d,i));
+  }
+  // DEFINE GETTER/SETTER FUNCTIONS FOR SIZE AND TYPE
+  symbol.type = function(_) {
+    if (!arguments.length) return type;
+    type = d3.functor(_);
+    return symbol;
+  };
+  symbol.size = function(_) {
+    if (!arguments.length) return size;
+    size = d3.functor(_);
+    return symbol;
+  };
+  return symbol;
+};"
+ 
  cgm_init <- function() {
    html <- paste('<meta name="viewport" content="initial-scale=1.0, user-scalable=no"/>',
                  '<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>',
                  '<script type="text/javascript" src="http://square.github.io/crossfilter/d3.v3.min.js"></script>',
                  '<script type="text/javascript" src="http://code.jquery.com/jquery-1.8.3.min.js"></script>',
                  '<script>',
+                 def_symbols,
                  'var sym_circle = d3.svg.symbol().size(100).type("circle");',
                  'var sym_upTri  = d3.svg.symbol().size(100).type("triangle-up");',
                  'var sym_dnTri  = d3.svg.symbol().size(100).type("triangle-down");',
                  'var sym_cross  = d3.svg.symbol().size(100).type("cross");',
                  'var sym_dimnd  = d3.svg.symbol().size(100).type("diamond");',
                  'var sym_square = d3.svg.symbol().size(100).type("square");',
-                 'var symbols = {"circle":sym_circle,"square":sym_square,"cross":sym_cross,"dimnd":sym_dimnd,"upTri":sym_upTri,"dnTri":sym_dnTri};',
+                 'var sym_star = d3.svg.customSymbol().type("star").size(100);',
+                 'var sym_cross2 = d3.svg.customSymbol().type("cross2").size(100);',
+                 'var symbols = {"circle":sym_circle,"square":sym_square,"cross":sym_cross,"dimnd":sym_dimnd,"upTri":sym_upTri,"dnTri":sym_dnTri,"star":sym_star,"cross2":sym_cross2};',
                  '</script>',
                  '\n',sep="\n")
    html
@@ -210,7 +249,7 @@
    opts <- merge.list(opts,list(size_range   = c(1,2), 
                                 stroke_range = c(1,4), 
                                 alpha_range  = c(.3,1),
-                                symbols      = c("circle", "upTri", "square", "dnTri", "cross", "dimnd"),
+                                symbols      = c("circle", "upTri", "square", "dnTri", "cross", "dimnd", "star", "cross2"),
                                 col_palette  = switch(class(dt$col),
                                                       integer   = ,
                                                       numeric   = colorRampPalette(c("blue", "white", "red"))(50),

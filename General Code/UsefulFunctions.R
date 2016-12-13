@@ -251,6 +251,31 @@
  
  #locateIndex(df <- data.frame(x=rnorm(100),y=rnorm(100)))
  
+ ## Snippets are little keywords that can be used to write code. Example: in an R script, type ts<SHIFT-TAB>
+ #  These can be customized in the r.snippets file, accessible via the following function.
+ snippets <- function(type = c("r", "markdown", "css", "c_cpp", "html", "java", "javascript", "python", "sql", "stan"), edit = F) {
+   type <- match.arg(type)
+   filename <- paste0("~/.R/snippets/", type, ".snippets")
+   if(file.exists(filename)) {
+     snips <- readLines(filename)
+     snips <- grep("^snippet .+$", snips, value = T)
+     snips <- gsub("snippet ", "", snips)
+     if(edit)
+       file.edit(filename)
+     return(snips)
+   }
+   else {
+     cat(paste0("The file ", type, ".snippets has not been created.\n",
+                 "Open Global Options... under the Tools menu,\n",
+                 "  in the Code - Editing section select Edit Snippets...\n",
+                 "  then modify and save the file of ", type, " snippets.\n",
+                 "Use snippets() to get snippet names.\n",
+                 "Use parameter edit=TRUE to view/modify snippets."))
+     return(invisible(NULL))
+   }
+ }
+ tmp
+ 
  dcast <- function(...) {dcast.data.table(...)}
  
  roc.dt <- function (rc, cost.fn = 1, cost.fp = 1, plot = T) {

@@ -14,7 +14,7 @@ source("d3/googleMaps.R")
 
 ```
 
-```{r, echo=TRUE, results='asis', warning=FALSE}
+```{r, echo=FALSE, results='asis', warning=FALSE}
 lst <- list(stations = list(svg = c(position = "absolute", color = "red"),
                           svg = c(width = "60px", height = "60px", "padding-bottom" = "100px", 
                                   "padding-right" = "100px", font = "12px sans-serif"),
