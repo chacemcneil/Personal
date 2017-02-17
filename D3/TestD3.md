@@ -1,0 +1,29 @@
+Title
+========================================================
+<script src="http://d3js.org/d3.v2.min.js" charset="utf-8"></script>
+
+
+
+
+<p id="chart">
+
+<svg width="300px" height="300px">
+  <title>Golden Watch</title>
+  <circle cx="150" cy="150" r="140" fill="ghostwhite" stroke="goldenrod" stroke-width="2" />
+  <circle cx="150" cy="150" r="130" fill="none" stroke="goldenrod" stroke-width="3" stroke-dasharray="2,11.613568" transform="rotate(-.12)" />
+  <line y2="-130" stroke="gold" stroke-width="1" transform="translate(150,150) rotate(0)">
+    <animateTransform attributeName="transform" type="rotate" repeatCount="indefinite" dur="60s" by="360" />
+  </line>
+  <line y2="-120" stroke="gold" stroke-width="2" transform="translate(150,150) rotate(0)">
+    <animateTransform attributeName="transform" type="rotate" repeatCount="indefinite" dur="60min" by="360" />
+  </line>
+  <line y2="-110" stroke="gold" stroke-width="3" transform="translate(150,150) rotate(0)">
+    <animateTransform attributeName="transform" type="rotate" repeatCount="indefinite" dur="12h" by="360" />
+  </line>
+</svg>
+<script>
+var g = d3.select("#chart").append("svg").attr("height",500).attr("width",500).append("g");
+var square = g.selectAll("rect").data([{"x":75,"y":50}]).enter().append("rect").attr("x",20).attr("y",20).attr("width",30).attr("height",30).style("fill","lightgreen");
+</script>
+
+</p>
