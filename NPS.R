@@ -11,23 +11,6 @@
  source("r:/users/cmcneil/projects/miscellaneous/Personal/General Code/UsefulFunctions.R")
  source("r:/users/cmcneil/projects/miscellaneous/Personal/General Code/MarkdownFunctions.R")
  
- # Functions
- npsind <- function(x, as.factor=F) {
-   x <- x[!is.na(x)]
-   x <- ifelse(x > 6, ifelse(x > 8, 1, 0), -1)
-   if(as.factor)
-     x <- factor(x, levels=-1:1)
-   x
- }
- npsprop <- function(x) {
-   prop.table(table(npsind(x, as.factor=T)))[c("-1", "0", "1")]
- }
- nps <- function(x) {
-   npsprop(x)[["1"]] - npsprop(x)[["-1"]]
- }
- moe <- function(x) {
-   qnorm(.975) * sd(npsind(x)) / sqrt(length(x))
- }
  
  thm <- theme(panel.background=element_rect(fill="azure1"),   text=element_text(size=40, family="Narkisim"), 
               legend.text=element_text(size=20), legend.title=element_text(size=20), 

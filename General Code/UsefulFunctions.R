@@ -1,4 +1,33 @@
-# Some useful functions
+# Some useful functions:
+# upd                 Modify width of console output and initialize lv = .Last.value
+# ini                 Opens ~/.odbc.ini file for editting
+# rsavvy              Creates a read.odbc function mimicking the savvy function, for use in Citrix
+# ept                 (Evaluate Parsed Text) Evaluates an expression in character form
+# revf                reverse the levels of a factor variable, useful for ggplot bar charts
+# replace.na          function for replacing NAs in a vector more easily
+# merge.list          Adds or modifies elements to a list based on entry names
+# backup              Creates or modifies a .backup variable to contain a copy of passed objects
+# revert              Restores all objects stored in .backup
+# Table               Similar to table function, but adds columns and rows for totals
+# vTable              Similar to Venn diagram, counts the number of unique elements contained in each set
+# ext.chisq.test      Extends the categorical version of chisq.test to more than two dimensions
+# matpaste            paste function that maintains matrix form
+# dfSummary           Summarizes data.table objects in another table, one row per column
+# is.color            Can the input be interpretted as a color
+# hex                 Convert a color to hex format, uses col2rgb and rgb
+# darken              Darken a color by a given factor
+# lighten             Lighten a color by a given factor
+# choose.colors       Choose colors from a palette
+# locateIndex         Uses locator function to identify an observation (doesn't work with ggplot)
+# snippets            Prints a list of available snippets
+# roc.dt              Creates a table of sensitivities, specificities and corresponding thresholds
+# ggroc               Prints a roc curve using ggplot
+# nps                 Calculate the Net Promoter Score (NPS)
+# npsind              Convert scores to -1,0,1 indicators (for NPS)
+# npsprop             Calculates the proportion of NPS indicators
+# moe                 Calculates Margin of Error (for NPS)
+# geom_violin2        function to work with ggplot to create asymetric violin plots
+
  tmp <- .Last.value
  library(abind)
  library(data.table)
@@ -12,12 +41,12 @@
  
  upd <- function(width=260) {
    if(exists("lv"))
-     rm(lv,envir=.GlobalEnv)
+   rm(lv, envir=.GlobalEnv)
    if(exists("env"))
-     rm(env,envir=.GlobalEnv)
+     rm(env, envir=.GlobalEnv)
    
-   makeActiveBinding("env",environment,parent.env(environment()))
-   makeActiveBinding("lv",function(x) .Last.value,env)
+   makeActiveBinding("env", environment, parent.env(environment()))
+   makeActiveBinding("lv", function(x) .Last.value, env)
    
    options(width=width)
  }
@@ -25,7 +54,7 @@
  
  ini <- function(print=F) {
    if(print)
-     cat(paste(readLines("/home/cmcneil/.odbc.ini"),collapse="\n"))
+     cat(paste(readLines("/home/cmcneil/.odbc.ini"), collapse="\n"))
    file.edit("/home/cmcneil/.odbc.ini")
  }
  
@@ -42,39 +71,90 @@
    }
  }
  
- ept <- function(txt,env=NULL,drop=T) {
+ ept <- function(txt, env=NULL, drop=T) {
    # Evaluate parsed text
    # Example: ept("sum(1:10)") --> 55
    if(is.null(env))
      env <- parent.frame()
-   dt <- data.table()[,lapply(txt, function(str) eval(parse(text=str),envir=env))]
+   dt <- data.table()[, lapply(txt, function(str) eval(parse(text=str), envir=env))]
    names(dt) <- txt
    if(length(txt)==1 & drop == T)
      dt <- dt[[1]]
    dt
  }
  
- merge.list <- function (...,priority=c("first","last")) {
+ revf <- function(vec) {
+   # Reverses the levels of a factor, useful in ggplot bar charts with coord_flip()
+   # Does NOT reverse the order of the vector!
+   vec <- factor(vec, levels = rev(levels(vec)))
+   vec
+ }
+ 
+ replace.na <- function(x, repl = NULL, ...) {
+   # Creates a copy of x with NAs replaced by repl
+   # If repl is not given it defaults to 0, "" or FALSE depending on mode(x)
+   # repl can be given a function that takes x as an input
+   isfactor = (class(x) == "factor")
+   if(is.null(repl))
+     repl <- switch(class(x), logical = FALSE, numeric = 0, integer = 0L, character = "", factor = stop("If x is a factor, repl must be supplied"))
+   if(isfactor) {
+     xlevels <- levels(x)
+     x <- as.character(x)
+   }
+   if(class(repl) == "function")
+     new <- ifelse(is.na(x), repl(x, ...), x)
+   else
+     new <- ifelse(is.na(x), repl, x)
+   if(isfactor)
+     new <- factor(new, levels = xlevels)
+   new
+ }
+ 
+ count.na <- function(x) {
+   # Count the number of NAs in a vector
+   count <- sum(is.na(x))
+   count
+ }
+ 
+ merge.list <- function (..., priority = c("first", "last")) {
    priority <- match.arg(priority)
    lst <- list(...)
-   if(priority=="last")
+   if(priority == "last")
      lst <- rev(lst)
    if (length(lst) == 1)
      newlst <- lst[[1]]
    else
-     newlst <- append(lst[[1]],do.call(merge.list,lst[-1]))
+     newlst <- append(lst[[1]], do.call(merge.list, lst[-1]))
    newlst[!duplicated(names(newlst))]
  }
  
- #rfiles <- dir("../Miscellaneous/",pattern=".R$",full.names=T)
- #rcode  <- lapply(rfiles,readLines)
+ backup <- function(obj) {
+   # Function for backing up objects for testing.
+   # Used in conjunction with revert function
+   if(!exists(".backup"))
+     .backup <<- list()
+   .backup[[as.character(substitute(obj))]] <<- obj
+ }
+ revert <- function(obj) {
+   # Revert to previously backed up version of obj
+   if(!exists(".backup"))
+     stop("No backup has been created")
+   nm <- as.character(substitute(obj))
+   if(!nm %in% names(.backup))
+     stop("Given object is not contained in backup")
+   assign(nm, .backup[[nm]], env = parent.frame())
+ }
+ 
+ 
+ #rfiles <- dir("../Miscellaneous/", pattern=".R$", full.names=T)
+ #rcode  <- lapply(rfiles, readLines)
  
  Table <- function(..., along = NULL, prop = FALSE) {
    require(abind)
    tab <- table(...)
    if(is.null(along))
      along <- 1:length(dim(tab))
-   if(length(dim(tab))==1) {
+   if(length(dim(tab)) == 1) {
      tab <- as.matrix(tab)
      colnames(tab) <- "Count"
    }
@@ -83,10 +163,58 @@
    }
    if (prop)
      tab <- prop.table(tab) * 2^(length(dim(tab)) - (length(dim(tab))==2 & dim(tab)[2]==1))
+   names <- names(list(...))
+   if (is.null(names))
+     names(dimnames(tab)) <- as.character(as.list(substitute(list(...)))[-1L])
+   else
+     names(dimnames(tab)) <- ifelse(names == "", as.character(as.list(substitute(list(...)))[-1L]), names)
+   names(dimnames(tab)) <- NULL
    tab
  }
  
- dfSummary <- function(...,table.names=NULL,track=T) {
+ vTable <- function(..., prop = FALSE, sums = FALSE) {
+   # Find the number of unique values that are shared
+   # Similar to values in a Venn diagram
+   names <- as.character(as.list(substitute(list(...)))[-1L])
+   lists <- lapply(list(...), function(x) if(class(x) == "factor") as.character(x) else x)
+   tab <- data.table(Values = unique(unlist(lists)))[, (names) := lapply(lists, function(x) ifelse(Values %in% x, "In", "Out"))][, Values := NULL]
+   if(sums)
+     tab <- do.call(Table, tab)
+   else
+     tab <- do.call(table, tab)
+   if (prop)
+     tab <- prop.table(tab) * 2^((length(dim(tab)) - (length(dim(tab))==2 & dim(tab)[2]==1))*sums)
+   tab
+ }
+ 
+ ext.cat.chisq.test <- function (arr) {
+   if (length(dim(arr)) < 2)
+     stop("arr must have at least two dimensions.")
+   expected <- array(apply(arr, 1, sum)[slice.index(arr, 1)], dim = dim(arr))
+   for (i in 2:length(dim(arr))) {
+     expected <- expected * array(apply(arr, i, sum)[slice.index(arr, i)], dim = dim(arr))
+   }
+   expected <- expected / sum(arr)^(length(dim(arr)) - 1)
+   chisq <- sum((arr - expected)^2/expected)
+   df <- prod(dim(arr) - 1)
+   p.value <- 1 - pchisq(chisq, df)
+   cat(sprintf("Chi-squared statistic: %s\nDegrees of freedom: %s\np-value: %s\n", chisq, df, p.value))
+   list(chisq = chisq, df = df, p.value = p.value)
+ }
+ 
+ bin <- function() {
+   l
+ }
+ 
+ matpaste <- function(..., sep = " ", collapse = NULL, dim = NULL) {
+   lst <- list(...)
+   if(is.null(dim))
+     dim <- dim(lst[[min(which(sapply(lst, is.matrix)))]])
+   mat <- matrix(paste(..., sep = sep, collapse = collapse), nrow = dim[1], ncol = dim[2])
+   mat
+ }
+ 
+ dfSummary <- function(..., table.names=NULL, track=T) {
    tabs <- list(...)
    if(is.null(names(tabs))) {
      if(is.null(table.names))
@@ -94,13 +222,13 @@
      else
        names(tabs) <- table.names
    }
-   summary <- do.call(rbind,lapply(seq_along(tabs),function(i) {
+   summary <- do.call(rbind, c(lapply(seq_along(tabs), function(i) {
      if(track)
-       cat(paste0("\rTable: ",names(tabs)[i]))
+       cat(paste0("\rTable: ", names(tabs)[i], "       "))
      dat <- tabs[[i]]
      column <- data.table(TableName = names(tabs)[i],
                           ColName   = colnames(dat),
-                          Class     = sapply(dat, function(x) paste(class(x),collapse=",")),
+                          Class     = sapply(dat, function(x) paste(class(x), collapse=",")),
                           Mode      = sapply(dat, mode),
                           NumNA     = sapply(dat, function(col) sum(is.na(col))),
                           PctNA     = sapply(dat, function(col) mean(is.na(col))),
@@ -122,7 +250,7 @@
      column[, LeastCount  := sapply(dat, function(col) sort(table(col))[1])]
      column[, LeastUnique := sapply(dat, function(col) diff(sort(table(col))[1:2])!=0) | NumUnq == 1]
      return(column)
-   }))
+   }), fill = T))
    cat("\n")
    return(summary)
  }
@@ -134,7 +262,7 @@
  ssred    <- rgb(192, 80, 77, max = 255)
  sspurple <- rgb(128, 100, 162, max = 255)
  ssteal   <- rgb(75, 172, 198, max = 255)
- sscols <- c(ssgray, ssblue, ssyellow, ssgreen, ssred, sspurple, ssteal)
+ sscols <- c(ssblue, ssyellow, ssgreen, ssred, sspurple, ssteal, ssgray)
  
  ss_theme <- theme_bw() + theme(panel.border = element_blank(), 
                                 axis.line = element_line(ssgray),
@@ -149,30 +277,30 @@
    x <- as.character(x)
    xic <- (x %in% colors()) | ( (nchar(x) %in% c(7, 9)) & 
                                 (substr(x, 1, 1) == "#") & 
-                                sapply(strsplit(substr(x,2,nchar(x)),""),function(x) all(toupper(x) %in% c(0:9,LETTERS[1:6]))) )
+                                sapply(strsplit(substr(x, 2, nchar(x)), ""), function(x) all(toupper(x) %in% c(0:9, LETTERS[1:6]))) )
    xic[is.na(x)] <- NA
    xic
  }
  
  hex <- function(col)  {
    rgb <- col2rgb(col)/255
-   hex <- rgb(red=rgb["red",],green=rgb["green",],blue=rgb["blue",],alpha=1)
+   hex <- rgb(red=rgb["red",], green=rgb["green",], blue=rgb["blue",], alpha=1)
    hex
  }
  
- darken <- function(col,factor=1/3) {
+ darken <- function(col, factor = 1/3) {
    rgb <- col2rgb(col)*(1-factor)/255
-   newcol <- rgb(red=rgb["red",],green=rgb["green",],blue=rgb["blue",],alpha=1)
+   newcol <- rgb(red = rgb["red",], green = rgb["green",], blue = rgb["blue",], alpha = 1)
    newcol
  }
  
- lighten <- function(col,factor=1/3) {
+ lighten <- function(col, factor = 1/3) {
    rgb <- 1- (1-col2rgb(col)/255)*(1-factor)
-   newcol <- rgb(red=rgb["red",],green=rgb["green",],blue=rgb["blue",],alpha=1)
+   newcol <- rgb(red = rgb["red",], green = rgb["green",], blue = rgb["blue",], alpha = 1)
    newcol
  }
  
- choose.colors <- function (plot.it=F,locate=0)
+ choose.colors <- function (plot.it = F, locate = 0)
  {
    if(!plot.it)
    {
@@ -180,10 +308,10 @@
    } # close on if
    else
    {
-     ytop    <- rep(seq(1/26,1,by=1/26),each=26)[1:657]
-     ybottom <- rep(seq(0,1-1/26,by=1/26),each=26)[1:657]
-     xleft   <- rep(seq(0,1-1/26,by=1/26),times=26)[1:657]
-     xright  <- rep(seq(1/26,1,by=1/26),times=26)[1:657]
+     ytop    <- rep(seq(1/26, 1, by=1/26), each=26)[1:657]
+     ybottom <- rep(seq(0, 1-1/26, by=1/26), each=26)[1:657]
+     xleft   <- rep(seq(0, 1-1/26, by=1/26), times=26)[1:657]
+     xright  <- rep(seq(1/26, 1, by=1/26), times=26)[1:657]
      pall    <- round(col2rgb(colors())/256)
      pall    <- colSums(pall) ; pall2 <- character(0)
      pall2[pall>0]   <- "black"
@@ -193,44 +321,44 @@
      
      plot.new()
      title(main="Palette of colors()")
-     rect(xleft,ybottom,xright,ytop,col=colors())
+     rect(xleft, ybottom, xright, ytop, col=colors())
      text(x=xleft+((1/26)/2)
-          ,y=ytop-((1/26)/2)
-          ,labels = 1:657
-          ,cex=0.55
-          ,col=pall2)
+          , y=ytop-((1/26)/2)
+          , labels = 1:657
+          , cex=0.55
+          , col=pall2)
      
    } # close on else
    if(locate==0) print("Palette of colors()")
    else
    {
-     colmat    <- matrix(c(1:657,rep(NA,26^2-657)),byrow=T,ncol=26,nrow=26)
+     colmat    <- matrix(c(1:657, rep(NA, 26^2-657)), byrow = T, ncol = 26, nrow = 26)
      cols        <- NA
      i        <- NA
      for(i in 1:locate)
      {
        h    <- locator(1)
-       if(any(h$x<0,h$y<0,h$x>1,h$y>1)) stop("locator out of bounds!")
+       if(any(h$x<0, h$y<0, h$x>1, h$y>1)) stop("locator out of bounds!")
        else
        {
          cc        <- floor(h$x/(1/26))+1
          rr        <- floor(h$y/(1/26))+1            
-         cols[i]    <- colors()[colmat[rr,cc]]
+         cols[i]    <- colors()[colmat[rr, cc]]
        } # close on else
      } # close on i
      return(cols)
    } # close on else
  } # close on else+function
  
- locateIndex <- function(dat,gg=F,print=T,n=1,...) {
+ locateIndex <- function(dat, gg=F, print=T, n=1, ...) {
    require(ggplot2)
-   if(sum(!c("x","y") %in% colnames(dat))) {
-     colnames(dat)[1:2] <- c("x","y")
+   if(sum(!c("x", "y") %in% colnames(dat))) {
+     colnames(dat)[1:2] <- c("x", "y")
    }
    if(gg)
-     ggplot() + geom_point(data=dat,aes(x,y))
+     ggplot() + geom_point(data=dat, aes(x, y))
    else
-     plot(dat$x,dat$y,...)
+     plot(dat$x, dat$y, ...)
    
    if(gg) { # Not possible?
      gglocator(n)
@@ -243,13 +371,17 @@
        ind[i] <- which.min(dist)
      }
    }
-   points(dat[ind,],col="red",pch=19)
+   points(dat[ind,], col="red", pch=19)
    if(print)
      print(dat[ind,])
    return(ind)
  }
  
- #locateIndex(df <- data.frame(x=rnorm(100),y=rnorm(100)))
+ plotprops <- function() {
+   
+ }
+ 
+ #locateIndex(df <- data.frame(x=rnorm(100), y=rnorm(100)))
  
  ## Snippets are little keywords that can be used to write code. Example: in an R script, type ts<SHIFT-TAB>
  #  These can be customized in the r.snippets file, accessible via the following function.
@@ -274,7 +406,6 @@
      return(invisible(NULL))
    }
  }
- tmp
  
  dcast <- function(...) {dcast.data.table(...)}
  
@@ -282,11 +413,11 @@
    dt <- data.table(Sens   = rc$sensitivities,
                     Spec   = rc$specificities,
                     Thresh = rc$thresholds )
-   dt[,TP   := sapply(Thresh, function(th) sum(rc$cases    > th))]
-   dt[,TN   := sapply(Thresh, function(th) sum(rc$controls < th))]
-   dt[,FP   := sapply(Thresh, function(th) sum(rc$controls > th))]
-   dt[,FN   := sapply(Thresh, function(th) sum(rc$cases    < th))]
-   dt[,Cost := FP * cost.fp + FN * cost.fn]
+   dt[, TP   := sapply(Thresh, function(th) sum(rc$cases    > th))]
+   dt[, TN   := sapply(Thresh, function(th) sum(rc$controls < th))]
+   dt[, FP   := sapply(Thresh, function(th) sum(rc$controls > th))]
+   dt[, FN   := sapply(Thresh, function(th) sum(rc$cases    < th))]
+   dt[, Cost := FP * cost.fp + FN * cost.fn]
    if (plot)
      print(ggroc(rc))
    dt
@@ -304,7 +435,7 @@
    if(!is.null(mark.sens))
      p <- p + geom_vline(aes(xintercept = ifelse(is.null(mark.spec), NULL, 1-mark.spec)), linetype = 2, col = "slateblue")
    if(!is.null(mark.spec))
-     p <- p + geom_hline(aes(yintercept = mark.sens),linetype=2,col="slateblue")
+     p <- p + geom_hline(aes(yintercept = mark.sens), linetype=2, col="slateblue")
    p <- p + 
      geom_abline(aes(intercept = 0, slope = 1), col = "gray50") + 
      geom_line(data = dat, aes(1 - Specificity, Sensitivity)) + 
@@ -350,7 +481,7 @@
    if(!is.null(mark.sens))
      p <- p + geom_vline(aes(xintercept = ifelse(is.null(mark.spec), NULL, 1-mark.spec)), linetype = 2, col = "slateblue")
    if(!is.null(mark.spec))
-     p <- p + geom_hline(aes(yintercept = mark.sens),linetype=2,col="slateblue")
+     p <- p + geom_hline(aes(yintercept = mark.sens), linetype=2, col="slateblue")
    p <- p + 
      geom_abline(aes(intercept = 0, slope = 1), col = "gray50") + 
      geom_line(data = dat, aes(1 - Specificity, Sensitivity, col = paste("AUC: ", round(AUC, 3)))) + 
@@ -367,6 +498,29 @@
      geom_hline(aes(yintercept = 0), size = 1) + 
      geom_vline(aes(xintercept = 0), size = 1)
    p
+ }
+ 
+ 
+ # NPS Functions
+ npsind <- function(x, as.factor=F) {
+   # Converts raw scores to -1,0,1 indicators
+   x <- x[!is.na(x)]
+   x <- ifelse(x > 6, ifelse(x > 8, 1, 0), -1)
+   if(as.factor)
+     x <- factor(x, levels=-1:1)
+   x
+ }
+ npsprop <- function(x) {
+   # Given individual raw scores, calculates the proportion of detractors (-1), passives (0), and promotors (1)
+   prop.table(table(npsind(x, as.factor=T)))[c("-1", "0", "1")]
+ }
+ nps <- function(x) {
+   # Given individual raw scores, calculates group NPS score
+   npsprop(x)[["1"]] - npsprop(x)[["-1"]]
+ }
+ moe <- function(x) {
+   # Calculates the margin of error for the NPS score
+   qnorm(.975) * sd(npsind(x)) / sqrt(length(x))
  }
  
  # Adding to ggplot2
@@ -413,12 +567,155 @@
  }
  environment(geom_violin2) <- ggen
  
+ geom_prop <- function(mapping = NULL, data = NULL, stat = "identity", position = "identity", bins = 10,
+                       ..., na.rm = FALSE, show.legend = NA, inherit.aes = TRUE) {
+   data2 <- data[, {
+     lst <- list(x = quantile(eval(mapping$x), (1:bins)/bins - .5/bins),
+                 y = tapply(eval(mapping$y), quantcut(eval(mapping$x), (0:bins)/bins), mean),
+                 n = tapply(eval(mapping$y), quantcut(eval(mapping$x), (0:bins)/bins), length) )
+     names(lst) <- as.character(map[names(lst)])
+   }, by = as.character(mapping[intersect(c("colour", "group"), names(mapping))]) ]
+   mapping$xlim <- substitute(xlim)
+   mapping$ylim <- substitute(ylim)
+   mapping <- aes(x = x, y = y, ylim = ylim, ymax = ymax)
+   geom_errorbar(mapping = mapping, data = data, stat = stat, position = position, ..., na.r = na.rm, show.legend = show.legend, inherit.aes = inherit.aes)
+ }
+ 
  #ggplot(mtcars, aes(factor(cyl), mpg, fill = as.factor(vs))) + geom_violin2() #+ coord_flip() + facet_grid(.~cyl)
  #ggplot(mtcars, aes(factor(cyl), mpg, fill = "blue")) + geom_violin() #+ coord_flip() + facet_grid(.~cyl)
  
+ ggsurv <- function(s, CI = 'def', plot.cens = T, surv.col = 'gg.def',
+                    cens.col = NULL, lty.est = 1, lty.ci = 2,
+                    cens.shape = 3, back.white = F, xlab = 'Time',
+                    ylab = 'Survival', main = ''){
+   
+   library(ggplot2)
+   strata <- ifelse(is.null(s$strata) ==T, 1, length(s$strata))
+   stopifnot(length(surv.col) == 1 | length(surv.col) == strata)
+   stopifnot(length(lty.est) == 1 | length(lty.est) == strata)
+   
+   ggsurv.s <- function(s, CI = 'def', plot.cens = T, surv.col = 'gg.def',
+                        cens.col = 'red', lty.est = 1, lty.ci = 2,
+                        cens.shape = 3, back.white = F, xlab = 'Time',
+                        ylab = 'Survival', main = ''){
+     
+     dat <- data.frame(time = c(0, s$time),
+                       surv = c(1, s$surv),
+                       up = c(1, s$upper),
+                       low = c(1, s$lower),
+                       cens = c(0, s$n.censor))
+     dat.cens <- subset(dat, cens != 0)
+     
+     col <- ifelse(surv.col == 'gg.def', 'black', surv.col)
+     
+     pl <- ggplot(dat, aes(x = time, y = surv)) +
+       xlab(xlab) + ylab(ylab) + ggtitle(main) +
+       geom_step(col = col, lty = lty.est)
+     
+     pl <- if(CI == T | CI == 'def') {
+       pl + geom_step(aes(y = up), color = col, lty = lty.ci) +
+         geom_step(aes(y = low), color = col, lty = lty.ci)
+     } else (pl)
+     
+     pl <- if(plot.cens == T & length(dat.cens) > 0){
+       if(is.null(cens.col))
+         pl + geom_point(data = dat.cens, aes(y = surv, col = group), shape = cens.shape)
+       else
+         pl + geom_point(data = dat.cens, aes(y = surv), shape = cens.shape, col = cens.col)
+     } else if (plot.cens == T & length(dat.cens) == 0){
+       stop ('There are no censored observations')
+     } else(pl)
+     
+     pl <- if(back.white == T) {pl + theme_bw()
+     } else (pl)
+     pl
+   }
+   
+   ggsurv.m <- function(s, CI = 'def', plot.cens = T, surv.col = 'gg.def',
+                        cens.col = 'red', lty.est = 1, lty.ci = 2,
+                        cens.shape = 3, back.white = F, xlab = 'Time',
+                        ylab = 'Survival', main = '') {
+     n <- s$strata
+     
+     groups <- factor(unlist(strsplit(names
+                                      (s$strata), '='))[seq(2, 2*strata, by = 2)])
+     gr.name <-  unlist(strsplit(names(s$strata), '='))[1]
+     gr.df <- vector('list', strata)
+     ind <- vector('list', strata)
+     n.ind <- c(0, n); n.ind <- cumsum(n.ind)
+     for(i in 1:strata) ind[[i]] <- (n.ind[i]+1):n.ind[i+1]
+     
+     for(i in 1:strata){
+       gr.df[[i]] <- data.frame(
+         time = c(0, s$time[ ind[[i]] ]),
+         surv = c(1, s$surv[ ind[[i]] ]),
+         up = c(1, s$upper[ ind[[i]] ]),
+         low = c(1, s$lower[ ind[[i]] ]),
+         cens = c(0, s$n.censor[ ind[[i]] ]),
+         group = rep(groups[i], n[i] + 1))
+     }
+     
+     dat <- do.call(rbind, gr.df)
+     dat.cens <- subset(dat, cens != 0)
+     
+     pl <- ggplot(dat, aes(x = time, y = surv)) +
+       xlab(xlab) + ylab(ylab) + ggtitle(main) +
+       geom_step(aes(col = group))
+     
+     col <- if(length(surv.col == 1)){
+       scale_colour_manual(name = gr.name, values = rep(surv.col, strata))
+     } else{
+       scale_colour_manual(name = gr.name, values = surv.col)
+     }
+     
+     pl <- if(surv.col[1] != 'gg.def'){
+       pl + col
+     } else {pl + scale_colour_discrete(name = gr.name)}
+     
+     line <- if(length(lty.est) == 1){
+       scale_linetype_manual(name = gr.name, values = rep(lty.est, strata))
+     } else {scale_linetype_manual(name = gr.name, values = lty.est)}
+     
+     pl <- pl + line
+     
+     pl <- if(CI == T) {
+       if(length(surv.col) > 1 && length(lty.est) > 1){
+         stop('Either surv.col or lty.est should be of length 1 in order
+             to plot 95% CI with multiple strata')
+       }else if((length(surv.col) > 1 | surv.col == 'gg.def')[1]){
+         pl + geom_step(aes(y = up, color = group), lty = lty.ci) +
+           geom_step(aes(y = low, color = group), lty = lty.ci)
+       } else{pl +  geom_step(aes(y = up, lty = group), col = surv.col) +
+           geom_step(aes(y = low, lty = group), col = surv.col)}
+     } else {pl}
+     
+     
+     pl <- if(plot.cens == T & length(dat.cens) > 0){
+       if(is.null(cens.col))
+         pl + geom_point(data = dat.cens, aes(y = surv, col = group), shape = cens.shape)
+       else
+         pl + geom_point(data = dat.cens, aes(y = surv), shape = cens.shape, col = cens.col)
+     } else if (plot.cens == T & length(dat.cens) == 0){
+       stop ('There are no censored observations')
+     } else(pl)
+     
+     pl <- if(back.white == T) {pl + theme_bw()
+     } else (pl)
+     pl
+   }
+   pl <- if(strata == 1) {ggsurv.s(s, CI , plot.cens, surv.col ,
+                                   cens.col, lty.est, lty.ci,
+                                   cens.shape, back.white, xlab,
+                                   ylab, main)
+   } else {ggsurv.m(s, CI, plot.cens, surv.col ,
+                    cens.col, lty.est, lty.ci,
+                    cens.shape, back.white, xlab,
+                    ylab, main)}
+   pl
+ }
  
  
-#   grid.align <- function (...,nrow=NULL,ncol=NULL, newpage=T,byrow=T,freecol=T,freerow=T) {
+#   grid.align <- function (..., nrow=NULL, ncol=NULL, newpage=T, byrow=T, freecol=T, freerow=T) {
 #     ps <- list(...)
 #     n  <- length(ps)
 #     if(is.null(nrow)) {
@@ -438,7 +735,7 @@
 #     }
 #     if (newpage)
 #       grid.newpage()
-#     gs <- lapply(ps,ggplotGrob)
+#     gs <- lapply(ps, ggplotGrob)
 #     
 #     # For each row of plots, standardize ylim
 #     for (i in 1:nrow) {
@@ -446,7 +743,7 @@
 #         ind <- which(((1:n)-1) %/% nrow == i-1)
 #       else
 #         ind <- which(((1:n)-1) %% nrow == i-1)
-#       lims <- do.call(cbind,lapply(ps[ind],function(pl) {
+#       lims <- do.call(cbind, lapply(ps[ind], function(pl) {
 #         if (pl$scales$has_scale("y"))
 #           lim <- pl$scales$get_scales("y")$limits
 #         else {
@@ -460,7 +757,7 @@
 #       }))
 #       miny <- min(lims[1,])
 #       maxy <- max(lims[2,])
-#       ps[ind] <- lapply(ps[ind],function(pl) {pl <- pl + ylim(c(miny,maxy)); pl})
+#       ps[ind] <- lapply(ps[ind], function(pl) {pl <- pl + ylim(c(miny, maxy)); pl})
 #     }
 #     # For each column of plots, standardize xlim
 #     for (i in 1:ncol) {
@@ -468,7 +765,7 @@
 #         ind <- which(((1:n)-1) %% ncol == i-1)
 #       else
 #         ind <- which(((1:n)-1) %/% ncol == i-1)
-#       lims <- do.call(cbind,lapply(ps[ind],function(pl) {
+#       lims <- do.call(cbind, lapply(ps[ind], function(pl) {
 #         if (pl$scales$has_scale("x"))
 #           lim <- pl$scales$get_scales("x")$limits
 #         else {
@@ -482,7 +779,7 @@
 #       }))
 #       minx <- min(lims[1,])
 #       maxx <- max(lims[2,])
-#       ps[ind] <- lapply(ps[ind],function(pl) {pl <- pl + xlim(c(minx,maxx)); pl})
+#       ps[ind] <- lapply(ps[ind], function(pl) {pl <- pl + xlim(c(minx, maxx)); pl})
 #     }
 #     # Standardize point size (?)
 #     
@@ -492,7 +789,7 @@
 #         ind <- which(((1:n)-1) %/% nrow == i-1)
 #       else
 #         ind <- which(((1:n)-1) %% nrow == i-1)
-#       maxheight <- do.call(grid::unit.pmax,lapply(ps[ind],function(pl) ggplotGrob(pl)$height[2:5]))
+#       maxheight <- do.call(grid::unit.pmax, lapply(ps[ind], function(pl) ggplotGrob(pl)$height[2:5]))
 #       gs[ind] <- lapply(gs[ind], function(g) {g$height[2:5] <- maxheight; g})
 #     }
 #     # For each column of plots, standardize the plot width and horizontal powition
@@ -501,69 +798,14 @@
 #         ind <- which(((1:n)-1) %% ncol == i-1)
 #       else
 #         ind <- which(((1:n)-1) %/% ncol == i-1)
-#       maxwidth <- do.call(grid::unit.pmax,lapply(ps[ind],function(pl) ggplotGrob(pl)$width[2:5]))
+#       maxwidth <- do.call(grid::unit.pmax, lapply(ps[ind], function(pl) ggplotGrob(pl)$width[2:5]))
 #       gs[ind] <- lapply(gs[ind], function(g) {g$width[2:5] <- maxwidth; g})
 #     }
 #     
-#     g <- do.call(arrangeGrob,c(gs,nrow=nrow,ncol=ncol))
+#     g <- do.call(arrangeGrob, c(gs, nrow=nrow, ncol=ncol))
 #     grid.draw(g)
 #     invisible(g)
 #   }
-#  
-#  
-#   getPassword <- function() {
-#     require(shiny)
-#     if(!file.exists("server.R")) {
-#       serverscript <- "
-#  library(shiny)
-#  shinyServer(function(input, output,session) {
-#      observe({
-#          input$button
-#          password <<- isolate(input$password)
-#      })
-#  })
-#       "
-#       write(serverscript,file="server.R")
-#     }
-#     if(!file.exists("ui.R")) {
-#       uiscript <- "
-#  library(shiny)
-#  shinyUI(
-#      sidebarPanel(textInput(\"password\",\"Enter password: \"),actionButton(\"button\",\"Enter\"))
-#  )
-#       "
-#       write(uiscript,file="ui.R")
-#     }
-#     runApp()
-#   }
-#  
-#  getPassword <- function() {
-#    require(tcltk)
-#    tt <- tktoplevel() 
-#    Password <- tclVar("") 
-#    password <- NULL
-#    tkf <- tkframe(tt,relief="ridge",borderwidth=3)
-#    ## Frame options:
-#    # borderwidth: width of border
-#    # relief:      style of border
-#    
-#    entry.Password <-tkentry(tkf,width="20",textvariable=Password,show="*") 
-#    tkgrid(tklabel(tkf,text="Please enter your password.")) 
-#    tkgrid(entry.Password) 
-#    OnOK <- function() 
-#    { 
-#      tkdestroy(tt)  
-#      password <<- tclvalue(Password) 
-#    } 
-#    OK.but <-tkbutton(tt,text="   OK   ",command=OnOK) 
-#    tkbind(entry.Password, "<Return>",OnOK) 
-#    tkgrid(tkf,OK.but)
-#    
-#    while(is.null(password))
-#    {}
-#    tkdestroy(tt)
-#    return(password)
-#  }
  
  invisible(tmp)
  

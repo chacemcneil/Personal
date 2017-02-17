@@ -21,7 +21,7 @@
  ssred    <- rgb(192, 80, 77, max = 255)
  sspurple <- rgb(128, 100, 162, max = 255)
  ssteal   <- rgb(75, 172, 198, max = 255)
- sscols <- c(ssgray, ssblue, ssyellow, ssgreen, ssred, sspurple, ssteal)
+ sscols <- c(ssblue, ssyellow, ssgreen, ssred, sspurple, ssteal, ssgray)
  
  ss_theme <- theme_bw() + theme(panel.border = element_blank(), 
                                 axis.line = element_line(ssgray),
@@ -29,6 +29,16 @@
                                 panel.grid.minor.y = element_line("dashed", size = .5, colour = ssgray),  
                                 panel.grid.major.x = element_line(size = .5, colour = ssgray))
  
+ # HTML options use at the beginning of markdown as follows
+ # ---
+ # title: "Title"
+ # output:
+ #   html_document:
+ #     theme: united
+ #     highlight: tango
+ # ---
+ html_themes <- c("default", "cerulean", "journal", "flatly", "readable", "spacelab", "united", "cosmo", "lumen",  "paper", "sandstone", "simplex", "yeti")
+ html_highlights <- c("default", "tango", "pygments", "kate",  "monochrome", "espresso", "zenburn", "haddock", "textmate")
  
  
  # Creating bulleted lists
@@ -41,6 +51,20 @@
                       sep = "", collapse = "\n" ),
                 "\n</", kind, ">", sep = "" )
    str
+ }
+ 
+ html_summary <- function(mod, names = NULL, ...) {
+   # Forms an htmlTable from a linear model
+   tab <- summary(mod)$coefficients
+   if(!is.null(names))
+     row.names(tab) <- names
+   colnames(tab)[4] <- "P-value"
+   tab[,1] <- round(tab[,1], digits = 3)
+   tab[,2] <- signif(tab[,2], digits = 4)
+   tab[,3] <- round(tab[,3], digits = 2)
+   tab[,4] <- signif(tab[,4], digits = 2)
+   tab[,4] <- ifelse(tab[,4] < 0.0001, "&lt;0.0001", tab[,4])
+   htmlTable(tab, ...)
  }
  
  roundNumeric <- function(dt, digits=1) {
@@ -68,6 +92,30 @@
      p$layers
  }
  
+ chunkplot <- function(chunk, num) {
+   require(knitr)
+   include_graphics(paste0(opts_chunk$get("fig.path"), chunk, "-", num, ".png"))
+ }
+ 
+ sidebyside <- function(..., sep = 1) {
+   lst <- list(...)
+   sep <- paste0("<th>", paste0(rep("&nbsp;", sep), collapse = ""), "</th>")
+   print("<table class='gmisc_table' style='border-collapse: collapse;'>\n<tr>")
+   for (i in seq_along(lst)) {
+     print("<th>")
+     print(lst[[i]])
+     print("</th>")
+   }
+   print("</tr>\n</table>")
+   html <- paste0("<table class='gmisc_table' style='border-collapse: collapse;' >\n<tr>",
+                  paste0("<th>", c(...), "</th>", collapse = sep),
+                  "</tr>\n</table>")
+   html <- c("<table class='gmisc_table' style='border-collapse: collapse;' >\n<tr>",
+                  unlist(paste0("<th>", lst, "</th>")),
+                  "</tr>\n</table>")
+   class(html) <- c("knit_image_paths", "knit_asis")
+   html
+ }
  
  markdown_init <- function(filename, echo = T) {
    ## initialize functions and options to manage figure/table labels, used for html markdown and notebooks.

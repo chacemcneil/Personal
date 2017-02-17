@@ -1,5 +1,6 @@
 # How to detect multivariate separation of categories
  library(data.table)
+ library(ggplot2)
  library(grid)
  library(gridExtra)
  

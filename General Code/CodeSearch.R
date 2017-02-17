@@ -1,6 +1,6 @@
 # Code for searching through other code files. Uses regular expressions for filtering files and for searching through lines of code files.
  
- getwd()
+ dir = getwd()
  
  code_search <- function(pattern, filepattern = "\\.R$", removeEmpty = T, replace = NULL, directory = getwd(), value = F, ...) {
    files <- dir(directory, ...)
@@ -26,23 +26,19 @@
    results
  }
  
- name <- "Explore"
- results <- code_search (name, directory = gsub("Projects.*", "Projects", getwd()), recursive = T, value = T)
  
- code_search (name, directory = gsub("Projects.*", "Projects", getwd()), recursive = T, replace = "")
+ #library(abind)
+ results <- code_search(pattern = "(require|library)\\([[:alnum:]]+\\)", filepattern = "\\.R", directory = dir, recursive = T, value = T)
+ pckgs <- as.vector(unique(gsub("^.*(library|require)\\(([[:alnum:]]+)\\).*$","\\2", do.call(c, results))))
+ #code_search(pattern = "library\\(reshape\\)", filepattern = "\\.R", directory = "..", recursive = T)
  
- results <- code_search (name, directory = gsub("Projects.*", "Projects", getwd()), recursive = T)
+ syspckgs <- data.table(installed.packages())$Package
+ 
+ missing_pckgs <- setdiff(pckgs, syspckgs)
+ missing_pckgs
  
  
- tmp <- names(results)
- file.edit(tmp)
- 
- results <- code_search("D10_PCP", filepattern = "\\.R", directory = "..", recursive = T)
- length(results)
- i <- 1
- file.edit(names(results)[i]); results[i]; (i <- i + 1)
- 
- ?edit
+ results <- code_search(pattern = "DEV10", filepattern = "\\.R", directory = getwd(), recursive = T, value = T)
  
  
 # End script
