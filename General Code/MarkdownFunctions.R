@@ -67,31 +67,6 @@
    htmlTable(tab, ...)
  }
  
- roundNumeric <- function(dt, digits=1) {
-   dt <- as.data.table(lapply(dt, function(x) {
-     if(class(x) == "numeric") 
-       round(x, digits) 
-     else 
-       x
-   }))
- }
- 
- scale_x_dayyear <- function(p) {
-   values <- with(p$data, eval(p$mapping[["x"]]))
-   days <- 365.25
-   left <- ggplot_build(p)$panel$ranges[[1]]$x.range[1]
-   p + scale_x_continuous(breaks = c(left, pretty(range(values, na.rm=T)),
-                                     left, pretty(range(values/days, na.rm = T))*days ), 
-                          labels = c("Days:", pretty(range(values, na.rm = T)),
-                                     "\nYears:", paste0("\n", pretty(range(values/days, na.rm = T))) ) ) + 
-     geom_vline(data = data.frame(x = pretty(values/days)*days), aes(xintercept = x), linetype = 2, col = "seagreen", size = 1) +
-     theme(panel.grid.minor = element_blank(),
-           axis.text.x = element_text(colour = rep(c("black", "seagreen"),
-                                                   times = c(length(pretty(range(values, na.rm = T)))+1,
-                                                             length(pretty(range(values/days, na.rm = T)))+1 )), size = 15)) +
-     p$layers
- }
- 
  chunkplot <- function(chunk, num) {
    require(knitr)
    include_graphics(paste0(opts_chunk$get("fig.path"), chunk, "-", num, ".png"))

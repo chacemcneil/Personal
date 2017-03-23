@@ -88,6 +88,41 @@
  
  
  
+ ## Adjustment to power analysis. Value in using model residuals, rather than just the response variable.
+ 
+ N <- 1e4
+ n <- 30
+ a <- 5.4
+ b1 <- 0.7
+ b2 <- 0.5
+ 
+ ps1 <- ps2 <- numeric(0)
+ vars1 <- vars2 <- varresid <- numeric(0)
+ for (i in 1:N) {
+   cat(paste0("\rIteration: ", i))
+   one <- data.table(x = rnorm(2*n), ind = rep(0:1, each = n))[, list(x, ind, y1 = rnorm(2*n, a + b1*ind))]
+   two <- data.table(x = rnorm(2*n), ind = rep(0:1, each = n))[, list(x, ind, y2 = rnorm(2*n, a + b1*ind + b2*x, .85))]
+   vars1[i] <- var(one$y1)
+   vars2[i] <- var(two$y2)
+   varresid[i] <- var(lm(y2 ~ x, data = two)$residuals)
+   mod1 <- lm(y1 ~ ind, data = one)
+   ps1[i] <- summary(mod1)$coef["ind", 4]
+   mod2 <- lm(y2 ~ ind + x, data = two)
+   ps2[i] <- summary(mod2)$coef["ind", 4]
+ }
+ hist(vars1)
+ hist(vars2)
+ hist(varresid)
+ mean(ps1 < 0.05)
+ mean(ps2 < 0.05)
+ 
+ pwr.t.test(d = 0.7, n = n)
+ pwr.t.test(d = 0.7/.85, n = n)
+ 
+ # Conclusion: The variation of the response variable y2 is .85, but because of x appears to be close to 1. The power to detect
+ #             the effect of the variable ind is higher than would be calculated using a variation of 1. 
+ 
+ 
  
  
 # End script

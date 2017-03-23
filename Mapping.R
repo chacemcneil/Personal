@@ -120,7 +120,7 @@
    
    
    
-   dir("../Miscellaneous/Zipcodes/cb_2014_us_zcta510_500k")
+   dir("../../Zipcodes/cb_2014_us_zcta510_500k")
    
    
    G <- plotGoogleMaps(all_states_shp)

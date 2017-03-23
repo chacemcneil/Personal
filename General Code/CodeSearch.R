@@ -38,7 +38,11 @@
  missing_pckgs
  
  
- results <- code_search(pattern = "DEV10", filepattern = "\\.R", directory = getwd(), recursive = T, value = T)
+ results <- code_search(pattern = "Miscellaneous", filepattern = "\\.R", directory = "..", recursive = T, value = T, ignore.case = T)
+ 
+ 
+ 
+ 
  
  
 # End script
