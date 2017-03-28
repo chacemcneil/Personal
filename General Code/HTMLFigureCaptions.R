@@ -142,14 +142,6 @@
  
  
  
- ## Different option (does not have reference capabilities)
- # knit_hooks$set(htmlcap = function(before, options, envir) {
- #   if(!before) {
- #     paste('<p class="caption">',options$htmlcap,"</p>",sep="")
- #     }
- #     })
- 
- 
  
 # End script
  
