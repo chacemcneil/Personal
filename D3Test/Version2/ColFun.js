@@ -4,35 +4,35 @@
 var margin = 0.001;
 
 function getcolfun (type1,type2) {
+  var fun = rect_rect;
   if (type1=="rect" && type2=="rect")
-    var fun = rect_rect;
+    fun = rect_rect;
   else if (type1=="rect" && type2=="circ")
-    var fun = rect_circ;
+    fun = rect_circ;
   else if (type1=="circ" && type2=="rect")
-    var fun = circ_rect;
+    fun = circ_rect;
   else if (type1=="circ" && type2=="circ")
-    var fun = circ_circ;
+    fun = circ_circ;
   else if (type1=="poly" && type2=="poly")
-    var fun = poly_poly;
+    fun = poly_poly;
   else if (type1=="circ" && type2=="poly")
-    var fun = circ_poly;
+    fun = circ_poly;
   else if (type1=="poly" && type2=="circ")
-    var fun = poly_circ;
+    fun = poly_circ;
   else if (type1=="rect" && type2=="poly")
-    var fun = rect_poly;
+    fun = rect_poly;
   else if (type1=="poly" && type2=="rect")
-    var fun = poly_rect;
+    fun = poly_rect;
   return fun;
 }
 
 function projectvec (vec1x,vec1y,vec2x,vec2y) {
   // project vec1 onto vec2
-  if(vec2x==0 && vec2y==0) {
-    //console.log("div by 0")
-    return {x:0, y:0};
+  if(Math.abs(vec2x) < 0.001 && Math.abs(vec2y) < 0.001) {
+    return {x:0, y:0, f:0};
   }
   var f = (vec1x*vec2x + vec1y*vec2y)/(vec2x*vec2x + vec2y*vec2y);
-  return {x:f*vec2x, y:f*vec2y};
+  return {x:f*vec2x, y:f*vec2y, f:f};
 }
 
 function rightvec (vecx,vecy) {
@@ -160,7 +160,6 @@ function circ_poly (circ,poly) {
   // find which region the cx,cy is in, currently assuming clockwise polygons
   var outside = 0;
   for (var i=0, j=poly.points.length-1; i<poly.points.length; j=i++) {
-  console.log("inside_out",circ.x,circ.y,poly.x,poly.y);
     var edge = {x:poly.points[i].x-poly.points[j].x,y:poly.points[i].y-poly.points[j].y},
         norm = rightvec(edge.x,edge.y),
         one  = {x:circ.x-poly.points[i].x-poly.x,y:circ.y-poly.points[i].y-poly.y},
@@ -188,20 +187,73 @@ function circ_poly (circ,poly) {
 }
 
 function poly_circ (poly,circ) {
-  var res = circ_poly(circ,poly)
+  var res = circ_poly(circ,poly);
   if (res==0)
     return res;
   return {x:-res.x,y:-res.y};
 }
 
 function poly_rect (poly,rect) {
-  
-  return ;
+  var bestdx = 100, bestdy = 0, bestr2 = 10000,
+      dirx = Math.sign(poly.points[poly.points.length-1].x - poly.points[poly.points.length-2].x),
+      diry = Math.sign(poly.points[poly.points.length-1].y - poly.points[poly.points.length-2].y);
+  for(var i = 0, j = poly.points.length - 1; i < poly.points.length; j = i++) {
+    var dx = poly.points[i].x - poly.points[j].x;
+    var dy = poly.points[i].y - poly.points[j].y;
+    if(Math.sign(dx) > dirx && (rect.x+rect.hw) - (poly.points[j].x+poly.x) < Math.sqrt(bestr2)) {
+      bestdx = rect.x+rect.hw - poly.points[j].x - poly.x;
+      if(bestdx <= 0) return 0;
+      bestdy = 0;
+      bestr2 = bestdx*bestdx;
+    } else if(Math.sign(dx) < dirx && (poly.points[j].x+poly.x) - (rect.x-rect.hw) < Math.sqrt(bestr2)) {
+      bestdx = rect.x-rect.hw - poly.points[j].x - poly.x;
+      if(bestdx >= 0) return 0;
+      bestdy = 0;
+      bestr2 = bestdx*bestdx;
+    }
+    if(Math.sign(dy) > diry && (rect.y+rect.hh) - (poly.points[j].y+poly.y) < Math.sqrt(bestr2)) {
+      bestdx = 0;
+      bestdy = rect.y+rect.hh - poly.points[j].y - poly.y;
+      if(bestdy <= 0) return 0;
+      bestr2 = bestdy*bestdy;
+    } else if(Math.sign(dy) < diry && (poly.points[j].y+poly.y) - (rect.y-rect.hh) < Math.sqrt(bestr2)) {
+      bestdx = 0;
+      bestdy = rect.y-rect.hh - poly.points[j].y - poly.y;
+      if(bestdy >= 0) return 0;
+      bestr2 = bestdy*bestdy;
+    }
+    
+    dirx = Math.sign(dx);
+    diry = Math.sign(dy);
+    
+    if(dx != 0 && dy != 0) {
+      var res = projectvec(rect.x + Math.sign(dy)*rect.hw - poly.points[i].x - poly.x, 
+                           rect.y - Math.sign(dx)*rect.hh - poly.points[i].y - poly.y,
+                           -dy, dx);
+      if(res.f > 0) {
+        //console.log(dx, dy, res);
+        return 0;
+      }
+      dx = res.x;
+      dy = res.y;
+      var r2 = dx*dx + dy*dy;
+      if (r2 < bestr2) {
+        //console.log("angle");
+        bestdx = dx;
+        bestdy = dy;
+        bestr2 = r2;
+      }
+    }
+  }
+  //console.log("poly_rect",poly.points, rect.x, "   ", rect.y, {x:bestdx, y:bestdy});
+  return {x:bestdx, y:bestdy};
 }
 
 function rect_poly (rect,poly) {
-  
-  return ;
+  var res = poly_rect(poly, rect);
+  if (res==0)
+    return res;
+  return {x:-res.x,y:-res.y};
 }
 
 function poly_poly (one,two) {

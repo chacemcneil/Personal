@@ -208,25 +208,28 @@ class Thing {
     if(tentative===undefined)
       tentative = 0;
     
+    //console.log(this.x, this.y, x, y);
     this.x = this.x*relative + x;
     this.y = this.y*relative + y;
     this.obj.attr("transform","translate("+this.x+","+this.y+")");
     
-    var res = this.checkCell()
-    return(res)
+    var res = this.checkCell();
+    return(res);
   }
   
   isPointInPoly(pt) {
-    console.log("point add")
+    console.log("point add");
       pt.x = pt.x - this.x;
       pt.y = pt.y - this.y;
       for(var c = false, d = false, i = -1, l = this.poly.length, j = l - 1; ++i < l; j = i) {
           ((this.poly[i].y <= pt.y && pt.y <= this.poly[j].y) || (this.poly[j].y <= pt.y && pt.y <= this.poly[i].y))
           && (pt.x <  (this.poly[j].x - this.poly[i].x) * (pt.y - this.poly[i].y) / (this.poly[j].y - this.poly[i].y) + this.poly[i].x)
           && (c = !c) ;
+          
           ((this.poly[i].y <= pt.y && pt.y <= this.poly[j].y) || (this.poly[j].y <= pt.y && pt.y <= this.poly[i].y))
           && (pt.x <=(this.poly[j].x - this.poly[i].x) * (pt.y - this.poly[i].y) / (this.poly[j].y - this.poly[i].y) + this.poly[i].x)
           && (d = !d) 
+          
           //if (pt.x == (this.poly[j].x - this.poly[i].x) * (pt.y - this.poly[i].y) / (this.poly[j].y - this.poly[i].y) + this.poly[i].x) {
           //if (pt.x == (this.poly[j].x - this.poly[i].x) * (pt.y - this.poly[i].y) / (this.poly[j].y - this.poly[i].y) + this.poly[i].x) {
           //  c = true;
@@ -274,16 +277,16 @@ class Thing {
           break;
       }
       if(curcell !== null) {
-        var poss = curcell.ThingList
-        var node = poss.start
+        var poss = curcell.ThingList;
+        var node = poss.start;
         while(node !== null) {
           if(this!==node.thing) {
             //var vec = rect_rect(this,node.thing);
             //console.log(node.thing);
             var vec = getcolfun(this.type,node.thing.type)(this,node.thing);
             if(vec) {
-              //console.log(vec)
-              col += 1
+              //console.log(vec);
+              col += 1;
               if(!fyi) { // Ignore if only checking for a collision, rather than colliding
                 this.collide(node.thing,vec);
                 node.thing.collided(this,{x:-vec.x,y:-vec.y});
@@ -431,6 +434,8 @@ class Bll extends Thing {
       //console.log(Math.sqrt(this.yvel*this.yvel + 2*this.grav*vec.y),vec.y,this.yvel);
       this.yvel = Math.sqrt(Math.max(this.yvel*this.yvel + 2*this.grav*vec.y,0))*Math.sign(this.yvel);
     }
+    if(thing.type == "poly")
+      console.log(this, thing, vec, this.xvel, this.yvel);
     switch(thing.class) {
       case "Main":
       case "Block":
@@ -462,6 +467,8 @@ class Bll extends Thing {
         thing.yvel = b1.y + f2.y;
         break;
     }
+    if(thing.type == "poly")
+      console.log(this.xvel, this.yvel);
     return ;
   }
   
