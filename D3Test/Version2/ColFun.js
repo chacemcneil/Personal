@@ -3,8 +3,8 @@
 
 var margin = 0.001;
 
-function getcolfun (type1,type2) {
-  var fun = rect_rect;
+function getcolfun (obj1,obj2) {
+  var fun = rect_rect, type1 = obj1.type, type2 = obj2.type;
   if (type1=="rect" && type2=="rect")
     fun = rect_rect;
   else if (type1=="rect" && type2=="circ")
@@ -23,12 +23,12 @@ function getcolfun (type1,type2) {
     fun = rect_poly;
   else if (type1=="poly" && type2=="rect")
     fun = poly_rect;
-  return fun;
+  return fun(obj1, obj2);
 }
 
 function projectvec (vec1x,vec1y,vec2x,vec2y) {
   // project vec1 onto vec2
-  if(Math.abs(vec2x) < 0.001 && Math.abs(vec2y) < 0.001) {
+  if(Math.abs(vec2x) < 0.0001 && Math.abs(vec2y) < 0.0001) {
     return {x:0, y:0, f:0};
   }
   var f = (vec1x*vec2x + vec1y*vec2y)/(vec2x*vec2x + vec2y*vec2y);
@@ -121,7 +121,7 @@ function circ_rect (circ,rect) {
     return 0;
   }
   if (ix!=0 && iy!=0) {
-    //console.log("corner bounce",Math.floor(circ.x/cellwidth),Math.floor(rect.x/cellwidth))
+    
   }
   return {x:dx,y:dy};
 }
@@ -231,21 +231,19 @@ function poly_rect (poly,rect) {
                            rect.y - Math.sign(dx)*rect.hh - poly.points[i].y - poly.y,
                            -dy, dx);
       if(res.f > 0) {
-        //console.log(dx, dy, res);
+        
         return 0;
       }
       dx = res.x;
       dy = res.y;
       var r2 = dx*dx + dy*dy;
       if (r2 < bestr2) {
-        //console.log("angle");
         bestdx = dx;
         bestdy = dy;
         bestr2 = r2;
       }
     }
   }
-  //console.log("poly_rect",poly.points, rect.x, "   ", rect.y, {x:bestdx, y:bestdy});
   return {x:bestdx, y:bestdy};
 }
 
