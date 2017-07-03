@@ -1,0 +1,442 @@
+---
+title: "Linear Programming"
+output: html_document
+---
+
+
+```{r, echo=FALSE, fig.height=10, fig.width=16, comment = "", warning = FALSE, message = FALSE}
+# Integer Linear Programming Examples
+library(data.table)
+library(dplyr)
+library(CMcCode)
+library(htmlTable)
+library(lpSolve)
+library(MASS)
+library(readODS)
+library(rgl)
+library(Rglpk)
+library(scales)
+
+```
+
+## Introduction
+
+The goal of linear programming is to obtain values, $x_1 \dots x_n$, which maximize a linear objective function subject to a set of given constraints. In standard form the problem is defined as:
+
+Maximize $$\boldsymbol{c}^\boldsymbol{T}\cdot\boldsymbol{x}$$ subject to the constraints $$\boldsymbol{Ax} \le \boldsymbol{b} \\ x_i \ge 0$$ where $\boldsymbol{x} = (x_1, \dots, x_n)$. Constraints of the form $\boldsymbol{Ax} \ge \boldsymbol{b}$ or $\boldsymbol{Ax} = \boldsymbol{b}$ can also be made to fit this form. Some constraints are not able to fit this form. Examples include: $$2x_1 + 3x_2 - x_3 < 4 \\ x_1 - \frac{3}{4}x_2 \ne 4 \\ x_3 \le -2 \quad\text{or}\quad x_3 \ge 2$$
+
+### Typical textbook problem
+You are a store manager placing an order for two of your most popular products. Each of Product A is purchased at \$40 and sells for \$80. Product B costs \$120 and sells for \$200. To meet inventory requirements, you need to purchase at least 30 units of Product A. Both products are quite large, and your store only has room for 80 total units. You also have a budget of \$6,000. How many of each product should you buy to maximize profit?
+
+Constraints:
+
+$$\boldsymbol{A} \ge 0 \\ \boldsymbol{B} \ge 0 \\ \boldsymbol{A} \ge 30 \\ \boldsymbol{A} + \boldsymbol{B} \le 80 \\ \$40\boldsymbol{A} + \$120\boldsymbol{B} \le \$6,000$$
+
+Maximize:
+
+$\boldsymbol{P} = \$40\boldsymbol{A} + \$80\boldsymbol{B}$
+
+```{r, echo = FALSE}
+plot(c(0, 90), c(0, 90), type = "n", xlab = "Product A", ylab = "Product B")
+a <- c(30, 30, 45, 80)
+b <- c(0, 40, 35, 0)
+polygon(c(a, a[1]), c(b, b[1]), density = 15, col = "seagreen")
+abline(h = 0, v = 0, lwd = 3)
+abline(v = 30)
+abline(50, -1/3)
+abline(80, -1)
+
+```
+
+```{r, echo = FALSE, fig.align = "center"}
+df <- data.table(ProdA = a, ProdB = b)[, Profit := dollar(40*ProdA + 80*ProdB)]
+htmlTable(df, rnames = FALSE, css.cell = "padding-left: 2em; padding-right: 2em", align = "r", css.table = "margin-top: 1em; margin-bottom: 1em;")
+```
+
+
+### Multiple dimensions
+
+In general, optimization problems involve many more variables and many more constraints. In complex problems, the process of finding every vertex and calculating the objective function becomes too time consuming. 
+
+Graph example.
+
+<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+
+```{r, eval = FALSE, echo = FALSE}
+coords <- data.table(x = c(1, 0, 0, 2, -1, 1, 0), 
+                     y = c(0, 1, 0, 1, 1.5, 1, 0), 
+                     z = c(0, 0, 1, 0, 0, 3, 1), 
+                     const = c(0, 0, 0, -5.9, -2, -10, -2.9),
+                     col = c("red", "green", "blue", "orange", "purple", "yellow", "pink"),
+                     alpha = .6,
+                     ineq = c(">", ">", ">", "<", "<", "<", "<"))
+coords[, x := x*ifelse(ineq=="<", -1, 1)]
+coords[, y := y*ifelse(ineq=="<", -1, 1)]
+coords[, z := z*ifelse(ineq=="<", -1, 1)]
+coords[, const := const*ifelse(ineq=="<", -1, 1)]
+
+## Planes defined by constraints
+
+open3d()
+obj <- plot3d(0, type = 'n', xlim = c(-1, 3), ylim = c(-1, 3), zlim = c(-1, 3), xlab = 'X', ylab = 'Y', zlab = 'Z')
+
+# for (i in 1:nrow(coords)) {
+#   obj <- c(obj, coords[i, planes3d(x, y, z, const, col = col, alpha = alpha)])
+# }
+obj <- c(obj, coords[1, planes3d(x, y, z, const, col = col, alpha = alpha)])
+obj <- c(obj, coords[2, planes3d(x, y, z, const, col = col, alpha = alpha)])
+obj <- c(obj, coords[3, planes3d(x, y, z, const, col = col, alpha = alpha)])
+obj <- c(obj, coords[4, planes3d(x, y, z, const, col = col, alpha = alpha)])
+obj <- c(obj, coords[5, planes3d(x, y, z, const, col = col, alpha = alpha)])
+obj <- c(obj, coords[7, planes3d(x, y, z, const, col = col, alpha = alpha)])
+obj <- c(obj, coords[6, planes3d(x, y, z, const, col = col, alpha = alpha)])
+
+## Feasible region
+
+open3d()
+plot3d(0, type = 'n', xlim = c(-1, 3), ylim = c(-1, 3), zlim = c(-1, 3), xlab = 'X', ylab = 'Y', zlab = 'Z')
+root <- currentSubscene3d()
+
+for (i in 1:nrow(coords)) {
+  newSubscene3d("inherit", "inherit", "inherit", copyShapes = TRUE, parent = root)
+  coords[i, planes3d(x, y, z, const, col = col, alpha = 1)]
+  for (j in setdiff(1:nrow(coords), i)) {
+    coords[j, clipplanes3d(x, y, z, const)]
+  }
+}
+```
+
+## Simplex Algorithm
+
+<a href = "https://en.wikipedia.org/wiki/Simplex_algorithm">Wikipedia</a>
+
+The process is very simple using basic matrix pivoting operations. Assume the following problem: 
+
+Maximize $$C = 2x - 3y - 4z$$ subject to $$x-y+z \le 6 \\ -2x + y + 3z \ge -4 \\ x, y, z \ge 0$$ To fit the design of the algorithm, the problem is reformulated as
+
+Minimize $$C = -2x + 3y + 4z$$ subject to $$x-y+z \le 6 \\ 2x - y - 3z \le 4 \\ x, y, z \ge 0$$ Slack variables are then introduced for each inequality, giving $$x-y+z+s = 6 \\ 2x - y - 3z + t = 4 \\ x, y, z, s, t \ge 0$$ This can be represented in the following table (in canonical form). The pivoting operations are also shown.
+
+```{r, echo = FALSE}
+# Display pivot operations
+{
+  rescale <- function(mat, rw, cl) {
+    mat[rw,] <- mat[rw,]/mat[rw, cl]
+    mat
+  }
+  
+  addrow <- function(mat, row1, row2, scale) {
+    mat[row2,] <- mat[row1,]*scale + mat[row2,]
+    mat
+  }
+  
+  addrows <- function(mat, rw, cl) {
+    for (i in setdiff(1:nrow(mat), rw)) {
+      mat <- addrow(mat, rw, i, -mat[i, cl]/mat[rw, cl])
+    }
+    mat
+  }
+  
+  pivot <- function(mat, rw, cl) {
+    mat %>% rescale(rw, cl) %>% addrows(rw, cl)
+  }
+  
+  disp <- function(mat) {
+    if(is.null(colnames(mat)))
+      colnames(mat) <- rep("", ncol(mat))
+    htmlTable(fractions(mat), css.table = "border: solid;", header = colnames(mat),
+              css.cell = paste(ifelse(1:ncol(mat) == ncol(mat), "border-left: dashed; border-left-width: 1px;", ""), "padding: 1em;") )
+  }
+}
+
+# Basic example
+A <- rbind(c(1, 2, -3, -4, 0, 0, 0),
+           c(0, 1, -1, 1, 1, 0, 6),
+           c(0, 2, -1, -3, 0, 1, 4))
+colnames(A) <- c("C", "x", "y", "z", "s", "t", "b")
+disp(A)
+disp(A %>% pivot(3, 2))
+#disp(A %>% pivot(3, 2) %>% pivot(2, 6))
+
+# Since  not in canonical form
+# A <- rbind(c(1, 0, 0, 0, 0, 0, 0, -1, 0),
+#            c(0, 1, 2, -3, -4, 0, 0, 0, 0),
+#            c(0, 0, 1, -1, 1, 1, 0, 0, 6),
+#            c(0, 0, 2, -1, -3, 0, -1, 1, 4))
+# colnames(A) <- c("W", "C", "x", "y", "z", "s", "t", "u", "b")
+# disp(A)
+# disp(A %>% pivot(4, 8))
+# disp(A %>% pivot(4, 8) %>% pivot(4, 3))
+# B <- (A %>% pivot(4, 8) %>% pivot(4, 3))[-1, -c(1, 8)]
+# disp(B)
+# disp(B %>% pivot(2, 6))
+```
+
+<br>
+If a canonical representation is not initially available, a two-phase approach is used after adding artificial variables.
+
+`r html_list("Other examples in code")`
+
+```{r, include = FALSE, echo = FALSE}
+# Example for equality constraints
+Ainit <- rbind(c(1, 2, 3, 4, 0),
+               c(0, 3, 2, 1, 10),
+               c(0, 2, 5, 3, 15))
+disp(Ainit)
+A <- rbind(c(1, 0, 5, 7, 4, 0, 0, 25),
+           c(0, 1, 2, 3, 4, 0, 0, 0),
+           c(0, 0, 3, 2, 1, 1, 0, 10),
+           c(0, 0, 2, 5, 3, 0, 1, 15))
+
+disp(A)
+disp(A %>% pivot(3, 3))
+disp(A %>% pivot(3, 3) %>% pivot(4, 4))
+B <- (A %>% pivot(3, 3) %>% pivot(4, 4))[-1, -c(1, 6:7)]
+disp(B)
+disp(B %>% pivot(3, 4))
+
+```
+
+## Applications
+
+<a href = "https://en.wikipedia.org/wiki/Data_envelopment_analysis">Data Envelopment Analysis</a>
+
+<a href = "http://www.me.utexas.edu/~jensen/ORMM/models/unit/linear/">Examples</a>
+
+<br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+
+## Integer Programming
+
+What if the selected inputs are restricted to the set of integers? The optimal solution from the simplex algorithm (in general) will not have integer solutions. Two basic methods are `r  html_list(c("Branch and Bound", "Plane Cutting"))` Some algorithms use elements of both.
+
+
+## Fun applications
+
+### Riddle of the Pilgrims
+
+```{r, echo=FALSE, fig.height=10, fig.width=16, comment = "", warning = FALSE, message = FALSE}
+
+Amat <- rbind(c(rep(1, 9), rep(-2, 9)),
+              c(1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0),
+              c(0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1),
+              kronecker(rep(1, 6), c(1, 0, 0)),
+              kronecker(rep(1, 6), c(0, 0, 1)),
+              diag(18),
+              diag(18)
+)
+colnames(Amat) <- paste0("x<sub>", 1:ncol(Amat), "</sub>")
+
+bvec <- c(0, rep(11, 4), replace(rep(1, 18), c(5, 14), 0), replace(rep(3, 18), c(5, 14), 0))
+
+cvec <- rep(1, 18)
+
+ineq <- c("==", rep("==", 4), rep(">=", 18), rep("<=", 18))
+ineq.p <- ifelse(ineq == "<=", "&le;", ifelse(ineq == ">=", "&ge;", "="))
+
+ints <- 1:18
+
+# Check dimensions
+# dim(Amat); length(bvec); length(ineq); length(cvec)
+
+#htmlTable(cbind(apply(matpaste(Amat, "x<sub>", col(Amat), "</sub>"), 1, paste, collapse = " + "), ineq, bvec), useViewer = T, css.cell = "padding-left: 1em; padding-right: 1em;", header = rep("", 3))
+htmlTable(cbind(Amat, " " = ineq.p, Const = bvec), rnames = FALSE,
+          css.cell = "padding-left: .5em; padding-right: .5em; font-size: 20px", 
+          rgroup = c("Twice as many up as down", "11 per side", "At least 1 person per room", "No more than 3 people per room"), 
+          n.rgroup = c(1, 4, 18, 18))
+
+```
+
+```{r, echo = FALSE}
+
+minres <- lp(direction = "min", objective.in = cvec, const.mat = Amat, const.dir = ineq, const.rhs = bvec, int.vec = ints)
+# minres$solution
+
+tab1 <- htmlTable(rbind(matrix(minres$solution[1:9], 3, 3), matrix(minres$solution[10:18], 3, 3)), rnames = F,
+          css.cell = "padding: 20px; font-size: 25; border: solid;", n.rgroup = 3, rgroup = c("Top", "Bottom"),
+          caption = "A Minimum Solution<br>Total People: 27")
+
+
+maxres <- lp(direction = "max", objective.in = cvec, const.mat = Amat, const.dir = ineq, const.rhs = bvec, int.vec = ints)
+# maxres$solution
+
+tab2 <- htmlTable(rbind(matrix(maxres$solution[1:9], 3, 3), matrix(maxres$solution[10:18], 3, 3)), rnames = F, 
+          css.cell = "padding: 20px; font-size: 25; border: solid;", n.rgroup = 3, rgroup = c("Top", "Bottom"), 
+          caption = "A Maximum Solution<br>Total People: 30")
+
+```
+
+<table class='gmisc_table' style='border-collapse: collapse; margin-top: 1em; margin-bottom: 1em; width:130%' >
+<tr><td style = 'width:30%'>`r tab1`</td><td>&nbsp;</td><td>&nbsp;</td><td style = 'width:70%'>`r tab2`</td></tr></table>
+
+Solution is not unique; however, multiple iterations give the same result.
+
+```{r, eval = FALSE, echo = FALSE}
+results1 <- results2 <- NULL
+for (i in 1:1e3) {
+  minres <- lp(direction = "min", objective.in = cvec, const.mat = Amat, const.dir = ineq, const.rhs = bvec, int.vec = ints)
+  results1 <- rbind(results1, minres$solution)
+  minres <- Rglpk_solve_LP(obj = cvec, mat = Amat, dir = ineq, rhs = bvec, types = "I", max = F)
+  results2 <- rbind(results2, minres$solution)
+}
+apply(results1, 2, function(x) length(unique(x)))
+apply(results2, 2, function(x) length(unique(x)))
+
+```
+
+
+### Sudoku Solver
+
+#### First attempt
+Optimize 81 integers between 1 and 9 to fit necessary criteria. Couldn't find constraints that ensure unique entries per column, row and block.
+
+```{r, echo = FALSE}
+n <- 3
+initpos <- c(1, 2, 5, 6, 9, 13, 16, 18, 21, 23, 25, 30, 37, 38, 44, 45, 52, 57, 59, 61, 64, 66, 69, 73, 76, 77, 80, 81)
+initval <- c(6, 8, 2, 4, 9, 1, 6, 2, 5, 9, 1, 2, 7, 3, 8, 1, 2, 7, 6, 4, 2, 9, 1, 3, 7, 8, 1, 6)
+initmat <- do.call(rbind, lapply(initpos, 
+                                 function(x) replace(rep(0, n^4), x, 1)))
+
+tab <- matrix("", 9, 9)
+tab[initpos] <- initval
+cssmat <- matrix("border: solid; border-width: 1px; padding: 10px; font-size: 18px;", 9, 9)
+cssmat <- matpaste(cssmat, ifelse(col(cssmat) %% 3 == 0, "border-right-width: 3px;", ""))
+cssmat <- matpaste(cssmat, ifelse(col(cssmat) %% 3 == 1, "border-left-width: 3px;", ""))
+cssmat <- matpaste(cssmat, ifelse(row(cssmat) %% 3 == 0, "border-bottom-width: 3px;", ""))
+cssmat <- matpaste(cssmat, ifelse(row(cssmat) %% 3 == 1, "border-top-width: 3px;", ""))
+htmlTable(t(tab), css.cell = cssmat)
+```
+
+
+```{r, eval = FALSE, echo = FALSE}
+
+# Only verifies sums, not unique entries ...
+
+Amat <- rbind(rep(1, n^4),
+              K(diag(n^2), t(rep(1, n^2))),                           # Row sums all equal
+              K(t(rep(1, n^2)), diag(n^2)),                           # Column sums all equal
+              K(diag(n), K(t(rep(1, n)), K(diag(n), t(rep(1, 3))))),  # Block sums all equal
+              diag(n^4),                                              # Each entry is at least 1
+              diag(n^4),                                              # Each entry is at most 9
+                                                                      # Ensure each entry is unique ?!?!
+              initmat )                                               # Given entries are fixed
+colnames(Amat) <- paste0("x<sub>", 1:ncol(Amat), "</sub>")
+
+bvec <- c(n^2*sum(1:n^2), rep(sum(1:n^2), 3*n^2), rep(1, n^4), rep(n^2, n^4), initval)
+
+cvec <- rep(1, n^4)
+
+ineq <- c("=", rep("=", 3*n^2), rep(">", n^4), rep("<", n^4), rep("=", length(initval)))
+ineq.p <- ifelse(ineq == "<", "&le;", ifelse(ineq == ">", "&ge;", "="))
+
+ints <- 1:n^4
+
+res <- lp(direction = "min", objective.in = cvec, const.mat = Amat, const.dir = ineq, const.rhs = bvec, int.vec = ints)
+res$solution
+# sums are correct, but uniqueness is not obtained. 
+
+```
+
+#### Second attempt
+Optimize 729 binary indicators, one for each combination of position and entry.
+
+```{r, echo = FALSE}
+
+# initpos <- c(1, 2, 5, 6, 9, 13, 16, 18, 21, 23, 25, 30, 37, 38, 44, 45, 52, 57, 59, 61, 64, 66, 69, 73, 76, 77, 80, 81)
+# initval <- c(6, 8, 2, 4, 9, 1, 6, 2, 5, 9, 1, 2, 7, 3, 8, 1, 2, 7, 6, 4, 2, 9, 1, 3, 7, 8, 1, 6)
+
+solve <- function(mat = NULL, initpos = NULL, initval = NULL, n = 3, byrow = T, print = T, simplify = F, binary = T) {
+  
+  if(is.null(mat)) {
+    mat <- matrix("", n^2, n^2)
+    mat[initpos] <- initval
+    if(byrow)
+      mat <- t(mat)
+  }
+  
+  mat <- as.matrix(mat)
+  initpos = which(!mat %in% c("", 0, NA))
+  initval = as.numeric(mat[initpos])
+  initmat <- do.call(rbind, lapply(n^4*(initval - 1) + initpos, 
+                                   function(x) replace(rep(0, n^6), x, 1)))
+  
+  K <- kronecker
+  Amat <- rbind(K(diag(n^4), t(rep(1, n^2))),                                         # One of each number per column
+                K(diag(n^2), K(t(rep(1, n^2)), diag(n^2))),                           # One of each number per row
+                K(diag(n^2), K(K(diag(n), t(rep(1, n))), K(diag(n), t(rep(1, n))))),  # One of each number per block
+                K(t(rep(1, n^2)), diag(n^4)),                                         # One number per position
+                initmat )
+  
+  if(binary) {
+    bvec <- rep(1, nrow(Amat))
+    ineq <- rep("==", nrow(Amat))
+    cvec <- rep(1, ncol(Amat))
+    
+    res_glpk <- Rglpk_solve_LP(obj = cvec, mat = Amat, dir = ineq, rhs = bvec, types = "B", max = F)
+  } else {
+    Amatb <- rbind(Amat, diag(n^6), diag(n^6))
+    bvecb <- c(rep(1, nrow(Amat)), rep(1, n^6), rep(0, n^6))
+    ineqb <- c(rep("==", nrow(Amat)), rep("<=", n^6), rep(">=", n^6))
+    cvecb <- rep(1, ncol(Bmat))
+    
+    res_glpk <- Rglpk_solve_LP(obj = cvecb, mat = Amatb, dir = ineqb, rhs = bvecb, max = F)
+  }
+  
+  #ints <- 1:n^6
+  
+  # Check that dimensions match
+  # dim(Amat); length(bvec); length(ineq); length(cvec)
+  
+  # t0 <- proc.time()
+  # res <- lp(direction = "min", objective.in = cvec, const.mat = Amat, const.dir = ineq, const.rhs = bvec, binary.vec = ints)
+  # t1 <- proc.time()   # Did not scomplete in 30 minutes.
+  
+  #names(res_glpk)
+  #res_glpk$solution
+  
+  if(res_glpk$status != 0)
+    stop("Solution could not be found.")
+  
+  if(simplify)
+    return(res_glpk$solution)
+  
+  arr <- array(res_glpk$solution, dim = rep(n^2, 3))
+  solution <- matrix(apply(arr, 1:2, function(x) which(x == 1)), n^2, n^2)
+  
+  cssmat <- matrix("border: solid; border-width: 1px; border-color: black; color: blue; padding: 10px; font-size: 18px;", 9, 9)
+  cssmat <- matpaste(cssmat, ifelse(col(cssmat) %% 3 == 0, "border-right-width: 3px;", ""))
+  cssmat <- matpaste(cssmat, ifelse(col(cssmat) %% 3 == 1, "border-left-width: 3px;", ""))
+  cssmat <- matpaste(cssmat, ifelse(row(cssmat) %% 3 == 0, "border-bottom-width: 3px;", ""))
+  cssmat <- matpaste(cssmat, ifelse(row(cssmat) %% 3 == 1, "border-top-width: 3px;", ""))
+  cssmat[initpos] <- paste(cssmat[initpos], "color: black; font-weight: 900")
+  solution_tab <- htmlTable(solution, css.cell = cssmat)
+  
+  row.names(mat) <- colnames(mat) <- NULL
+  initial_tab <- htmlTable(mat, css.cell = cssmat)
+  
+  list(solution = solution, solution_tab = solution_tab, initial = mat, initial_tab = initial_tab)
+}
+
+puzzles <- read.ods("puzzle.ods")
+
+puzzle1 <- solve(puzzles[[1]])
+puzzle2 <- solve(puzzles[[2]])
+puzzle3 <- solve(puzzles[[3]])
+
+puzzles <- lapply(1:1000, function(i) puzzles[[(i %% length(puzzles))+1]])
+
+t0 <- proc.time()
+for(i in 1:1e3) {
+  cat(paste0("\rIteration: ", i))
+  puzzle1 <- solve(puzzles[[i]], simplify = T, binary = T)
+  #res_glpk <- Rglpk_solve_LP(obj = cvec, mat = Bmat, dir = ineq, rhs = bvec, types = "B", max = F)
+}
+proc.time() - t0
+
+```
+
+<table class='gmisc_table' style='border-collapse: collapse; margin-top: 1em; margin-bottom: 1em; width:130%' >
+<tr><td style = 'width:30%'>`r puzzle1$initial_tab`</td><td>&nbsp;</td><td>&nbsp;</td><td style = 'width:70%'>`r puzzle1$solution_tab`</td></tr></table>
+
+```{r, echo = FALSE}
+# Read puzzle from .ods file.
+
+```

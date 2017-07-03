@@ -87,7 +87,6 @@ class Point {
   }
   
   static distance(a, b) {
-    console.log("point distance")
     const dx = a.x - b.x;
     const dy = a.y - b.y;
     
@@ -95,12 +94,10 @@ class Point {
   }
   
   add (arr) {
-    console.log("point add")
     return {"x":this.x+arr.x,"y":this.y+arr.y}
   }
   
   shift (arr) {
-    console.log("point shift")
     this.x = this.x + arr.x;
     this.y = this.y + arr.y;
   }
@@ -116,6 +113,8 @@ class Thing {
     }
     this.x = orient.x;
     this.y = orient.y;
+    this.prevx = this.x;
+    this.prevy = this.y;
     this.xvel  = (orient.xvel  === undefined) ? 0 : orient.xvel;
     this.yvel  = (orient.yvel  === undefined) ? 0 : orient.yvel;
     this.direc = (orient.direc === undefined) ? -90 : orient.direc; // Default direction: up
@@ -190,9 +189,10 @@ class Thing {
       relative = 1;
     var curr = this,
         oldx=this.x,
-        oldy=this.y;
+        oldy=this.y,
+        coll=0;
     if(this.move(x,y,relative,0))
-      var coll = this.findCollisions(Cells[Math.floor(this.y/cellheight)][Math.floor(this.x/cellwidth)]);
+      coll = this.findCollisions(Cells[Math.floor(this.y/cellheight)][Math.floor(this.x/cellwidth)]);
       
     //if(coll) {
     //  this.move(coll.x,coll.y,0);
@@ -208,25 +208,28 @@ class Thing {
     if(tentative===undefined)
       tentative = 0;
     
+    this.prevx = this.x;
+    this.prevy = this.y;
     this.x = this.x*relative + x;
     this.y = this.y*relative + y;
     this.obj.attr("transform","translate("+this.x+","+this.y+")");
     
-    var res = this.checkCell()
-    return(res)
+    var res = this.checkCell();
+    return(res);
   }
   
   isPointInPoly(pt) {
-    console.log("point add")
       pt.x = pt.x - this.x;
       pt.y = pt.y - this.y;
       for(var c = false, d = false, i = -1, l = this.poly.length, j = l - 1; ++i < l; j = i) {
           ((this.poly[i].y <= pt.y && pt.y <= this.poly[j].y) || (this.poly[j].y <= pt.y && pt.y <= this.poly[i].y))
           && (pt.x <  (this.poly[j].x - this.poly[i].x) * (pt.y - this.poly[i].y) / (this.poly[j].y - this.poly[i].y) + this.poly[i].x)
           && (c = !c) ;
+          
           ((this.poly[i].y <= pt.y && pt.y <= this.poly[j].y) || (this.poly[j].y <= pt.y && pt.y <= this.poly[i].y))
           && (pt.x <=(this.poly[j].x - this.poly[i].x) * (pt.y - this.poly[i].y) / (this.poly[j].y - this.poly[i].y) + this.poly[i].x)
           && (d = !d) 
+          
           //if (pt.x == (this.poly[j].x - this.poly[i].x) * (pt.y - this.poly[i].y) / (this.poly[j].y - this.poly[i].y) + this.poly[i].x) {
           //if (pt.x == (this.poly[j].x - this.poly[i].x) * (pt.y - this.poly[i].y) / (this.poly[j].y - this.poly[i].y) + this.poly[i].x) {
           //  c = true;
@@ -274,16 +277,15 @@ class Thing {
           break;
       }
       if(curcell !== null) {
-        var poss = curcell.ThingList
-        var node = poss.start
+        var poss = curcell.ThingList;
+        var node = poss.start;
         while(node !== null) {
           if(this!==node.thing) {
             //var vec = rect_rect(this,node.thing);
-            //console.log(node.thing);
-            var vec = getcolfun(this.type,node.thing.type)(this,node.thing);
+            //var vec = getcolfun(this.type,node.thing.type)(this,node.thing);
+            var vec = getcolfun(this,node.thing);
             if(vec) {
-              //console.log(vec)
-              col += 1
+              col += 1;
               if(!fyi) { // Ignore if only checking for a collision, rather than colliding
                 this.collide(node.thing,vec);
                 node.thing.collided(this,{x:-vec.x,y:-vec.y});
@@ -299,12 +301,12 @@ class Thing {
   }
   
   collide () {
-    console.log("nothing")
+    
     return ;
   }
   
   collided () {
-    //console.log("nothing")
+    
     return ;
   }
   
@@ -318,7 +320,6 @@ class Thing {
       this.grounded = 1;
     }
     if (Math.abs(this.xvel) < .001 && this.xvel != 0) {
-      console.log("Zeroed")
       this.xvel = 0;
     }
     //var xmove = this.xvel,
@@ -334,13 +335,11 @@ class Thing {
           this.yvel = this.yvel + this.grav/rep;
         
         var ymove = (this.grav==0) ? this.yvel/rep : -(v1*v1-this.yvel*this.yvel)/this.grav/2;
-        //console.log(rep,this.grav,this.yvel,ymove);
         if(ymove != this.yvel) {
-          //console.log(this.yvel,ymove)
+          
         }
         //var coll = this.trymove(this.xvel/rep,this.yvel/rep,1);
         var coll = this.trymove(this.xvel/rep,ymove,1);
-        //console.log(xmove,ymove,this.xvel,this.yvel);
         if(!coll) {
           //this.yvel = this.yvel - this.grav/rep;
         }
@@ -350,11 +349,9 @@ class Thing {
   }
   
   remove() {
-    console.log("remove1",Things.length)
     this.obj.remove();
     this.cell.moveout(this);
     Things.splice(Things.indexOf(this),1);
-    console.log("remove2",Things.length)
   }
 }
 
@@ -414,7 +411,7 @@ class Trmp extends Block {
     super(parent,orient,physics,type,pars);
     this.class = "Trmp";
     this.color = "#DDFFFF";
-    this.bnce  = 1.1;
+    this.bnce  = 1.15;
   }
 }
 
@@ -428,7 +425,6 @@ class Bll extends Thing {
   collide (thing,vec) {
     this.move(vec.x,vec.y,1);
     if(this.grav!=0) {
-      //console.log(Math.sqrt(this.yvel*this.yvel + 2*this.grav*vec.y),vec.y,this.yvel);
       this.yvel = Math.sqrt(Math.max(this.yvel*this.yvel + 2*this.grav*vec.y,0))*Math.sign(this.yvel);
     }
     switch(thing.class) {
@@ -487,7 +483,8 @@ function Make (parent,data) {
         var Creator = Bll;
         break;
     }
-    new Creator(parent,[data.x[i],data.y[i],data.xvel[i],data.yvel[i],data.direc[i]],[data.grav[i],data.fric[i],data.bnce[i],data.mov[i],data.drag[i]],data.type[i],
-                {hh:data.hh[i],hw:data.hw[i],r:data.r[i],color:data.color[i]})
+    new Creator(parent,[data.x[i],data.y[i],data.xvel[i],data.yvel[i],data.direc[i]],
+                [data.grav[i],data.fric[i],data.bnce[i],data.mov[i],data.drag[i]],data.type[i],
+                {hh:data.hh[i],hw:data.hw[i],r:data.r[i],color:data.color[i]});
   }
 }
