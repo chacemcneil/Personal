@@ -47,6 +47,56 @@ html_list <- function(strings, details = NULL, detailpref = "- ", kind = c("ul",
   str
 }
 
+#' HTML Dropdown Function
+#' 
+#' Creates HTML dropdown list containing the elements of a vector.
+#' @param id Character, id of the dropdown menu.
+#' @param labels Vector of values to display in dropdown list. Will be converted to \code{character}
+#' @param values Values to associate with labels. If NULL (default), names of \code{labels} will be used. Can be character or numeric.
+#' @export
+#' @examples
+#' x <- c(first = 10, second = 20, third = 30)
+#' 
+#' # Dropdown list with default values
+#' html_dropdown("tmp", x)
+#' 
+#' # Dropdown list with selected values
+#' html_dropdown("tmp", x, values = 1:4)
+
+html_dropdown <- function(id, labels, values = NULL, onchange = "", onload = "") {
+  if(is.null(values))
+    values = names(labels)
+  if(is.character(values))
+    values <- paste0("\"", values, "\"")
+  str <- paste("<select id = \"", id, "\" onchange = \"", onchange, "\" onload = \"", onload, "\">", paste("\n<option value = ", values, ">", labels, "</option>", sep = "", collapse = ""), "\n</select>", sep = "")
+  str
+}
+
+#' HTML Chunk
+#' 
+#' Creates a section of html code that is modified according to selected inputs.
+#' @param id Character, id attribute for html tags.
+#' @param divs Character vector giving the ids of the div tags to be selected
+#' @param labels Character vector of labels to display in dropdown menu
+#' @export
+#' @example
+#' # In markdown file.
+#' x <- rnorm(1e3)
+#' id <- "myid"
+#' divs <- c("div1", "div2")
+#' labels <- c("Sorted", "Unsorted")
+#' 
+
+html_chunk <- function(id, divs, labels) {
+  str <- paste("<script>\nfunction ", id, "_function (value) {\n", paste(divs, ".hidden = true;", sep = "", collapse = "\n"), "\nconsole.log(value);\n",  
+               # id, "_disp.innerHTML = document.getElementById(value).innerHTML;\n}\n", "</script>", sep = "" )
+               "document.getElementById(value).hidden = false;\n}\n</script>", sep = "" )
+  str <- paste(str, html_dropdown(id = id, labels = labels, values = divs, onchange = paste0(id, "_function(value);")), 
+               paste("<div id = \"", id, "_disp\"></div>", sep = ""), sep = "\n" )
+  str
+}
+
+
 #' HTML Model Summary Function
 #' 
 #' Creates an \code{htmlTable} object for a model coefficient table.
@@ -62,9 +112,11 @@ html_list <- function(strings, details = NULL, detailpref = "- ", kind = c("ul",
 #' lm.D9 <- lm(weight ~ group)
 #' html_summary(lm.D9)
 
-html_summary <- function(mod, names = NULL, ...) {
+html_summary <- function(mod, names = NULL, caption = NULL, ...) {
   # Forms an htmlTable from a linear model
   tab <- summary(mod)$coefficients
+  if(is.null(caption))
+    caption = paste("<b>Response variable:</b>", as.character(mod$call[[2]])[2])
   if(!is.null(names))
     row.names(tab) <- names
   colnames(tab)[4] <- "P-value"
@@ -73,7 +125,7 @@ html_summary <- function(mod, names = NULL, ...) {
   tab[,3] <- round(tab[,3], digits = 2)
   tab[,4] <- signif(tab[,4], digits = 2)
   tab[,4] <- ifelse(tab[,4] < 0.0001, "&lt;0.0001", tab[,4])
-  htmlTable::htmlTable(tab, ...)
+  htmlTable::htmlTable(tab, caption = caption, ...)
 }
 
 #' Chunk Plot Function
@@ -184,6 +236,28 @@ markdown_init <- function(filename, echo = T) {
   })
 }
 
+#' Animated plot
+#' 
+#' Returns a sequence of plots that transition between given plots.
+#' @param ... \code{ggplot2} objects to transition between. At least 2 needed.
+#' @param n Number of frames between plots. Default is 20.
+#' @export
+#' @example
+#' 
+gganimate <- function(..., n = 20) {
+  lst <- list(...)
+  if(any(sapply(lst, function(x) ! "gg" %in% class(x))))
+    stop("Only objects of class gg are allowed.")
+  if(length(lst) < 2)
+    stop("At least two plots needed.")
+  
+  # Function not completed
+  return(NULL)
+}
+
+# Use the following when using animated plots
+# <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+# <script src="http://vis.supstat.com/assets/themes/dinky/js/jquery.scianimator.min.js"></script>
 
 
 # End script

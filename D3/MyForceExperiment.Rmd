@@ -11,7 +11,7 @@ library(igraph)
 # library(xtable)
 # library(ggplot2)
 
-setwd("/work/cmcneil/Projects/Miscellaneous/Personal/D3")
+setwd("/work/cmcneil/Miscellaneous/Personal/D3")
 source("D3Force.R")
 
 options(width=150)
@@ -47,6 +47,7 @@ E(ig)$value  <- sample(1:4,length(E(ig)),replace=T)
 E(ig)$visitstowebsite <- sample(c(4,225,961),length(E(ig)),replace=T)
 E(ig)$text   <- sample(c("Edge","Line","Link"),length(E(ig)),replace=T)
 
+
 html1 <- myForce(ig)
 # A lot of the graph characteristics can also be adjusted (HL indicates the value when it is highlighted).
 html2 <- myForce(ig,
@@ -75,13 +76,13 @@ html2 <- myForce(ig,
                                     fillopacity=.2,
                                     strokeopacity=.6))
 
-# Graph object can also be specified as a list containing two data.frames for vertex (nodes) and edge (links) attributes
+# Graph object should also be able to be specified as a list containing two data.frames for vertex (nodes) and edge (links) attributes (NOT WORKING)
 nodes.df <- as.data.frame(vertex.attributes(ig)) 
 links.df <- as.data.frame(edge.attributes(ig))   # must include 'target' and 'source' fields referencing row numbers of nodes.df
 graph <- list(v=nodes.df,e=links.df)
 
 # Using formulas, the numerical graph characteristics and textbox output can also be functions of graph characteristics
-html3 <- myForce(graph,
+html3 <- myForce(ig,
                    duration=100,
                    nodes=list(strokewidth = ~group-.5,
                               radius = ~sqrt(nodesize)*10,

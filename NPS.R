@@ -1,4 +1,5 @@
 # Exploring NPS
+ library(CMcCode)
  library(data.table)
  library(extrafont)
  library(ggplot2)
@@ -8,8 +9,7 @@
  setwd("r:/Users/cmcneil/Projects/Miscellaneous/BrownBag/Net Promoter Score")
  load("Data.rda", verbose=T)
  
- source("r:/users/cmcneil/projects/miscellaneous/Personal/General Code/UsefulFunctions.R")
- source("r:/users/cmcneil/projects/miscellaneous/Personal/General Code/MarkdownFunctions.R")
+ source("r:/users/cmcneil/miscellaneous/Personal/General Code/MarkdownFunctions.R")
  
  
  thm <- theme(panel.background=element_rect(fill="azure1"),   text=element_text(size=40, family="Narkisim"), 

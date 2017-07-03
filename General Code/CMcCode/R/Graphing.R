@@ -497,13 +497,16 @@ ggsurv <- function(s, CI = 'def', plot.cens = T, surv.col = 'gg.def',
 
 #' Scale DayYear
 #'
-#' Adjusts the scale of an axis representing time to show days and years. Used with \code{ggplot2}.
+#' Adjusts the scale of an axis representing time to show days and years. Used with \code{ggplot2}. Not currently working.
 #' @export
+#' @example
+#' 
 
 scale_x_dayyear <- function(p) {
   values <- with(p$data, eval(p$mapping[["x"]]))
   days <- 365.25
-  left <- ggplot2::ggplot_build(p)$panel$ranges[[1]]$x.range[1]
+  # left <- ggplot2::ggplot_build(p)$panel$ranges[[1]]$x.range[1]
+  left <- ggplot2::ggplot_build(p)$layout$panel_ranges[[2]]$x.range[1]
   p + ggplot2::scale_x_continuous(breaks = c(left, pretty(range(values, na.rm=T)),
                                              left, pretty(range(values/days, na.rm = T))*days ), 
                                   labels = c("Days:", pretty(range(values, na.rm = T)),
@@ -517,9 +520,13 @@ scale_x_dayyear <- function(p) {
 }
 
 
-# Adding to ggplot2
+## Adding to ggplot2
+# geom_violin2 creates a 2-sided violin plot
+# geom_polyline creates a polynomial line
 
 ggen <- environment(ggplot2::ggplot)
+
+# geom_violin2
 
 GeomViolin2 <- ggplot2::ggproto(ggplot2::GeomViolin)
 for(i in names(ggplot2::GeomViolin)) {
@@ -555,6 +562,7 @@ environment(GeomViolin2) <- ggen
 #' with a two-level factor variable in the \code{group} or \code{fill} arguments.
 #' @export
 #' @examples
+#' library(MASS)
 #' # geom_violin from ggplot2 package
 #' ggplot(survey, aes(Fold, Wr.Hnd, fill = Sex)) + geom_violin()
 #' # New geom_violin2 combined graphs
@@ -571,14 +579,99 @@ geom_violin2 <- function (mapping = NULL, data = NULL, stat = "ydensity", positi
 }
 environment(geom_violin2) <- ggen
 
+# geom_polyline
 
-#' Check Predicted Probabilities
+GeomPolyline <- ggplot2::ggproto(ggplot2::GeomAbline)
+for(i in names(ggplot2::GeomAbline)) {
+  GeomPolyline[[i]] <- ggplot2::GeomAbline[[i]]
+}
+class(GeomPolyline) <- c("GeomAbline", "Geom", "ggproto")
+GeomPolyline$required_aes <- paste0("c", 0)
+GeomPolyline$optional_aes <- paste0("c", 1:5)
+# GeomPolyline$draw_group <- GeomAbline$draw_group
+GeomPolyline$draw_panel <- function (data, panel_scales, coord, precision) 
+{
+  ranges <- coord$range(panel_scales)
+  
+  #data$group <- 1:nrow(data)
+  
+  poly_order <- max(as.numeric(gsub("c", "", grep("^c[[:digit:]]*$", names(data), value = T, ignore.case = T))))
+  for(i in 0:poly_order) {
+    if(is.null(data[[paste0("c", i)]]))
+      data[[paste0("c", i)]] <- 0
+  }
+  
+  newdata <- do.call(rbind, lapply(1:nrow(data), function(i) do.call(data.frame, c(list(x = c(seq(ranges$x[1], ranges$x[2], length.out = precision), NA)), data[i,]))))
+  newdata$y <- newdata$c0
+  i = 1
+  while(!is.null(newdata[[paste0("c", i)]])) {
+    newdata$y <- newdata$y + newdata[[paste0("c", i)]] * newdata$x ^ i
+    i <- i+1
+  }
+  # data <- data[data$x >= ranges$x[1] & data$x <= ranges$x[2] & data$y >= ranges$y[1] & data$y <= ranges$y[2],]
+  with(newdata, {
+    x <- ifelse(x < ranges$x[1] | x > ranges$x[2], NA, x)
+    y <- ifelse(y < ranges$y[1] | y > ranges$y[2], NA, y)
+  })
+  
+  # browser()
+  
+  # newdata <- merge(newdata, data, by = NULL)
+  
+  GeomLine$draw_panel(newdata, panel_scales, coord)
+}
+environment(GeomPolyline) <- ggen
+
+#' @export
+GeomPolyline
+
+#' Plot Polynomial Curve
+#'
+#' Creates a polynomial line, similar to \code{geom_abline}
+#' @export
+#' @examples
+#' dat <- data.table(x = rnorm(1e3))[, y := rnorm(1e3, x, .2)^2][, x2 := x^2]
+#' coefs <- lm(y ~ ., data = dat)$coef
 #' 
-#' Compares the proportion of success to a predicted probability using \code{ggplot2} functions.
+#' ggplot(data.frame(x = x, y = rnorm(1e3, x, .2)^2), aes(x, y)) + geom_point() + geom_polyline(aes(c0 = coefs[1], c1 = coefs[2], c2 = coefs[3]))
+geom_polyline <- function (mapping = NULL, data = NULL, precision = 100, ..., c0,
+                           na.rm = FALSE, show.legend = NA) 
+{
+  # browser()
+  if (missing(mapping) && missing(c0)) {
+    c0 <- 0
+    c1 <- 1
+    data <- data.frame(c0 = c0, c1 = c1)
+  }
+  # data <- data.frame(precision = precision)
+  # if (!missing(slope) || !missing(intercept)) {
+  #   if (missing(slope)) 
+  #     slope <- 1
+  #   if (missing(intercept)) 
+  #     intercept <- 0
+  #   data <- data.frame(intercept = intercept, slope = slope)
+  #   mapping <- aes(intercept = intercept, slope = slope)
+  #   show.legend <- FALSE
+  # }
+  layer(data = data, mapping = mapping, stat = StatIdentity, 
+        geom = GeomPolyline, position = PositionIdentity, show.legend = show.legend, 
+        inherit.aes = FALSE, params = list(na.rm = na.rm, precision = precision, ...))
+}
+environment(geom_polyline) <- ggen
+
+
+
+
+#' Check Predicted Probabilities and Linearity of Means
+#' 
+#' Compares the proportion of success to a predicted probability using \code{ggplot2} functions. 
+#' Alternatively, provides a check of linearity relative to a given covariate.
 #' @param data \code{data.frame} as passed to \code{ggplot}()
-#' @param mapping Aesthetic mapping using \code{aes}() as in \code{ggplot}
+#' @param mapping Aesthetic mapping using \code{aes}() as in \code{ggplot}. \code{x} and \code{y} are both required.
 #' @param bins The number of quantiles to bin predicted probabilities into. Default is 10.
 #' @param bound Whether to bound confidence intervals to the range [0, 1]. Default is \code{TRUE}
+#' @param predicted Whether the given \code{x} represents a predicted probability. Default is \code{TRUE}.
+#' @param link Provides a link function for the binned means, if \code{predicted} is \code{FALSE}.
 #' @param stat, position, na.rm, show.legend, inherit.aes, ... Parameters that get passed through to \code{geom_errorbar}.
 #' @param pt... \code{list} object with parameters to pass through to \code{geom_point}.
 #' @export
@@ -586,45 +679,190 @@ environment(geom_violin2) <- ggen
 #' esoph_mod <- glm(cbind(ncases, ncontrols) ~ ., data = esoph, family = "binomial")
 #' esoph2 <- cbind(esoph, pred_prob = gtools::inv.logit(predict(esoph_mod)))
 #' ggprop(esoph2, aes(pred_prob, cbind(ncases, ncontrols)))
+#' ggprop(esoph2, aes(pred_prob, cbind(ncases, ncontrols)), predicted = F)
+#' ggprop(esoph2, aes(pred_prob, cbind(ncases, ncontrols)), predicted = F, link = "identity")
 
-ggprop <- function(data, mapping, stat = "identity", position = "identity", bins = 10, bound = T, ..., pt... = NULL, na.rm = FALSE, show.legend = NA, inherit.aes = TRUE) {
+ggprop <- function(data, mapping, link = binomial(), predicted = T, stat = "identity", position = "identity", bins = 10, bound = T, ..., pt... = NULL, na.rm = FALSE, show.legend = NA, inherit.aes = TRUE) {
   # currently only works with binary input, not two-column counts.
   x <- with(data, eval(mapping$x))
   y <- with(data, eval(mapping$y))
   data <- data.table(data)
   if(is.null(dim(y)) & length(unique(y)) > 2)
-    stop("y parameter must be dichotomous are a two-column vector of counts for successes and failures.")
-  if(!is.null(dim(y)) & ncol(y) != 2)
-    stop("y parameter must be dichotomous are a two-column vector of counts for successes and failures.")
+    stop("y parameter must be dichotomous.")
+  if(!is.null(dim(y)))
+    if(ncol(y) != 2)
+      stop("y parameter must be dichotomous.")
+  
+  if(is.character(link))
+    link = binomial(link)
+  if(predicted)
+    link = binomial("identity")
   
   if(!is.null(dim(y))) {
     data <- cbind(data, "_x" = x, setnames(data.table(y), c("_Pos", "_Neg")))
     data[, Index := 1:nrow(data)]
-    data <- data[, list(x = `_x`, y = c(rep(1, `_Pos`), rep(0, `_Neg`))), by = setdiff(colnames(data), c("_x", "_Pos", "_Neg"))][, Index := NULL]
+    data <- data[, list(x = `_x`, y = c(rep(1, `_Pos`), rep(0, `_Neg`))), by = setdiff(colnames(data), c("_x", "_Pos", "_Neg"))]
+    data$Index <- NULL
   } else {
     if(any(! y %in% 0:1))
       y <- as.numeric(factor(y)) - 1
-    data <- data[, x := x][, y := y]
+    data$x <- x
+    data$y <- y
   }
   rm(x, y)
   
-  data2 <- data[, {
-    lst <- list(Predicted = quantile(x, (1:bins)/bins - .5/bins),
-                Observed = tapply(y, gtools::quantcut(x, (0:bins)/bins), mean),
-                n = tapply(y, gtools::quantcut(x, (0:bins)/bins), length) )
-    lst
-  }, by = eval(as.character(mapping[intersect(c("colour", "group"), names(mapping))])) ]
-  data2[, ymin := pmax(Observed - 1.96 * sqrt(Observed*(1-Observed)/n), 0)]
-  data2[, ymax := pmin(Observed + 1.96 * sqrt(Observed*(1-Observed)/n), 1)]
-  # mapping$x <- substitue
-  # mapping$ymin <- substitute(ymin)
-  # mapping$ymax <- substitute(ymax)
-  mapping <- ggplot2::aes(x = Predicted, y = Observed, ymin = ymin, ymax = ymax)
-  p <- ggplot2::ggplot() + do.call(geom_point, c(list(data = data2, mapping = mapping), pt...)) + 
-    ggplot2::geom_errorbar(data = data2, mapping = mapping, stat = stat, position = position, ..., na.rm = na.rm, show.legend = show.legend, inherit.aes = inherit.aes)
-  p <- p + ggplot2::geom_line(data = data.table(x = pretty(data2$Predicted), y = pretty(data2$Predicted), ymin = -1, ymax = 1), mapping = aes(x, y), linetype = 2)
+  data2 <- with(data, data.table(x = quantile(x, (1:bins)/bins - .5/bins),
+                                 y = link$linkfun(tapply(y, gtools::quantcut(x, (0:bins)/bins), mean)),
+                                 n = tapply(y, gtools::quantcut(x, (0:bins)/bins), length) ))
+  # data2 <- data[, {
+  #   lst <- list(x = quantile(x, (1:bins)/bins - .5/bins),
+  #               y = link$linkfun(tapply(y, gtools::quantcut(x, (0:bins)/bins), mean)),
+  #               n = tapply(y, gtools::quantcut(x, (0:bins)/bins), length) )
+  #   lst
+  # }, by = eval(as.character(mapping[intersect(c("colour", "group"), names(mapping))])) ]
+  
+  if(predicted) {
+    data2[, ymin := pmax(y - 1.96 * sqrt(y*(1-y)/n), 0)]
+    data2[, ymax := pmin(y + 1.96 * sqrt(y*(1-y)/n), 1)]
+    mapping <- ggplot2::aes(x = x, y = y, ymin = ymin, ymax = ymax)
+    p <- ggplot2::ggplot() + do.call(geom_point, c(list(data = data2, mapping = mapping), pt...)) + 
+      ggplot2::geom_errorbar(data = data2, mapping = mapping, stat = stat, position = position, ..., na.rm = na.rm, show.legend = show.legend, inherit.aes = inherit.aes)
+    p <- p + ggplot2::geom_line(data = data.table(x = pretty(data2$x), y = pretty(data2$x)), mapping = aes(x, y), linetype = 2)
+  } else {
+    mapping <- ggplot2::aes(x = x, y = y)
+    p <- ggplot2::ggplot() + ggplot2::geom_point(data = data2, mapping = mapping, stat = stat, position = position, ..., na.rm = na.rm, show.legend = show.legend, inherit.aes = inherit.aes)
+  }
   p
 }
 
 
+#' Plot Regression Lines
+#' 
+#' Plots response variable against all explanatory variables with estimated regression lines.
+#' @param mod Linear regression model as returned by \code{lm()}.
+#' @export
+#' @examples
+#' library(data.table)
+#' n <- 1e3
+#' 
+#' # Three independent explanatory variables
+#' coef <- c(2.1, -0.8, 1.2)
+#' dt <- data.table(x1 = rnorm(n), x2 = rnorm(n, , 2), x3 = rnorm(n, 4))
+#' dt[, Mean := cbind(x1, x2, x3) %*% coef]
+#' dt[, y := rnorm(.N, Mean, .5)]
+#' mod <- lm(y ~ x1 + x2 + x3, data = dt)
+#' reglines(mod)
+#' 
+#' # Three correlated explanatory variables
+#' coef <- c(2.1, -0.8, 1.2)
+#' dt <- data.table(x1 = rnorm(n))
+#' dt[, x2 := rnorm(.N, -.8 + .7*x1)]
+#' dt[, x3 := rnorm(.N, 1.2 + 1.1*x1 + .5*x2)]
+#' dt[, Mean := cbind(x1, x2, x3) %*% coef]
+#' dt[, y := rnorm(.N, Mean, .5)]
+#' mod <- lm(y ~ x1 + x2 + x3, data = dt)
+#' reglines(mod)
+#' 
+#' # Additional interaction term
+#' coef <- c(2.1, -0.8, 1.2, -0.9)
+#' dt <- data.table(x1 = rnorm(n))
+#' dt[, x2 := rnorm(.N, -.8 + .7*x1)]
+#' dt[, x3 := rnorm(.N, 1.2 + 1.1*x1 + .5*x2)]
+#' dt[, Mean := cbind(x1, x2, x3, x1*x2) %*% coef]
+#' dt[, y := rnorm(.N, Mean, .5)]
+#' mod <- lm(y ~ x1 + x2 + x3 + x1*x2, data = dt)
+#' reglines(mod)
+#' 
+#' # Additional categorical variable
+#' coef <- c(2.1, -0.8, 1.2, -0.9, 2)
+#' dt <- data.table(x1 = rnorm(n))
+#' dt[, x2 := rnorm(.N, -.8 + .7*x1)]
+#' dt[, Group := letters[rbinom(.N, 2, .5) + 1]]
+#' dt[, x3 := rnorm(.N, 1.2 + 1.1*x1 + .5*x2)]
+#' dt[, Mean := cbind(x1, x2, x3, x1*x2, factor(Group)) %*% coef]
+#' dt[, y := rnorm(.N, Mean, .5)]
+#' mod <- lm(y ~ x1 + x2 + Group + x3 + x1*x2, data = dt)
+#' reglines(mod)
+#' 
+#' # Interaction with poorly fitted model
+#' coef <- c(2.1, -0.8, 1.2, -0.9, 2, -3)
+#' dt[, Mean := cbind(x1, x2, x3, x1*x2, factor(Group), as.numeric(factor(Group))*x3) %*% coef]
+#' dt[, y := rnorm(.N, Mean, .5)]
+#' mod <- lm(y ~ x1 + x2 + Group*x3 + x3 + x1*x2, data = dt)
+#' reglines(mod)
+#' 
+#' # Interaction with better model
+#' coef <- c(2.1, -0.8, 1.2, -0.9, 2, -3)
+#' dt[, Mean := cbind(x1, x2, x3, x1*x2, factor(Group), as.numeric(factor(Group))*x3) %*% coef]
+#' dt[, y := rnorm(.N, Mean, .5)]
+#' mod <- lm(y ~ (x1 + x2 + x3)*Group + x1*x2, data = dt)
+#' reglines(mod)
 
+
+reglines <- function(mod) {
+  data <- data.table(mod$model)
+  setnames(data, replace(names(data), 1, "y"))
+  vars <- sapply(data[, -1, with = F], class)
+  isfactor <- sum(c("character", "factor") %in% vars) > 0
+  if(isfactor)
+    factorvar <- names(data)[which(sapply(data, class) %in% c("factor", "character"))]
+  vars <- names(vars)[vars %in% c("numeric", "integer")]
+  p <- length(vars)
+  
+  coefs <- NULL
+  for (i in 1:p) {
+    tmpdata <- data[, .SD]
+    tmpdata[, (vars[-i]) := 0]
+    
+    call <- mod$call
+    call$data <- as.name("tmpdata")
+    
+    if(isfactor) {
+      form <- (~ -1 + 1)[[2]]
+      form[[3]] <- call$formula[[3]]
+      call$formula[[3]] <- form
+    }
+    
+    tmpmod <- eval(call)
+    tmpcoef <- coef(tmpmod)
+    tmpcoef <- tmpcoef[!is.na(tmpcoef)]
+    
+    slp <- tmpcoef[grep(paste0("(^|:)", vars[i]), names(tmpcoef))]
+    slp[-1] <- slp[1] + slp[-1]
+    int <- tmpcoef[-grep(paste0("(^|:)", vars[i]), names(tmpcoef))]
+    
+    if(isfactor)
+      coefs <- rbind(coefs, data.table(Coefficient = vars[i], 
+                                       Intercept = int, 
+                                       Slope = slp, 
+                                       Factor = names(int) ))
+    else
+      coefs <- rbind(coefs, data.table(Coefficient = vars[i], Intercept = tmpcoef[-which(names(tmpcoef) == vars[i])], Slope = tmpcoef[vars[i]]))
+  }
+  if(isfactor) {
+    coefs[, Factor := gsub(paste0("^", factorvar), "", Factor)]
+    setnames(coefs, "Factor", factorvar)
+  }
+  
+  data2 <- melt(data, measure.vars = vars, variable.name = "Coefficient", value.name = "Value")
+  if(isfactor)
+    g <- ggplot(data2, aes(Value, y, col = get(factorvar))) + geom_point() + facet_wrap(~Coefficient, scales = "free") + 
+    geom_abline(data = coefs, aes(slope = Slope, intercept = Intercept, col = get(factorvar))) + labs(y = as.character(mod$call$formula[[2]]))
+  else
+    g <- ggplot(data2, aes(Value, y)) + geom_point() + facet_wrap(~Coefficient, scales = "free") + geom_abline(data = coefs, aes(slope = Slope, intercept = Intercept)) + labs(y = as.character(mod$call$formula[[2]]))
+  plot(g)
+  
+  invisible(coefs)
+}
+
+#' Plot Regression Lines and Curves
+#' 
+#' Expand on previous function to allow more complicated functions -- polynomials, exponentials, etc.
+#' @param mod A linear regression model
+#' @export
+#' @examples
+#' reglines2(mod)
+
+regliens2 <- function(mod) {
+  
+}

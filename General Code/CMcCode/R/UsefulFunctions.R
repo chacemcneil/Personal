@@ -25,6 +25,14 @@
 # roundNumeric        Rounds the numeric columns of a data.table
 # convert.tz          Convert times between time zones
 
+## Use the following code to update package
+# library(devtools)
+# detach("package:CMcCode")
+# install("/work/cmcneil/miscellaneous/personal/general code/CMcCode")
+# document("/work/cmcneil/miscellaneous/personal/general code/CMcCode")
+
+
+
 
 #' Update function
 #'
@@ -46,6 +54,30 @@ upd <- function(width=260) {
   
   options(width=width)
 }
+
+#' Read Database
+#' 
+#' Function for reading data from databases.
+#' @param db Name of database.
+#' @param dbTable Name of table in database.
+#' @param dbQuery Character vector of length one containing a query to run against the database.
+#' @export
+read.odbc <- function (db, dbTable = NULL, dbQuery = NULL, ...) 
+{
+  con <- RODBC::odbcConnect(db)
+  if (is.null(dbTable)) {
+    tab <- RODBC::sqlQuery(con, query = dbQuery, ...)
+  }
+  else {
+    tab <- RODBC::sqlQuery(con, paste("SELECT * FROM", dbTable), 
+                           ...)
+  }
+  RODBC::odbcClose(con)
+  tab
+}
+
+
+
 
 #' Open .odbc.ini file.
 #'
@@ -84,7 +116,32 @@ rsavvy <- function() {
 }
 
 
+#' Yes/No Converter
+#' 
+#' Converts 0/1 to Yes/No
+#' @param x Vector of 0s and 1s.
+#' @export
+#' @example
+#' x <- rbinom(100, 1, .4)
+#' table(x)
+#' table(yn(x))
 
+yn <- function(x, type = c("YN", "PN", "TF", "yn", "pn", "tf"), as.factor = T) {
+  type <- match.arg(type)
+  if(length(setdiff(x, 0:1)) > 0)
+    stop("Only values of 0 and 1 are allowed.")
+  newvals <- switch(type, 
+                    yn = c("Y", "N"), 
+                    YN = c("Yes", "No"), 
+                    pn = c("Pos", "Neg"), 
+                    PN = c("Positive", "Negative"), 
+                    tf = c("T", "F"), 
+                    TF = c("True", "False"))
+  x = newvals[2 - x]
+  if(as.factor)
+    x = factor(x, levels = newvals)
+  x
+}
 
 #' Evaluate Parsed Text
 #'
@@ -118,6 +175,21 @@ ept <- function(txt, env=NULL, drop=T, useDT = T) {
   if(length(txt)==1 & drop == T)
     dt <- dt[[1]]
   dt
+}
+
+#' Dollar format
+#' 
+#' Uses code from \code{dollar} in \code{scales} package, but adds the option to not have even dollars rounded.
+#' @param x Vector of numbers to format
+#' @export
+#' @example
+#' x <- c(1, 1.5, 150)
+#' dollarfull(x)
+
+dollarfull <- function(x) {
+  newtxt <- scales::dollar(x)
+  newtxt <- gsub("((?<!\\.)..)$", "\\1.00", newtxt, perl = T)
+  newtxt
 }
 
 #' Reverse factor levels
@@ -189,11 +261,18 @@ replace.na <- function(x, repl = NULL, ...) {
 #' dt2 <- complete.dt(dt, "Gender", "Response")
 #' ggplot(dt2, aes(Gender, Count, fill = Response)) + geom_bar(position = "dodge", stat = "identity")
 
-complete.dt <- function(dt, ..., replaceFUN = NULL) {
+complete.dt <- function(dt, ..., all.levels = T, replaceFUN = NULL) {
   lst <- list(...)
   if(length(lst) < 2)
     stop("Need at least two sets of columns in ...")
-  tabs <- lapply(seq_along(lst), function(i) unique(dt[, lst[[i]], with = F])[, paste0("Ind", i) := 1:.N])
+  tabs <- lapply(seq_along(lst), function(i) {
+    if(length(lst[[i]]) == 1 & class(dt[[lst[[i]]]]) == "factor" & all.levels) {
+      tmp <- data.table(levels = factor(levels(dt[[lst[[i]]]]), levels = levels(dt[[lst[[i]]]])))[, ind := 1:.N]
+      setnames(tmp, c(lst[[i]], paste0("Ind", i)))
+      tmp
+    } else
+      unique(dt[, lst[[i]], with = F])[, paste0("Ind", i) := 1:.N]
+  })
   inds <- lapply(seq_along(tabs), function(i) tabs[[i]][[paste0("Ind", i)]])
   names(inds) <- paste0("Ind", 1:length(inds))
   new <- data.table(expand.grid(inds))
@@ -248,6 +327,24 @@ merge.list <- function (..., priority = c("first", "last")) {
   else
     newlst <- append(lst[[1]], do.call(merge.list, lst[-1]))
   newlst[!duplicated(names(newlst))]
+}
+
+#' List Grep
+#' 
+#' Performs \code{grep} on each entry in a list
+#' @param pattern, ... Parameters passed to \code{grep}.
+#' @param x List of vectors to perform \code{grep} on.
+#' @export
+#' @examples
+#' lst <- list(letters, LETTERS)
+#' grep.list("a", lst)
+#' grep.list("a", lst, value = T)
+#' grep.list("a", lst, ignore.case = T)
+#' grep.list("a", lst, value = T, ignore.case = T)
+grep.list <- function(pattern, x, ...) {
+  res <- lapply(lst, grep, pattern = pattern, ...)
+  res <- res[sapply(res, length) > 0]
+  res
 }
 
 #' Backup function
@@ -548,10 +645,11 @@ browse_db <- function(server, db = NULL) {
   if(!exists("read.odbc"))
     rsavvy()
   if (is.null(db)) {
-    lst <- lapply(server, function(sv) data.table(read.odbc(sv, dbQuery = "select * from master.dbo.sysdatabases"))$name)
+    server <- sort(server)
+    lst <- lapply(server, function(sv) sort(data.table(read.odbc(sv, dbQuery = "select * from master.dbo.sysdatabases"))$name))
     names(lst) <- server
   } else {
-    tabs <- data.table(read.odbc(server, paste0(db, ".information_schema.tables")))$TABLE_NAME
+    tabs <- sort(data.table(read.odbc(server, paste0(db, ".information_schema.tables")))$TABLE_NAME)
     lst <- lapply(tabs, function(tab) colnames(read.odbc(server, dbQuery = paste0("select top 1 * from ", db, "..", tab))))
     names(lst) <- tabs
   }

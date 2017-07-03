@@ -38,7 +38,7 @@
  missing_pckgs
  
  
- results <- code_search(pattern = "Miscellaneous", filepattern = "\\.R", directory = "..", recursive = T, value = T, ignore.case = T)
+ results2 <- code_search(pattern = "region", filepattern = "\\.R", directory = "../../Miscellaneous", recursive = T, value = T, ignore.case = T)
  
  
  
