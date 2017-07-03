@@ -1,0 +1,29 @@
+---
+title: "Bases"
+output: html_document
+---
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
+library(data.table)
+library(ggmap)
+library(leaflet)
+
+adds <- data.table(Address = c("91 N 970 W, Orem UT","438 N 950 E, Orem, UT","730 S 200 W, Orem, UT","13961 Minuteman Dr, Draper, UT"), 
+                   Label = c("Home","Homebase","Inlaws","Work")) [,c("lon","lat"):=geocode(Address)]
+```
+
+
+
+```{r, echo=FALSE}
+# Same thing
+m <- leaflet() %>%
+     addTiles() %>%  # Add default OpenStreetMap map tiles
+     addMarkers(lng=adds$lon, lat=adds$lat, popup=adds$Label, icon = makeIcon("C:/Users/cmcneil/Documents/Projects/Miscellaneous/Personal/Images/images.png",iconHeight=50,iconWidth=20,iconAnchorX=5,iconAnchorY=50))
+m
+
+# Same thing
+m <- addMarkers(addTiles(leaflet()),lng=adds$lon, lat=adds$lat, popup=adds$Label, icon = makeIcon("C:/Users/cmcneil/Documents/Projects/Miscellaneous/Personal/Images/images.png",iconHeight=50,iconWidth=20,iconAnchorX=5,iconAnchorY=50))
+
+```
+
+
