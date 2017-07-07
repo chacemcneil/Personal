@@ -102,6 +102,7 @@ html_chunk <- function(id, divs, labels) {
 #' Creates an \code{htmlTable} object for a model coefficient table.
 #' @param mod Model object.
 #' @param names Optional 4-element vector of column names.
+#' @param caption Optional caption for the table.
 #' @export
 #' @example
 #' # From lm documentation:
@@ -126,6 +127,26 @@ html_summary <- function(mod, names = NULL, caption = NULL, ...) {
   tab[,4] <- signif(tab[,4], digits = 2)
   tab[,4] <- ifelse(tab[,4] < 0.0001, "&lt;0.0001", tab[,4])
   htmlTable::htmlTable(tab, caption = caption, ...)
+}
+
+#' HTML Model Formula Function
+#' 
+#' Creates a formula for a fitted model.
+#' @param mod Model object.
+#' @export
+#' @example
+#' # From lm documentation:
+#' ctl <- c(4.17,5.58,5.18,6.11,4.50,4.61,5.17,4.53,5.33,5.14)
+#' trt <- c(4.81,4.17,4.41,3.59,5.87,3.83,6.03,4.89,4.32,4.69)
+#' group <- gl(2, 10, 20, labels = c("Ctl","Trt"))
+#' weight <- c(ctl, trt)
+#' lm.D9 <- lm(weight ~ group)
+#' html_summary(lm.D9)
+
+html_model <- function(mod, caption = NULL, ...) {
+  # Forms an htmlTable from a linear model
+  coef <- coef(mod)
+  # Not finished. Goal is to output math equation.
 }
 
 #' Chunk Plot Function

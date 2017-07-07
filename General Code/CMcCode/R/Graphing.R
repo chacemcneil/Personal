@@ -812,7 +812,7 @@ reglines <- function(mod) {
   coefs <- NULL
   for (i in 1:p) {
     tmpdata <- data[, .SD]
-    tmpdata[, (vars[-i]) := 0]
+    tmpdata[, (vars[-i]) := as.list(rep(0, length(vars) - 1))]
     
     call <- mod$call
     call$data <- as.name("tmpdata")
@@ -863,6 +863,6 @@ reglines <- function(mod) {
 #' @examples
 #' reglines2(mod)
 
-regliens2 <- function(mod) {
+reglines2 <- function(mod) {
   
 }
