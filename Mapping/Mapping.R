@@ -14,7 +14,7 @@
  #download.file("http://www.arcgis.com/home/item.html?id=f7f805eb65eb4ab787a0a3e1116ca7e5","../Miscellaneous/Personal/usmapdata.zip",method="curl")
  #unzip("../../Miscellaneous/Personal/usmapdata.zip")
  
- all_states_shp <- readOGR("../Miscellaneous/Personal/states_21basic", "states",verbose=F)
+ all_states_shp <- readOGR("/work/cmcneil/Miscellaneous/Personal/states_21basic", "states",verbose=F)
  dfstates <- as.data.table(as.data.frame(all_states_shp))
  setnames(dfstates,c("State","Seq","FIPS","SubRegion","Abbr"))
  
