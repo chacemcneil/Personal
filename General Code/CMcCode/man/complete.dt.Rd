@@ -4,7 +4,7 @@
 \alias{complete.dt}
 \title{Complete \code{data.table} combinations}
 \usage{
-complete.dt(dt, ..., replaceFUN = NULL)
+complete.dt(dt, ..., all.levels = T, replaceFUN = NULL)
 }
 \arguments{
 \item{dt}{\code{data.table} object to modify}

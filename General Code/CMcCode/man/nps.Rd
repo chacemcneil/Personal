@@ -21,7 +21,8 @@ moe(x)
 \item{as.factor}{Whether to return indicators as a factor variable. Default is \code{FALSE}}
 }
 \description{
-Functions for calculating NPS from responses to the net promoter score survey question.
+Functions for calculating NPS from responses to the net promoter score survey question:
+"How likely are you to recommend [company/product] to a friend or colleague?"
 }
 \section{Functions}{
 \itemize{
@@ -35,11 +36,6 @@ Functions for calculating NPS from responses to the net promoter score survey qu
 }}
 
 \examples{
-data(aSAH)
-rc <- roc(aSAH$outcome, aSAH$s100b, levels=c("Good", "Poor"))
-ggroc(rc)
-ggroc(rc, print.auc = "plot")
-}
-\seealso{
-\code{\link{ggroc}}
+responses <- c(10, 9, 10, 3, 7, 8, 5, 9, 8, 6)
+npsind(responses)
 }
