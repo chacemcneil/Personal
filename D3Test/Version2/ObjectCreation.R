@@ -14,20 +14,20 @@
                         color=ifelse((Row %in% c(0,rows) & Col < 12) | (Col == cols & Row > 20),"#FFFFDD","#CCFFFF"),
                         class=ifelse((Row %in% c(0,rows) & Col < 12) | (Col == cols & Row > 20),"Trmp","Block") )]
  
- blltmp <- data.table(x=(1:20)*40,y=20+5*(1:100),xvel=-1:3,yvel=0,direc=0,grav=c(-.1,.1,.1,.1),fric=0,bnce=.95,mov=0,drag=0,type=c("rect","circ"),
+ blltmp <- data.table(x=(1:20)*40,y=20+5*(1:100),xvel=rnorm(50),yvel=0,direc=0,grav=c(-.1,.1,.1,.1),fric=0,bnce=.95,mov=0,drag=0,type=c("rect","circ"),
                       hw=cellwidth/4,hh=cellheight/4,r=cellheight/5, xs=NA, ys=NA,color="#FFEEFF",class="Bll")
  
- blltmp <- data.table(x=700 + (0:3)*20,y=c(570,520,560,580),xvel=0,yvel=10,direc=0,grav=0,fric=0,bnce=.95,mov=0,drag=0,type=c("rect"),
+ blltmp <- data.table(x=700 + (0:3)*20,y=c(570,520,560,580),xvel=0,yvel=10,direc=0,grav=.1,fric=0,bnce=.95,mov=0,drag=0,type=c("rect"),
                       hw=cellwidth/2,hh=cellheight/2,r=cellheight/2, xs=NA, ys=NA,color="#FFCCFF",class="Bll")
  
- rm1 <- rbind(blktmp,blltmp)
+ write(paste0("objects = ",toJSON(rbind(blktmp,blltmp)),";"),file="rm1.js")
  
- write(paste0("objects = ",toJSON(rm1),";"),file="rm1.js")
- 
- 
- 
+ # blltmp <- data.table(x=460,y=c(270,520),xvel=0,yvel=10,direc=0,grav=0.1,fric=0,bnce=.95,mov=0,drag=0,type=c("rect"),
+ #                      hw=cellwidth/2,hh=cellheight/2,r=cellheight/2, xs=NA, ys=NA,color="#FFCCFF",class="Bll")
  
  
+ 
+ ?repeat
  
  
 # End script
