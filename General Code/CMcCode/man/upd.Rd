@@ -4,16 +4,13 @@
 \alias{upd}
 \title{Update function}
 \usage{
-upd(width = 260)
-}
-\arguments{
-\item{width}{Sets the width, in characters, of the output in the console window.}
+upd()
 }
 \description{
-This function initializes lv as .Last.value and sets the width of any printed output.
+This function initializes lv as .Last.value.
 }
 \examples{
-upd(200)
+upd()
 3 + 4
 lv
 getwd()
