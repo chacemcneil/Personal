@@ -2,6 +2,7 @@
  library(animation)
  library(data.table)
  
+ setwd("C:/Users/cmcneil/Documents/Projects/Miscellaneous/Personal/Geometry")
  
  t <- 1:1e3
  d <- 1:1e3
@@ -93,6 +94,7 @@
  saveHTML("temp", htmlfile = "temp.html", opts = ani.options(interval = .02), verbose = F)
  
  
+ #### Another method exists in PlotWaves2.R
  
 # End script
  

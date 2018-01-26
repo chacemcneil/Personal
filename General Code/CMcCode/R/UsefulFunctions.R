@@ -1,5 +1,5 @@
 ### This contains handy functions that I use frequently. The included functions are:
-# upd                 Modify width of console output and initialize lv = .Last.value
+# upd                 Initialize lv = .Last.value
 # ini                 Opens ~/.odbc.ini file for editting
 # rsavvy              Creates a read.odbc function mimicking the savvy function, for use in Citrix
 # ept                 (Evaluate Parsed Text) Evaluates an expression in character form
@@ -24,6 +24,7 @@
 # moe                 Calculates Margin of Error (for NPS)
 # roundNumeric        Rounds the numeric columns of a data.table
 # convert.tz          Convert times between time zones
+# hardcode            Generate code that creates the given object as is (currently only vectors).
 
 ## Use the following code to update package
 # library(devtools)
@@ -36,23 +37,19 @@
 
 #' Update function
 #'
-#' This function initializes lv as .Last.value and sets the width of any printed output.
-#' @param width Sets the width, in characters, of the output in the console window.
+#' This function initializes lv as .Last.value.
 #' @export
 #' @examples
-#' upd(200)
+#' upd()
 #' 3 + 4
 #' lv
 #' getwd()
 #' lv
  
-upd <- function(width=260) {
+upd <- function() {
   if(exists("lv"))
   rm(lv, envir=.GlobalEnv)
-  
   makeActiveBinding("lv", function(x) .Last.value, .GlobalEnv)
-  
-  options(width=width)
 }
 
 #' Read Database
@@ -771,6 +768,62 @@ convert.tz <- function(x, tz, oldtz = "UTC") {
   x
 }
 
- 
+#' Hard Code Objects
+#' 
+#' Generates R code to re-create the given input as is. 
+#' Generated code, when run, should create an identical object.
+#' Supported object types include \code{numeric}, \code{character}, \code{logical}, \code{factor}, \code{matrix}, \code{data.frame} and \code{list}.
+#' (other than \code{data.frame} objects which are converted to \code{data.table} objects).
+#' @param x Vector to hard code.
+#' @export
+#' @examples
+#' x <- rnorm(10, 5, 3)
+#' hardcode(x)
+#' 
+#' lets <- letters
+#' hardcode(y)
+#' 
+#' hardcode(mtcars)
+
+hardcode <- function(x, assign = T, assign_oper = "<-", print = T) {
+  if(length(x)==0)
+    code <- paste0(class(x), ifelse(is.null(x), "", "()"))
+  else {
+    if(is.matrix(x)) {
+      code <- paste("matrix(cbind(", paste(apply(mat, 2, hardcode, assign = F), collapse = ",\n"), "\n),\ndimnames = ", hardcode(dimnames(mat), assign = F), ")", sep = "")
+    } else {
+      if(is.numeric(x) || is.logical(x)) {
+        code <- x
+        if(length(x) > 1)
+          code <- paste0("c(", paste0(code, collapse = ", "), ")")
+      }
+      if(is.character(x)) {
+        code <- ifelse(is.na(x), NA, paste0('"', x, '"'))
+        if(length(x) > 1)
+          code <- paste0("c(", paste0(code, collapse = ", "), ")")
+      }
+    }
+    if(is.factor(x)) {
+      code <- paste0("factor(", hardcode(as.character(x), assign = F), ", levels = ", hardcode(levels(x), assign = F), ")")
+    }
+    if(is.data.frame(x)) {
+      code <- paste0("data.table(", paste(names(x), "=", sapply(x, hardcode, assign = F), collapse = ",\n"), "\n)")
+    } else {
+      if (is.list(x)) {
+        code <- paste0("list(", paste0(ifelse(names(x) == "", "", paste(names(x), "= ")), sapply(x, hardcode, assign = F), collapse = ",\n"), "\n)")
+      }
+    }
+  }
+  
+  if(!exists("code")) stop(paste("Cannot create code for object of class", class(x)[1]))
+  if(assign)
+    code <- paste(substitute(x), assign_oper, code)
+  if(print & identical(parent.frame(), globalenv()))
+    cat(code)
+  invisible(code)
+}
+
+
+
 # End script
  

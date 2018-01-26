@@ -120,6 +120,7 @@ m6 <- function(train, test, prob = T, thresh = 0.5) {
 }
 
 # Linear Discriminate Analysis (LDA), (MASS package)
+
 m7 <- function(train, test, prob = T, thresh = 0.5) {
   
   model <- lda(AorB~., data=train)
