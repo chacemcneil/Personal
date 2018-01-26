@@ -257,7 +257,7 @@ roc_dt <- function (rc, cost.fn = 1, cost.fp = 1, plot = T) {
 #' ggroc(rc)
 #' ggroc(rc, print.auc = "plot")
 
-ggroc <- function(rc, labels = NULL, print.auc = c("title", "plot"), mark.sens = NULL, mark.spec = NULL) {
+ggroc <- function(rc, labels = NULL, print.auc = c("title", "plot"), mark.sens = NULL, mark.spec = NULL, ...) {
   print.auc = match.arg(print.auc)
   dat <- data.table(Sensitivity = rc$sensitivities,
                     Specificity = rc$specificities,
@@ -274,7 +274,7 @@ ggroc <- function(rc, labels = NULL, print.auc = c("title", "plot"), mark.sens =
     p <- p + ggplot2::geom_hline(aes(yintercept = mark.sens), linetype=2, col="slateblue")
   p <- p + 
     ggplot2::geom_abline(aes(intercept = 0, slope = 1), col = "gray50") + 
-    ggplot2::geom_line(data = dat, aes(1 - Specificity, Sensitivity)) + 
+    ggplot2::geom_line(data = dat, aes(1 - Specificity, Sensitivity), ...) + 
     ggplot2::labs(title = ifelse(print.auc == "title", paste0("AUC: ", round(rc$auc, 3)), ""), x = "Specificity", y = "Sensitivity", yy = "Cases") +
     ggplot2::theme(panel.grid.minor = element_blank(), 
                    axis.text = element_text(size = 15), 
