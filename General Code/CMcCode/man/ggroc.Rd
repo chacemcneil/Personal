@@ -5,7 +5,7 @@
 \title{\code{ggplot2} ROC Curves}
 \usage{
 ggroc(rc, labels = NULL, print.auc = c("title", "plot"), mark.sens = NULL,
-  mark.spec = NULL)
+  mark.spec = NULL, ...)
 }
 \arguments{
 \item{rc}{\code{\link[pROC]{roc}} object to evaluate.}

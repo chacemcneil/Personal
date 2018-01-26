@@ -92,10 +92,13 @@ is.color <- function (x)
 
 #' @describeIn is.color
 #' @export
-hex <- function(col)  {
+hex <- function(col, alpha = 1)  {
   col <- ifelse(is.color(col), col, NA)
   rgb <- col2rgb(col)/255
-  hex <- rgb(red=rgb["red",], green=rgb["green",], blue=rgb["blue",], alpha=1)
+  if(all(alpha == 1))
+    hex <- rgb(red = rgb["red",], green = rgb["green",], blue = rgb["blue",])
+  else
+    hex <- rgb(red = rgb["red",], green = rgb["green",], blue = rgb["blue",], alpha = alpha)
   hex <- ifelse(is.na(col), NA, hex)
   hex
 }

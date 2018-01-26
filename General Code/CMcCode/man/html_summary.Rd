@@ -10,6 +10,8 @@ html_summary(mod, names = NULL, caption = NULL, ...)
 \item{mod}{Model object.}
 
 \item{names}{Optional 4-element vector of column names.}
+
+\item{caption}{Optional caption for the table.}
 }
 \description{
 Creates an \code{htmlTable} object for a model coefficient table.
