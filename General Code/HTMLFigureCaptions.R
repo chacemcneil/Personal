@@ -27,12 +27,22 @@
        ## caption with the refName that was passed to fig$cap() (not the code chunk name).
        ## The cross reference can be hyperlinked.
        
-       if (checkRef && !refName %in% names(ref)) stop(paste0("fig$ref() error: ", refName, " not found"))
-       if (link) {
-         paste0("<A HREF=\"#", refName, "\">Figure ", ref[[refName]], "</A>")
-       } else {
-         paste0("Figure ", ref[[refName]])
+       if (checkRef && any(!refName %in% names(ref))) stop(paste0("fig$ref() error: ", refName, " not found"))
+       if(length(refName) == 1) {
+         refs <- paste("Figure", ref[[refName]])
+         if(link)
+           refs <- paste0("<A HREF=\"#", refName[1], "\">", refs, "</A>")
        }
+       else {
+         refs <- sapply(refName, function(nm) ref[[nm]])
+         if(link)
+           refs <- paste("Figures", 
+                         paste(paste0("<A HREF=\"#", head(refName, -1), "\">", head(refs, -1), "</A>"), collapse = ", "), "&", 
+                         paste0("<A HREF=\"#", tail(refName, 1), "\">", tail(refs, 1), "</A>") )
+         else
+           refs <- paste("Figures", paste(head(refs, -1), collapse = ", "), "&", tail(refs, 1))
+       }
+       refs
      },
      
      ref_all=function(){
@@ -55,6 +65,7 @@
      if (is.list(options$fig.cap)) {
        ## options$fig.cap is a list returned by the function fig$cap()
        str_caption <- options$fig.cap$cap_txt
+       print(str_caption)
        str_anchr <- options$fig.cap$anchor
      } else {
        ## options$fig.cap is a character object (hard coded, no anchor)
@@ -101,7 +112,8 @@
  ## before the caption actually appears. 
  
  ## Get the name of this Rmd file
- rmdFn <- paste(filedir,knitr::current_input(),sep="/")  # filename of input document
+ rmdFn <- knitr::current_input()
+ # rmdFn <- paste(filedir,knitr::current_input(),sep="/")  # filename of input document
  
  ## Read lines and close connection
  rmdCon <- file(rmdFn, open = "r")
