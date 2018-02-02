@@ -3,6 +3,7 @@
 # ini                 Opens ~/.odbc.ini file for editting
 # rsavvy              Creates a read.odbc function mimicking the savvy function, for use in Citrix
 # ept                 (Evaluate Parsed Text) Evaluates an expression in character form
+# qu                  Allow for the creation of a character vector without using quotes
 # revf                reverse the levels of a factor variable, useful for ggplot bar charts
 # replace.na          function for replacing NAs in a vector more easily
 # merge.list          Adds or modifies elements to a list based on entry names
@@ -172,6 +173,25 @@ ept <- function(txt, env=NULL, drop=T, useDT = T) {
   if(length(txt)==1 & drop == T)
     dt <- dt[[1]]
   dt
+}
+
+#' Create Character Vector
+#' 
+#' Creates a character vector from a vector of unquoted characters.
+#' Ignores any value assigned to variables.
+#' Does not work for character strings containing spaces.
+#' @param vec Vector
+#' @export
+#' @example
+#' a <- 1
+#' c(a, b)     # Gives error
+#' # All the same
+#' qu(c(a, b))
+#' qu(c(a, "b"))
+#' qu(c("a", "b"))
+
+qu <- function(vec) {
+  as.character(substitute(vec))[-1]
 }
 
 #' Dollar format

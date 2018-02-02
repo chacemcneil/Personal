@@ -63,39 +63,21 @@ html_list <- function(strings, details = NULL, detailpref = "- ", kind = c("ul",
 #' # Dropdown list with selected values
 #' html_dropdown("tmp", x, values = 1:4)
 
-html_dropdown <- function(id, labels, values = NULL, onchange = "", onload = "") {
-  if(is.null(values))
-    values = names(labels)
-  if(is.character(values))
-    values <- paste0("\"", values, "\"")
-  str <- paste("<select id = \"", id, "\" onchange = \"", onchange, "\" onload = \"", onload, "\">", paste("\n<option value = ", values, ">", labels, "</option>", sep = "", collapse = ""), "\n</select>", sep = "")
+html_dropdown <- function (id, divs, labels = NULL, onchange = paste0(id, "_function(value);"), onload = "") {
+  if(is.null(labels)) {
+    if(any(names(divs) == ""))
+      stop("Must supply labels or a named vector for divs.")
+    else
+      labels <- names(divs)
+  }
+  str <- paste("<script>\nfunction ", id, "_function (value) {\n", 
+               paste(divs, ".hidden = true;", sep = "", collapse = "\n"), 
+               "\nconsole.log(value);\n", "document.getElementById(value).hidden = false;\n}\n</script>", 
+               "\n<select id = \"", id, "\" onchange = \"", onchange, "\" onload = \"", onload, "\">", 
+               paste("\n<option value = ", divs, ">", labels, "</option>", sep = "", collapse = ""), 
+               "\n</select>", "<div id = \"", id, "_disp\"></div>", sep = "")
   str
 }
-
-#' HTML Chunk
-#' 
-#' Creates a section of html code that is modified according to selected inputs.
-#' @param id Character, id attribute for html tags.
-#' @param divs Character vector giving the ids of the div tags to be selected
-#' @param labels Character vector of labels to display in dropdown menu
-#' @export
-#' @example
-#' # In markdown file.
-#' x <- rnorm(1e3)
-#' id <- "myid"
-#' divs <- c("div1", "div2")
-#' labels <- c("Sorted", "Unsorted")
-#' 
-
-html_chunk <- function(id, divs, labels) {
-  str <- paste("<script>\nfunction ", id, "_function (value) {\n", paste(divs, ".hidden = true;", sep = "", collapse = "\n"), "\nconsole.log(value);\n",  
-               # id, "_disp.innerHTML = document.getElementById(value).innerHTML;\n}\n", "</script>", sep = "" )
-               "document.getElementById(value).hidden = false;\n}\n</script>", sep = "" )
-  str <- paste(str, html_dropdown(id = id, labels = labels, values = divs, onchange = paste0(id, "_function(value);")), 
-               paste("<div id = \"", id, "_disp\"></div>", sep = ""), sep = "\n" )
-  str
-}
-
 
 #' HTML Model Summary Function
 #' 
