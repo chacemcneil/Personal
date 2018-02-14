@@ -48,9 +48,11 @@
 #' lv
  
 upd <- function() {
+  tmp <- .Last.value
   if(exists("lv"))
   rm(lv, envir=.GlobalEnv)
   makeActiveBinding("lv", function(x) .Last.value, .GlobalEnv)
+  invisible(tmp)
 }
 
 #' Read Database
