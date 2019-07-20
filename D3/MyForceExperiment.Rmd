@@ -11,7 +11,9 @@ library(igraph)
 # library(xtable)
 # library(ggplot2)
 
-setwd("/work/cmcneil/Miscellaneous/Personal/D3")
+dir()
+
+# setwd("/work/cmcneil/Miscellaneous/Personal/D3")
 source("D3Force.R")
 
 options(width=150)
