@@ -1,0 +1,827 @@
+---
+title: "R Markdown Demo"
+output: 
+  html_document:
+    code_folding: show
+geometry: margin=0cm
+---
+
+<!-- 
+HTML comment
+-->
+`r # Comment using R code, note that in-line R statements require use of single back-quote characters (upper-left part of keyboard)`
+
+<!-- Include this to use MathJax for creating formulas 
+<script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+-->
+
+<!-- This style tag changes the formatting of div tags that are of class tabset -->
+<style>
+div.tabset {
+  font-size: 16px;
+}
+tabset level2 {
+  background-color: orange;
+}
+div.tabset a {
+  text.align: center;
+}
+code {
+  background-color: #EEDDFF;
+}
+.collapse {
+
+}
+</style>
+
+<script>
+// Used with kableExtra package.
+$(document).ready(function(){
+    $('[data-toggle="popover"]').popover(); 
+});
+</script>
+
+<!-- These commands are for the animations section -->
+<link rel="stylesheet" href="css/scianimator.css" />
+<script src="js/jquery.scianimator.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.3/highlight.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.3/languages/r.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+```{r setup, include=FALSE}
+library(animation)
+library(data.table)
+library(ggplot2)
+library(gtools)
+library(htmlTable)
+library(kableExtra)
+library(knitr)
+library(leaflet)
+library(maps)
+library(plotly)
+library(rpivotTable)
+library(scales)
+
+options(width = 5000)
+# dir()
+## This makes the default alignment for all captions 'center' (commented out for comparison)
+# knitr::opts_chunk$set(fig.align = 'center')
+
+## This is used to generated auto-numbered figures
+source("HTMLFigureCaptions.R")
+
+## HTML Functions
+
+## Creates html for bulleted/numbered lists from character vectors
+html_list <- function (strings, details = NULL, detailpref = "- ", kind = c("ul", "ol"), type = c(1, "A", "a", "I", "i")) {
+    kind <- match.arg(kind)
+    type <- match.arg(type)
+    str <- paste("<", kind, " type = \"", type, "\">\n", paste("<li>", 
+        strings, "</li>", sapply(details, function(det) paste("\n<dd>", 
+            detailpref, det, "</dd>", sep = "", collapse = "")), 
+        sep = "", collapse = "\n"), "\n</", kind, ">", sep = "")
+    str
+}
+
+## Creates a dropdown menu
+html_dropdown <- function (id, divs, labels = NULL, onchange = paste0(id, "_function(value);"), onload = "") {
+  if(is.null(labels)) {
+    if(any(names(divs) == ""))
+      stop("Must supply labels or a named vector for divs.")
+    else
+      labels <- names(divs)
+  }
+  str <- paste("<script>\nfunction ", id, "_function (value) {\n", 
+               paste(divs, ".hidden = true;", sep = "", collapse = "\n"), 
+               "\nconsole.log(value);\n", "document.getElementById(value).hidden = false;\n}\n</script>", 
+               "\n<select id = \"", id, "\" onchange = \"", onchange, "\" onload = \"", onload, "\">", 
+               paste("\n<option value = ", divs, ">", labels, "</option>", sep = "", collapse = ""), 
+               "\n</select>", "<div id = \"", id, "_disp\"></div>", sep = "")
+  str
+}
+
+```
+
+<!-- This is a level one heading, all following level two headings will be grouped in the same tabset -->
+# {.tabset .tabset-pills}
+
+## HTML Basics
+
+### Formatting
+
+#### Text
+
+Use \*\* to start and end sections of **bold text**. Use only one \* for *italics*. Use the \<code\> tag to make code look like <code>code</code>. The style for differnt types of text (code, headings, tabs, etc.) can be modified in a <code>\<style\></code> section. Certain characters (\$, \&, \<, \>, etc.) have special interpretations in HTML. These can be inserted as regular text by escaping with the \\ character.
+
+#### Links
+
+Links can be created in a couple ways:
+
+* <code>[This link]\(https://www.google.com "Google's Homepage")</code> [This link](https://www.google.com "Google's Homepage") connects to Google and gives a little description when hovering (quoted section can be modified/remove to change tooltip).
+* <code>\<a href="https://www.google.com" title ="Google's Homepage"\>This is the same link\</a\></code> <a href="https://www.google.com" title ="Google's Homepage">This link</a> is the same thing created with an html tag.
+
+#### Tooltips
+
+```{r hidden, include = FALSE}
+gg = ggplot(data.table(r = 1:10, c = rnorm(10)), aes(r, c)) + geom_point()
+```
+
+The <code>kableExtra</code> package is commonly used for creating tables but can also be used to add a tooltip to text. `r text_spec("Hover over this", tooltip = "Additional information:\nYou might not want all of this printed", color = "red")`. This can also modify the appearance of text like `r text_spec("this", popover = spec_popover(content = "Tooltip also tilted", position = "bottom"), color = "green", background = "#DDDDDD", font_size = 18, angle = 12)`.
+
+I think there is more functionality here, but I haven't worked with the package much.
+
+#### Formulas
+
+Inline formulas are created by starting and ending with \$ or surrounding with escaped parentheses. Example: $x + 4 = 6$ or \(x+4 = 6\). Block formulas are created using \$\$, as in $$ x + 3 = 10$$ More complex formulas can also be made $$x = {-b \pm \sqrt{b^2-4ac} \over 2a}.$$ as well as multi-line equations $$ \begin{array}{} x - 2 & = & {4 \over 2} \times 3 \\ x & = & 2 \times 3 + 2 \\ & = & 8 \end{array}$$ or $$ s_{ij} = \left\{ \begin{array}{} -\frac{1}{2} & \text{if} & x_{ij} < 0 \\ 0 & \text{if} & x_{ij} = 0 \\ \frac{1}{2} & \text{if} & x_{ij} > 0 \end{array}\right.$$
+
+#### Breaks
+
+Line breaks can be created with the <code>\<hr\></code> tag.<hr>The width and color of the line can be modified by adding <code>style="border-width: 4px; border-color: #AA5500;"</code> inside the tag.
+
+<hr style="border-width: 4px; border-color: #AA5500;">
+
+If you just want to ensure that the text skips to the next line, without adding the extra vertical space,<br>use the <code>\<br\></code> tag.
+
+### Lists
+
+Basic lists can be created in markdown documents by typing the following code. It is important to have the correct number of spaces before "+" for sub bullets. Manually type numerals or letters for ordered lists.
+
+<pre>
+* item one
+    + sub item one
+    + sub item two
+* item two
+</pre>
+
+Lists can also be created from R objects and auto-formatted. The lists created below use a custom function <code>html_list</code> shown in the following code chunk. It's a little hairy, but is best placed in the setup chunk (or in a personal R package if you have one &#x1F913; &#x1F609;).
+
+```{r, eval = FALSE}
+## Creates html for bulleted/numbered lists from character vectors
+html_list <- function (strings, details = NULL, detailpref = "- ",
+                       kind = c("ul", "ol"), type = c(1, "A", "a", "I", "i")) {
+    kind <- match.arg(kind)
+    type <- match.arg(type)
+    str <- paste("<", kind, " type = \"", type, "\">\n",
+                 paste("<li>", strings, "</li>",
+                       sapply(details, function(det) {
+                         paste("\n<dd>", detailpref, det, "</dd>", sep = "", collapse = "")
+                       }),
+                       sep = "", collapse = "\n"),
+                 "\n</", kind, ">", sep = "")
+    str
+}
+
+```
+
+```{r, echo = TRUE}
+bulleted_list = c("ItemA", "ItemB")
+list_details = list(c("An okay thing", "Needs work"), "A really cool thing!")
+numbered_list = c("First item", "Second item", "Third item", "Fourth item")
+```
+
+#### Bulleted (unordered) lists
+Basic list
+
+<code>html_list(bulleted_list)</code>
+`r html_list(bulleted_list)`
+
+Sub lists (<code>details</code>):
+
+<code>html_list(bulleted_list, details = list_details)</code>
+`r html_list(bulleted_list, details = list_details)`
+
+#### Ordered lists
+Using numerals
+
+<code>html_list(numbered_list, kind = "ol")</code>
+`r html_list(numbered_list, kind = "ol")`
+
+Using letter labels
+
+<code>html_list(numbered_list, kind = "ol", type = "a")</code>
+`r html_list(numbered_list, kind = "ol", type = "a")`
+
+Options for the <code>type</code> parameter include:
+
+`r html_list(paste(c(1, "A", "a", "I", "i"), c("Numbers", "Upper case letters", "Lower case letters", "Upper case roman numerals", "Lower case roman numerals"), sep = " -- "))`
+
+### Symbols
+
+Certain symbols can also be added to the markdown file using unicode character encoding. Certain characters can be referenced by name (e.g. <code>\&dagger;</code> gives &dagger;), but most require a hexidecimal representation given in the form <code>\&#x0000;</code> or <code>\&#x00000;</code> (zeros replaced by desired unicode). Follow this link (&#x1F8A5; [here](https://unicode-table.com/en/)) for a table of codes (warning: it's huge).
+
+
+## Tables & Graphs
+
+### Tables
+
+The package <code>htmlTable</code> allows a lot of flexibility in formatting tables without having to stick with R output.
+
+```{r}
+tab <- data.table(Item = c("First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh"), Ind = 1:7, Dec1 = rnorm(7, 3), Dec2 = rnorm(7, 4))
+tab
+```
+
+Though it isn't perfect, a simple htmlTable like the one below is better than R output and is simple to create.
+
+```{r}
+htmlTable(tab)
+```
+
+Adding a little bit of code allows for more formatting options.
+
+<div style = "code.height: 50px; code.overflow-y: scroll;">
+```{r, fig.align = 'center'}
+htmlTable(tab[, list(Item, Ind, Dec1 = round(Dec1, 2), Dec2 = round(Dec2, 2))], 
+          align = "lrrr", 
+          rnames = F,                                           # No numbers on rows
+          rgroup = c("Top", "Middle", "Bottom"),                # Labels for sets of rows
+          n.rgroup = c(2, 3, 2),                                # Number of rows for each group
+          col.rgroup = c("none", "#BBDDFF"),                    # Alternating colors for background
+          cgroup = c("", "Values"),                             # Grouping columns
+          n.cgroup = c(2, 2),                                   # Number of columns in each group
+          css.cell = "padding-right: 2em; padding-left: 2em;",  # Horizontal padding, remember units
+          css.rgroup = 'color: #AA0000; font-weight: bold;',    # Format row group headers
+          caption = "This is a table caption",                  # Caption
+          tfoot = "&dagger; Table footer",                      # Footer, you get odd characters with &____; using some words or unicode numbers
+          css.table = "margin: 1em auto;"                       # Putting 'auto' in the margin of the table style centers the table on the page
+          )
+```
+</div>
+
+### Chunk options
+
+Here is a list of convenient chunk options: `r html_list(c("echo (T/F)", "fig.height", "fig.width", "message (T/F)", "warning (T/F)", "results ('asis' interprets output as HTML)"))` Most just control how much extra stuff gets thrown into the document. The chunk for the following graph includes <code>fig.width = 14</code> and <code>fig.height = 3</code> to change the figure size.
+
+```{r, fig.width = 14, fig.height = 3, fig.cap = fig$cap("previous_figure", inline = T, center = T)}
+mat <- matrix(rnorm(100), 20, 5)
+image(mat)
+```
+
+### Side-by-side figures
+
+Uses package <code>knitr</code>
+
+```{r chunk_label, include = FALSE, echo = TRUE}
+# Note label of chunk: 'chunk_label'
+# Use include = FALSE
+# This creates 2 plots, which are referenced separately in the table below.
+
+tab1 <- htmlTable(data.table(Letters = letters[1:5]))
+tab2 <- htmlTable(data.table(Letters = LETTERS[1:5]))
+
+# 1st plot
+plot(1:5)
+
+# 2nd plot
+plot(rnorm(5, 5, 5))
+abline(0, 0, lt = 2)
+```
+
+This is really ugly. I wish there was a better way to do this.
+The only thing to change in the code below is the final string, <code>"chunk_label-1"</code>, which references the label of the chunk where the graph is created. The second graph shown is created in the same chunk, so the string used in that case is <code>"chunk_label-2"</code>. The percentages given for the width in the style section define how much of the available space is given to the respective elements.
+
+```{r, eval = FALSE}
+<table class='gmisc_table' style='border-collapse: collapse; margin-top: 1em; margin-bottom: 1em; width:80%' >
+<tr><td style = 'width:30%'>`r tab1`</td><td>&nbsp;</td><td style = 'width:70%'>`r include_graphics(paste0(opts_chunk$get("fig.path"), "chunk_label-1.png"))`</td></tr></table>
+```
+
+<<!-- 
+The first line just sets up a table.  
+The second line adds elements to different cells in the table. This table has one row with two cells.
+-->
+<table class='gmisc_table' style='border-collapse: collapse; margin-top: 1em; margin-bottom: 1em; width:80%' >
+<tr><td style = 'width:30%'>`r tab1`</td><td>&nbsp;</td><td style = 'width:70%'>`r include_graphics(paste0(opts_chunk$get("fig.path"), "chunk_label-1.png"))`</td></tr></table>
+
+<table class='gmisc_table' style='border-collapse: collapse; margin-top: 1em; margin-bottom: 1em; width:80%' >
+<tr><td style = 'width:30%'>`r tab2`</td><td>&nbsp;</td><td style = 'width:70%'>`r include_graphics(paste0(opts_chunk$get("fig.path"), "chunk_label-2.png"))`</td></tr></table>
+
+The same effect can be achieved by putting the whole R chunk between the <code>\<td\></code> tags. Note that since the chunk did not include <code>echo = FALSE</code>, the code is included and also appears inside the cell of the table.
+
+<table class='gmisc_table' style='border-collapse: collapse; margin-top: 1em; margin-bottom: 1em; width:80%' >
+<tr><td style = 'width:30%'>
+`r htmlTable(data.table(CapLetters = LETTERS[1:9]))`
+</td><td style="width:5%;"></td><td style = 'width:70%'>
+```{r, fig.height = 3}
+plot(rnorm(5, 5, 5))
+abline(0, 0, lt = 2)
+```
+</td></tr></table>
+
+
+### Auto-numbered Figures
+
+You can also add auto-numbered labels to figures. See `r fig$ref(c("figure_name", "figure_name_2"), link = T)` below. Also note `r fig$ref("previous_figure", link = T)` above. This requires additional code sourced in the setup chunk (<code>source("HTMLFigureCaptions.R")</code>). Note that if a figure is on a different tab (like `r fig$ref("figure_somewhere_else", link = T)`), or hidden because of dropdown menu settings, the link will not work.
+
+```{r, echo = F, fig.cap = fig$cap("figure_name", inline = T)}
+ggplot(tab, aes(Dec1, Dec2)) + geom_point() + labs(title = "Plot title")
+```
+
+Notice that the caption for the next graph is centered on the full screen, where the previous caption is centered on the left 60% of the screen by default (?!). Including <code>knitr::opts_chunk$set(fig.align = 'center')</code> at the beginning of the file will center all captions.
+
+```{r nothing, echo = FALSE, fig.cap = fig$cap("figure_name_2", text = "Including a Simple Caption", width = 100, inline = T)}
+plot(1:3, main = paste("This title refers to", fig$ref("figure_name")))
+```
+
+You can also separately refer to tables, like `r fig$ref(c("justatable"), link = T)`, with similar numbering. For tables created with <code>htmlTable</code>, the chunk header must include <code>results = 'asis'</code> or the caption will not appear.
+
+```{r, echo = FALSE, fig.cap = fig$cap("justatable", text = "Another Simple Caption", type = "Table", width = 100), results = 'asis'}
+htmlTable(head(tab), rnames = F, css.table = "margin: 1em auto;")
+```
+
+## Page Organization
+
+### Tabs
+
+The tabs above are created using <code># {.tabset .tabset-pills}</code> and then all headings at the next level (created using ##) are added as individual tabs. The tabbed pages are ended by including another heading at the original level (#). See bottom of script. This can be useful if you want a footer on the page.
+
+### Drop-down lists
+
+```{r, results = 'asis', echo = FALSE}
+# These ids should be unique to the document. If they occur more than once it won't work properly.
+main_id = "options"
+id_list = c("some_id_1", "some_id_2", "some_id_3")
+label_list = c("Random", "Increasing", "Decreasing")
+
+vec <- rnorm(1e3)
+
+# The results = 'asis' means that any output will be interpretted as HTML.
+# This would do the same as `r html_dropdown(id = main_id, divs = id_list, labels = label_list)` outside of the chunk
+# cat(html_dropdown(id = main_id, divs = id_list, labels = label_list))
+cat(html_dropdown(id = main_id, divs = c(Random = "some_id_1", Increasing = "some_id_2", Decreasing = "some_id_3")))
+```
+
+At this point you need to insert actual <code>\<div\></code> tags with the correct id.
+Note that all but the first section are initially <code>hidden</code>.
+Also note that the following sections could be anywhere in the file, so be careful.
+
+<div id = "some_id_1">
+Random
+```{r, fig.cap = fig$cap("figure_somewhere_else", inline = T, center = T, width = 100), fig.align = 'center'}
+plot(vec)
+```
+<<!-- and then end each section -->
+</div>
+
+<div id = "some_id_2" hidden>
+Ordered
+```{r, fig.cap = fig$cap("blah", inline = T, center = T, width = 100), fig.align = 'center'}
+plot(sort(vec))
+```
+<<!-- and then end each section -->
+</div>
+
+<div id = "some_id_3" hidden>
+Reverse ordering
+```{r, fig.cap = fig$cap("blah_2", inline = T, center = T, width = 100), fig.align = 'center'}
+plot(rev(sort(vec)))
+```
+<<!-- and then end each section -->
+</div>
+
+### Return to Top Button
+
+<!-- This creates a button that appears when scrolling down that returns to the top of the page -->
+<script>
+window.onscroll = function() {scrollFunction()};
+
+function scrollFunction() {
+    if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+        document.getElementById("myBtn").style.display = "block";
+    } else {
+        document.getElementById("myBtn").style.display = "none";
+    }
+}
+function topFunction() {
+    document.body.scrollTop = 0; // For Safari
+    document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+}
+</script>
+<button onclick="topFunction()" id="myBtn" title="Return to top" style = "display: none; position: fixed; top: 40px; right: 20px;">Return to Top</button>
+
+Notice that since you are not at the top of the page, there is a button in the upper right that will return the view to the top of the page.
+
+This is done by inserting the following HTML and javascript.
+
+```{r, eval = FALSE}
+<script>
+function scrollFunction() {
+    if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+        document.getElementById("myBtn").style.display = "block";
+    } else {
+        document.getElementById("myBtn").style.display = "none";
+    }
+}
+function topFunction() {
+    document.body.scrollTop = 0; // For Safari
+    document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+}
+</script>
+<button onclick="topFunction()" id="myBtn" title="Return to top" style = "display: none; position: fixed; top: 40px; right: 20px;">Return to Top</button>
+```
+
+
+Notice that since the button was inserted beneath the "Tables & Graphs" heading, it only appears on this tab. To have it available on all tabs, the button should be placed at the beginning of the page -- outside of any tabs.
+
+### Code Folding
+
+You will notice that all code sections have a small button on the right which allows the user to hide or reveal the code associated with the chunk. To get this effect, insert <code>code_folding: show</code> at the very top of the markdown file (in the YAML section). Set to <code>hide</code> instead if you want code to be hidden by default. There will still be no code shown for chunks where you set <code>echo=FALSE</code>, but this can keep pages from feeling cluttered with code.
+
+### Slides
+
+This functionality mimics a slide presentation by enabling the user to click through a series of graphs. Along with the javascript inserted here, the code chunks must be separated and have the same class, set by <code>out.extra=list('class = "mySlides"')</code>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<style>
+.mySlides {display:none;}
+</style>
+
+<h2 class="w3-center">Slides</h2>
+
+
+<script>
+function plusDivs(n) {
+  showDivs(slideIndex += n);
+}
+function showDivs(n) {
+  var i;
+  var x = document.getElementsByClassName("mySlides");
+  
+  // For looping slides, use the following:
+  <!-- if (n > x.length) {slideIndex = 1} -->
+  <!-- if (n < 1) {slideIndex = x.length} -->
+  
+  // For beginning/ending slides, use the following:
+  if (n > x.length) {slideIndex = x.length}    
+  if (n < 1) {slideIndex = 1}
+  
+  for (i = 0; i < x.length; i++) {
+     x[i].style.display = "none";  
+  }
+  x[slideIndex-1].style.display = "block";  
+}
+</script>
+
+<div class="w3-content w3-display-container">
+  <button class="w3-button w3-black w3-display-left" onclick="plusDivs(-1)">&#10094;</button>
+  <button class="w3-button w3-black w3-display-right" onclick="plusDivs(1)">&#10095;</button>
+```{r, echo = FALSE, out.extra=list('class = "mySlides"'), fig.align='center'}
+nimadd <- function(x, y) {
+  # x and y must have same dimensions
+  nr <- nrow(x)
+  nc <- ncol(x)
+  x <- as.vector(x)
+  y <- as.vector(y)
+  maxn <- floor(log2(max(x, y)))
+  mx <- baseOf(x, 2, maxn+1)
+  my <- baseOf(y, 2, maxn+1)
+  res <- matrix(((mx + my) %% 2) %*% 2^(maxn:0), nr, nc)
+  res
+}
+n <- 4
+mat <- nimadd(row(matrix(0, n, n))-1, col(matrix(0, n, n))-1)
+image(mat, axes = F, col = colorRampPalette(c("white", "blue", "darkblue"))(64), zlim = c(0, n))
+```
+
+```{r, echo = FALSE, out.extra=list('class = "mySlides"'), fig.align='center'}
+n <- 8
+mat <- nimadd(row(matrix(0, n, n))-1, col(matrix(0, n, n))-1)
+image(mat, axes = F, col = colorRampPalette(c("white", "blue", "darkblue"))(64), zlim = c(0, n))
+```
+
+```{r, echo = FALSE, out.extra=list('class = "mySlides"'), fig.align='center'}
+n <- 16
+mat <- nimadd(row(matrix(0, n, n))-1, col(matrix(0, n, n))-1)
+image(mat, axes = F, col = colorRampPalette(c("white", "blue", "darkblue"))(64), zlim = c(0, n))
+```
+
+```{r, echo = FALSE, out.extra=list('class = "mySlides"'), fig.align='center'}
+n <- 32
+mat <- nimadd(row(matrix(0, n, n))-1, col(matrix(0, n, n))-1)
+image(mat, axes = F, col = colorRampPalette(c("white", "blue", "darkblue"))(64), zlim = c(0, n))
+```
+
+```{r, echo = FALSE, out.extra=list('class = "mySlides"'), fig.align='center'}
+n <- 64
+mat <- nimadd(row(matrix(0, n, n))-1, col(matrix(0, n, n))-1)
+image(mat, axes = F, col = colorRampPalette(c("white", "blue", "darkblue"))(64), zlim = c(0, n))
+```
+
+```{r, echo = FALSE, out.extra=list('class = "mySlides"'), fig.align='center'}
+n <- 128
+mat <- nimadd(row(matrix(0, n, n))-1, col(matrix(0, n, n))-1)
+image(mat, axes = F, col = colorRampPalette(c("white", "blue", "darkblue"))(64), zlim = c(0, n))
+```
+
+```{r, echo = FALSE, out.extra=list('class = "mySlides"'), fig.align='center'}
+# n <- 256
+# mat <- nimadd(row(matrix(0, n, n))-1, col(matrix(0, n, n))-1)
+# image(mat, axes = F, col = colorRampPalette(c("white", "blue", "darkblue"))(64), zlim = c(0, n))
+
+# image(mat - abs(row(mat) - col(mat)) + ifelse(isPrime(row(mat)^3+col(mat)^2), -40, 0),
+#       axes = F, col = colorRampPalette(c("white", "blue", "darkblue", "black"))(64), zlim = c(0, n))
+```
+</div>
+<script>
+var slideIndex = 1;
+showDivs(slideIndex);
+</script>
+
+### Embedding HTML files
+
+The following code creates a markdown file and compiles it to create an HTML file. The created file is then shown in it's own frame below.
+
+```{r}
+newscript <- paste(
+  "---\ntitle: Embedded HTML file\noutput:\n  html_document:\n    code_folding: hide\n---\n",
+  "\n### Table of Contents\nAnother thing that can be done is a table of contents which appears in aside-bar on the left-hand margin. ",
+  "The top of this embedded html file contains the following yaml:\n",
+  "```{r}",
+  "",
+  "```",
+  "```{r}",
+  "library(data.table)",
+  "library(htmlTable)",
+  "htmlTable(data.table(iris)[, list(Samples = .N, Avg_Length = mean(Sepal.Length), Avg_Width = mean(Sepal.Width)), keyby = list(Species)],",
+  " rnames = F, align = \"lr\", css.cell = \"padding-left: 3em; padding-right: 3em;\")",
+  "plot(iris$Sepal.Length, iris$Sepal.Width)",
+  "```\n",
+  sep = "\n"
+)
+newscript <- "
+---
+title: Embedded HTML file
+output:
+  html_document:
+    toc: true
+    toc_depth: 4
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    number_sections: false
+---
+
+### Using Table of Contents
+Another way of organizing the page is using a table of contents which appears in a side-bar on the left-hand margin. Notice that there is a line automatically created for each heading.
+The top of this embedded html file contains the following yaml at the beginning:
+
+#### YAML code
+
+\n```{r, eval = FALSE}
+---
+title: Embedded HTML file
+output:
+  html_document:
+    toc: true
+    toc_depth: 4
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    number_sections: false
+---
+\n```
+
+#### Note of Caution
+Using a table of contents does not work really well with tabs and some other elements. (That is why it was demonstrated in this embedded html file 
+<span style=\"font-size: 20px;\">&#x1F609;</span>)
+
+### Other stuff
+This section is here just to have more content. Notice how the webpage scrolls within the window while the table of contents remains fixed.
+\n```{r}
+library(data.table)
+library(htmlTable)
+htmlTable(data.table(iris)[, list(Samples = .N, Avg_Length = mean(Sepal.Length), Avg_Width = mean(Sepal.Width)), keyby = list(Species)],
+ rnames = F, align = \"lr\", css.cell = \"padding-left: 3em; padding-right: 3em;\")
+plot(iris$Sepal.Length, iris$Sepal.Width)
+\n```
+"
+write(newscript, "newfile.Rmd")
+rmarkdown::render("newfile.Rmd", quiet = T)
+```
+
+The following frame is created using 
+<code>\<iframe style="width: 900px; height: 600px;" src = "newfile.html"\>\</iframe\></code>
+. I have not been able to get this to load all external web pages ... 
+<span style="font-size: 20px;">&#x1F61E;</span>
+
+<iframe style="width: 900px; height: 600px;" src = "newfile.html"></iframe>
+
+### Collapsing Sections
+
+The following HTML defines a the style and functionality of buttons used to collapse the sections below.
+
+```{r, eval = FALSE, echo = TRUE}
+<style>
+.collapsebtn {
+  font-size: 10px;
+  border-radius: 6px;
+  outline: none;
+}
+</style>
+<script>
+function myClick (d) {
+  var tmp = document.getElementById("" + d.id + "div");
+  tmp.hidden = (tmp.hidden) ? false : true;
+  d.innerHTML = (tmp.hidden) ? "+" : "-";
+}
+</script>
+```
+
+<style>
+.collapsebtn {
+  font-size: 10px;
+  border-radius: 6px;
+  outline: none;
+}
+</style>
+<script>
+function collapseDiv (d) {
+  var tmp = document.getElementById("" + d.id + "div");
+  tmp.hidden = (tmp.hidden) ? false : true;
+  d.innerHTML = (tmp.hidden) ? "+" : "-";
+}
+</script>
+
+After inserting the code above, a <code>\<button\></code> element must be created and linked to a <code>\<div\></code> element. The code below gives an example of how to create a collapsed section (it is not necessary to have the button wrapped in a heading tag). If you want the section expanded by default, omit the <code>hidden</code> attribute in the <code>div</code> tag and replace "+" with "-" in the innerHTML of the <code>button</code> tag. Notice that the ids of the two elements are very similar. The function defined above depends on this similarity to collapse the correct section when the button is clicked.
+
+```{r, eval = FALSE, echo = TRUE}
+<h4><button id="btn1" class="collapsebtn" onclick="collapseDiv(this)">+</button>Scatterplot</h4>
+<div id = "btn1div" hidden>
+[R chunks, text and anything else you want to be collapsed]
+</div>
+```
+
+This might be a little more complex than you want, but the result is nice.
+
+<h4><button id="btn1" class="collapsebtn" onclick="collapseDiv(this)">+</button>Scatterplot</h4>
+<div id = "btn1div" hidden>
+```{r, echo = FALSE}
+n <- 100
+dat <- data.table(expand.grid(Group = c("Treatment", "Control"), Ind = 1:n))
+dat[, x := rnorm(.N, 5 + 2*(Group == "Treatment"))]
+ggplot(dat, aes(Ind, x, col = Group)) + geom_point(size = 1.2) + labs(col = "")
+```
+</div>
+
+<h4><button id="btn2" class="collapsebtn" onclick="collapseDiv(this)">+</button>Histogram</h4>
+<div id = "btn2div" hidden>
+```{r, echo = FALSE}
+ggplot(dat, aes(x, fill = Group)) + geom_histogram(position = "dodge", col = "white", binwidth = .5) + labs(fill = "")
+```
+</div>
+
+<h4><button id="btn3" class="collapsebtn" onclick="collapseDiv(this)">+</button>Density</h4>
+<div id = "btn3div" hidden>
+```{r, echo = FALSE}
+ggplot(dat, aes(x, fill = Group)) + geom_density(lwd = .1, alpha = .4, adjust = 1.5) + labs(fill = "")
+```
+</div>
+
+<h4><button id="btn4" class="collapsebtn" onclick="collapseDiv(this)">+</button>Table</h4>
+<div id = "btn4div" hidden>
+```{r, echo = FALSE}
+htmlTable(dat[, list(Observations = .N, Mean = round(mean(x), 2), StdDev = round(sd(x), 2)), by = Group], rnames = F, align = "lrr", css.cell = "padding-left: 1em; padding-right: 1em;")
+```
+</div>
+
+### Caution
+
+Be careful with using too many different elements. Using too many of the features above can make the page confusing and can make some information hard to find.
+
+
+## Interactive graphs
+
+### Plotly
+
+The <code>plotly</code> package can be used to add interactivity to some graphs. Most <code>ggplot2</code> graphs can be wrapped in the <code>ggplotly</code> function.
+
+```{r}
+data(USArrests)
+USArrests <- data.table(USArrests, State = row.names(USArrests))
+
+ggplotly(ggplot(USArrests, aes(Murder, Assault)) + geom_point())
+plot_ly(USArrests, x = ~State, y = ~Murder)
+```
+
+### Animation
+
+<code>plotly</code> can also be used to create animations.
+
+```{r, echo = FALSE, warning = FALSE}
+clock <- data.table(expand.grid(Hour = 1:12, Minute = 0:59, Second = 0:59))
+setkeyv(clock, c("Hour", "Minute", "Second"))
+clock[, Instant := 1:.N]
+clock <- clock[, list(Hr_Hnd_x = c(0, Im(exp(2i*pi*(Hour/12 + Minute/720 + Second/43200)))),
+                      Hr_Hnd_y = c(0, Re(exp(2i*pi*(Hour/12 + Minute/720 + Second/43200)))),
+                      Min_Hnd_x = c(0, Im(exp(2i*pi*(Minute/60 + Second/3600)))),
+                      Min_Hnd_y = c(0, Re(exp(2i*pi*(Minute/60 + Second/3600)))),
+                      Sec_Hnd_x = c(0, Im(exp(2i*pi*Second/60))),
+                      Sec_Hnd_y = c(0, Re(exp(2i*pi*Second/60))) ), by = list(Hour, Minute, Second, Instant)]
+# if(interactive()) {
+    ggplotly(
+      ggplot(clock[Hour == 3 & Minute %in% 30:32]) +
+        geom_line(aes(Sec_Hnd_x*.9, Sec_Hnd_y*.9, frame = Instant), col = "red") +
+        geom_line(aes(Min_Hnd_x, Min_Hnd_y, frame = Instant)) +
+        geom_line(aes(Hr_Hnd_x*.6, Hr_Hnd_y*.6, frame = Instant)) +
+        geom_text(data = clock[Minute == 1 & Second == 1 & Hr_Hnd_x + Hr_Hnd_y != 0], aes(Hr_Hnd_x, Hr_Hnd_y, label = Hour)) +
+        labs(x = "", y = "") + scale_x_continuous(breaks = 10) + scale_y_continuous(breaks = 10) + theme(panel.background = element_rect(fill = "aquamarine")),
+      width = 400, height = 500
+    ) %>% animation_opts(transition = 0, 1000)
+# }
+```
+
+Animated plots can also be created using the <code>animation</code> package.
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, results = 'asis'}
+
+# This function makes it easier to create the necessary HTML elements
+# Also notice in the chunk options we have set results = 'asis'
+showAnimation <- function(imgname) {
+  paste0("<div class=\"scianimator\"><div id=\"", imgname, "\" style=\"display: inline-block;\"></div></div>\n",
+        "<div class=\"scianimator\" style=\"width: 480px; text-align: left\"></div>\n",
+        "<script src=\"js/", imgname, ".js\"></script>")
+}
+
+pts <- rnorm(300)
+xpts1 <- seq_along(pts)
+xpts2 <- rank(pts)
+frames <- 20
+
+filename <- "animated_sort.html"
+imgname <- "SortPlot"
+# file.remove(paste0("images/", grep(paste0(imgname, "[[:digit:]]*.png"), dir("images"), value = T)))
+
+saveHTML({
+  for (i in 1:frames) {
+    plot(xpts1 * (frames-i)/(frames-1) + xpts2 * (i-1)/(frames-1), pts, ylab = "Random Values", xlab = "Order", xlim = c(0, length(pts)), main = "Sort")
+  }
+}, interval = .2, img.name = imgname, verbose = F)
+
+cat(showAnimation(imgname))
+```
+
+
+For longer animations, you may not want the mini icons for each individual frame. These can be removed by setting <code>navigator = F</code> as in the following animation.
+
+```{r, echo = FALSE, results = 'asis'}
+n <- 100
+dt <- data.table(ind = 1:n,
+                 x = cumsum(rnorm(n)),
+                 y = cumsum(rnorm(n)) )
+dt <- rbind(data.table(ind = 0, x = 0, y = 0), dt)
+
+imgname <- "RandWalk"
+
+saveHTML({
+  for (i in 0:(nrow(dt)-1)) {
+    dt[ind <= i, {plot(x, y, type = "l", xlim = range(dt$x), ylim = range(dt$y), main = "Random Walk"); points(x[i+1], y[i+1]); points(0, 0, pch = 19)}]
+  }
+}, interval = .15, img.name = imgname, filename = imgname, verbose = F, navigator = F)
+
+cat(showAnimation(imgname))
+```
+
+### Pivot Tables
+
+The function <code>rpivotTable</code> (in the package by the same name) provides a neat way to explore a <code>data.frame</code> object.
+
+I wrap this code chunk in <code>\<div\></code> tags with <code>style="width: 800px; height: 700px; overflow-y: scroll;"</code> to keep the tables and graphs from spilling outside of the designated plotting area.
+
+<div style="width: 100%; height: 700px; overflow-y: scroll;">
+```{r}
+rpivotTable(mtcars)
+```
+</div>
+
+
+### Maps
+
+Interactive maps can be created easily using the <code>leaflet</code> package. Adding custom functionality, like colored markers, isn't always easy or straight-forward, but most things can be done.
+
+```{r, echo = FALSE}
+# html_legend_A <- "<img src='http://leafletjs.com/docs/images/leaf-green.png'>green<br/>"
+# html_legend_B <- "<img src='http://leafletjs.com/docs/images/leaf-red.png'>red<br/>"
+
+city <- data.table(us.cities)[capital == 2]
+
+leaflet(options = list(zoomControl = FALSE)) %>%
+  setView(lng=sum(range(city$long))/2, lat=sum(range(city$lat))/2, zoom = 3) %>% 
+  addTiles() %>%
+  addAwesomeMarkers(lng=city$long, lat=city$lat, popup=paste0(city$name, "<br>Population: ", comma(city$pop)), group = "Capitals",
+             icon = awesomeIcons(icon = "ios-close", iconColor = "black", library = "ion", markerColor = ifelse(city$pop > 1e5, "red", "blue")) ) %>%
+  addLayersControl(overlayGroups = "Capitals", options = layersControlOptions(collapsed = FALSE))
+
+```
+
+### D3
+
+There are a lot of different graphs and figures that can be made with the D3 javascript library. It is not very easy to implement this in R markdown, but it can be done.
+
+
+<hr style="border-width: 2px; border-color: #AA5512;">
+#
+
+#### Footer
+Adding a new level one heading ends the tabs (description of tabs is under Page Organization). Everything afterward will essentially appear on all tabs, though it is technically outside of and separate from the tabs portion of the page.
+
+

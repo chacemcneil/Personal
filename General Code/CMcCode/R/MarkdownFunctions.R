@@ -36,10 +36,12 @@ html_highlights <- c("default", "tango", "pygments", "kate",  "monochrome", "esp
 #' # Ordered list
 #' html_list(x, kind = "dl")
 
-html_list <- function(strings, details = NULL, detailpref = "- ", kind = c("ul","ol","dl"), type = c(1,"A","a","I","i")) {
+html_list <- function(strings, details = NULL, detailpref = "- ", kind = c("ul","ol","dl"), type = c(1,"A","a","I","i"), parent_element = NULL) {
   kind <- match.arg(kind)
   type <- match.arg(type)
-  str <- paste("<", kind, " type = \"",type,"\">\n",
+  if(!is.null(parent_element))
+    parent_element <- paste0(parent_element, "\n")
+  str <- paste(parent_element, "<", kind, " type = \"",type,"\">\n",
                paste("<li>", strings, "</li>",
                      sapply(details, function(det) paste("\n<dd>", detailpref, det, "</dd>", sep = "", collapse = "")),
                      sep = "", collapse = "\n" ),
@@ -106,7 +108,7 @@ html_summary <- function(mod, names = NULL, caption = NULL, ...) {
   tab[,1] <- round(tab[,1], digits = 3)
   tab[,2] <- signif(tab[,2], digits = 4)
   tab[,3] <- round(tab[,3], digits = 2)
-  tab[,4] <- signif(tab[,4], digits = 2)
+  tab[,4] <- round(tab[,4], 4)
   tab[,4] <- ifelse(tab[,4] < 0.0001, "&lt;0.0001", tab[,4])
   htmlTable::htmlTable(tab, caption = caption, ...)
 }

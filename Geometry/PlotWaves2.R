@@ -2,7 +2,7 @@
  library(animation)
  library(data.table)
  library(ggplot2)
-
+ 
  setwd("C:/Users/cmcneil/Documents/Projects/Miscellaneous/Personal/Geometry")
  
  
@@ -36,7 +36,7 @@
  
  # Test snapshots
  ggplot(dt[time == .05], aes(x, y, fill = Wave2)) + geom_tile() + scale_fill_gradient2(limits = dt[, range(Wave1)])
- ggplot(dt[time == .3], aes(x, y, fill = Wave1)) + geom_tile() + scale_fill_gradient2(limits = dt[, range(Wave1)])
+ ggplot(dt[time == 130], aes(x, y, fill = Wave3)) + geom_tile() + scale_fill_gradient2(limits = dt[, range(Wave3)])
  ggplot(dt[time == 1], aes(x, y, fill = Wave2)) + geom_tile() + scale_fill_gradient2(limits = dt[, range(Wave1)])
  
  # Create animations
