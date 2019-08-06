@@ -1,0 +1,51 @@
+
+---
+title: Embedded HTML file
+output:
+  html_document:
+    toc: true
+    toc_depth: 4
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    number_sections: false
+---
+
+### Using Table of Contents
+Another way of organizing the page is using a table of contents which appears in a side-bar on the left-hand margin. Notice that there is a line automatically created for each heading.
+The top of this embedded html file contains the following yaml at the beginning:
+
+#### YAML code
+
+
+```{r, eval = FALSE}
+---
+title: Embedded HTML file
+output:
+  html_document:
+    toc: true
+    toc_depth: 4
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    number_sections: false
+---
+
+```
+
+#### Note of Caution
+Using a table of contents does not work really well with tabs and some other elements. (That is why it was demonstrated in this embedded html file 
+<span style="font-size: 20px;">&#x1F609;</span>)
+
+### Other stuff
+This section is here just to have more content. Notice how the webpage scrolls within the window while the table of contents remains fixed.
+
+```{r}
+library(data.table)
+library(htmlTable)
+htmlTable(data.table(iris)[, list(Samples = .N, Avg_Length = mean(Sepal.Length), Avg_Width = mean(Sepal.Width)), keyby = list(Species)],
+ rnames = F, align = "lr", css.cell = "padding-left: 3em; padding-right: 3em;")
+plot(iris$Sepal.Length, iris$Sepal.Width)
+
+```
+

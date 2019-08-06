@@ -30,8 +30,8 @@
 ## Use the following code to update package
 # library(devtools)
 # detach("package:CMcCode")
-# install("/work/cmcneil/miscellaneous/personal/general code/CMcCode")
-# document("/work/cmcneil/miscellaneous/personal/general code/CMcCode")
+# install("c:/users/cmcnei12/documents/code/personal/general code/CMcCode")
+# document("c:/users/cmcnei12/documents/code/personal/general code/CMcCode")
 
 
 
@@ -346,6 +346,32 @@ merge.list <- function (..., priority = c("first", "last")) {
   else
     newlst <- append(lst[[1]], do.call(merge.list, lst[-1]))
   newlst[!duplicated(names(newlst))]
+}
+
+#' Align lists
+#'
+#' Creates a table with similarly named items on the same line to compare elements of multiple lists
+#' @param ... Lists to be merged. Elements of each list should be named to avoid confusion.
+#' @export
+#' @examples
+#' x <- list(a = 2, b = 13, c = 8)
+#' y <- list(b = 4, c = 8, d = 12)
+#' align(x, y)
+#' merge.list(x, y, priority = "last")
+
+align <- function(...) {
+  lsts <- list(...)
+  if(is.null(names(lsts)))
+    names(lsts) = rep("", length(lsts))
+  nms <- ifelse(names(lsts) == "", paste0("Value", 1:length(lsts)), names(lsts))
+  lsts <- lapply(seq_along(lsts), function(i) {
+    setnames(data.table(names(lsts[[i]]), lsts[[i]]), c("Name", nms[i]))
+  })
+  res <- lsts[[1]]
+  for (i in 2:length(lsts)) {
+    res <- merge(res, lsts[[i]], by = "Name", all = T)
+  }
+  res
 }
 
 #' List Grep

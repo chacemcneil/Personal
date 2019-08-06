@@ -63,7 +63,7 @@ library(rpivotTable)
 library(scales)
 
 options(width = 5000)
-
+# dir()
 ## This makes the default alignment for all captions 'center' (commented out for comparison)
 # knitr::opts_chunk$set(fig.align = 'center')
 
@@ -799,8 +799,8 @@ rpivotTable(mtcars)
 Interactive maps can be created easily using the <code>leaflet</code> package. Adding custom functionality, like colored markers, isn't always easy or straight-forward, but most things can be done.
 
 ```{r, echo = FALSE}
-html_legend_A <- "<img src='http://leafletjs.com/docs/images/leaf-green.png'>green<br/>"
-html_legend_B <- "<img src='http://leafletjs.com/docs/images/leaf-red.png'>red<br/>"
+# html_legend_A <- "<img src='http://leafletjs.com/docs/images/leaf-green.png'>green<br/>"
+# html_legend_B <- "<img src='http://leafletjs.com/docs/images/leaf-red.png'>red<br/>"
 
 city <- data.table(us.cities)[capital == 2]
 
@@ -823,3 +823,5 @@ There are a lot of different graphs and figures that can be made with the D3 jav
 
 #### Footer
 Adding a new level one heading ends the tabs (description of tabs is under Page Organization). Everything afterward will essentially appear on all tabs, though it is technically outside of and separate from the tabs portion of the page.
+
+

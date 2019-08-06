@@ -4,13 +4,13 @@ Title
 This Markdown document demonstrates plotting using google maps. 
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(CMcCode)
 library(data.table)
 
-setwd("C:/Users/cmcneil/Documents/Projects/Miscellaneous/Personal")
-#setwd("r:/users/cmcneil/projects/miscellaneous/personal")
+dir("../General Code/CMcCode/R")
 
-source("general code/UsefulFUnctions.R")
-source("d3/googleMaps.R")
+source("../general code/CMcCode/R/UsefulFUnctions.R")
+source("../D3/googleMaps.R")
 
 ```
 
