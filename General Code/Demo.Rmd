@@ -229,6 +229,7 @@ htmlTable(tab)
 
 Adding a little bit of code allows for more formatting options.
 
+
 <div style = "code.height: 50px; code.overflow-y: scroll;">
 ```{r, fig.align = 'center'}
 htmlTable(tab[, list(Item, Ind, Dec1 = round(Dec1, 2), Dec2 = round(Dec2, 2))], 
@@ -236,7 +237,7 @@ htmlTable(tab[, list(Item, Ind, Dec1 = round(Dec1, 2), Dec2 = round(Dec2, 2))],
           rnames = F,                                           # No numbers on rows
           rgroup = c("Top", "Middle", "Bottom"),                # Labels for sets of rows
           n.rgroup = c(2, 3, 2),                                # Number of rows for each group
-          col.rgroup = c("none", "#BBDDFF"),                    # Alternating colors for background
+          col.rgroup = c("#FFF", "#BBDDFF"),                    # Alternating colors for background
           cgroup = c("", "Values"),                             # Grouping columns
           n.cgroup = c(2, 2),                                   # Number of columns in each group
           css.cell = "padding-right: 2em; padding-left: 2em;",  # Horizontal padding, remember units
@@ -244,6 +245,42 @@ htmlTable(tab[, list(Item, Ind, Dec1 = round(Dec1, 2), Dec2 = round(Dec2, 2))],
           caption = "This is a table caption",                  # Caption
           tfoot = "&dagger; Table footer",                      # Footer, you get odd characters with &____; using some words or unicode numbers
           css.table = "margin: 1em auto;"                       # Putting 'auto' in the margin of the table style centers the table on the page
+          )
+```
+</div>
+
+You can also use scrolling to keep tables from using too much space. The following table uses some CSS code to keep the header visible and alternate row colors.
+
+<style>
+.fixedheader {
+  font-size: 15pt;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.fixedheader thead tr th {
+  background: #A00;
+  color: #FEE;
+  text-align: center;
+  position: sticky;
+  top: 0;
+}
+
+.fixedheader tbody tr:nth-child(even) {
+  background: #DDD;
+}
+</style>
+
+<div style = "height: 250px; overflow-y: scroll;">
+```{r, fig.align = 'center', echo = FALSE}
+n <- 100
+tmp <- data.table(Id = 1:n, Group = sample(LETTERS[1:3], n, replace = T), Value = sprintf("%.2f", rbeta(n, 1.5, 1)))
+htmlTable(tmp, 
+          align = "c", 
+          rnames = F,                                           # No numbers on rows
+          css.class = "fixedheader",                            # The css just before this chunk makes tables of this class have a fixed header
+          caption = "This table caption does not stay fixed",   # Caption
+          css.table = "margin: 1em auto;"                       # Center table
           )
 ```
 </div>
@@ -705,7 +742,7 @@ plot_ly(USArrests, x = ~State, y = ~Murder)
 
 ### Animation
 
-<code>plotly</code> can also be used to create animations.
+<code>plotly</code> can also be used to create animations. (note that it often adds tooltips that show up when hovering, which may not be desired)
 
 ```{r, echo = FALSE, warning = FALSE}
 clock <- data.table(expand.grid(Hour = 1:12, Minute = 0:59, Second = 0:59))
