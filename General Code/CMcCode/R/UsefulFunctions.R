@@ -26,6 +26,7 @@
 # roundNumeric        Rounds the numeric columns of a data.table
 # convert.tz          Convert times between time zones
 # hardcode            Generate code that creates the given object as is (currently only vectors).
+# gg_us_hex           Creates a data.table object for plotting US states in a hex map
 
 ## Use the following code to update package
 # library(devtools)
@@ -871,6 +872,43 @@ hardcode <- function(x, assign = T, assign_oper = "<-", print = T) {
   invisible(code)
 }
 
+#' US Hex Map
+#' 
+#' Generates a \code{data.table} object with center points and polygon information for graphing US states in a hex map.
+#' @export
+#' @param dc Logical, whether or not to include a row for Washinton D.C.
+#' @example
+#' dt <- data.table(statepop)[, list(StateCd = abbr, pop_2015)]
+#' gg_us_hex(dt, aes(fill = pop_2015))
+
+gg_us_hex <- function(data, mapping, dc = T, ...) {
+  ## Returns hexagon-shaped polygons to be used in geom_polygon
+  require(data.table)
+  hexgrid <- data.table(StateCd = state.abb,
+                        x_ct = c(15, 1, 6, 12, 4, 7, 22, 19, 17, 16,
+                                 1, 4, 12, 14, 10, 10, 13, 11, 23, 17,
+                                 21, 15, 9, 13, 11, 5, 9, 5, 22, 20,
+                                 7, 19, 18, 7, 16, 9, 3, 18, 23, 17,
+                                 8, 14, 10, 8, 20, 16, 3, 15, 11, 6),
+                        y_ct = c(3, 9, 4, 4, 4, 5, 6, 5, 1, 2,
+                                 1, 6, 6, 6, 6, 4, 5, 3, 9, 5,
+                                 7, 7, 7, 3, 5, 7, 5, 5, 8, 6,
+                                 3, 7, 4, 7, 6, 3, 5, 6, 7, 3,
+                                 6, 4, 2, 4, 8, 4, 7, 5, 7, 6))
+  if(dc){
+    hexgrid <- rbind(hexgrid, data.table(StateCd = "DC", x_ct = 22, y_ct = 4))
+  }
+  hexgrid <- hexgrid[, list(x = x_ct + c(0, -1, -1, 0, 1, 1, 0),
+                            y = y_ct + c(-2, -1, 1, 2, 1, -1, -2)/3), by = list(StateCd, x_ct, y_ct)]
+
+  data <- merge(data, hexgrid, by = "StateCd", all = T)
+  ggplot(data, mapping) +
+    geom_polygon(aes(x = x, y = y, group = StateCd)) +
+    geom_text(aes(x_ct, y_ct, label = StateCd)) +
+    labs(x = "", y = "") +
+    theme(axis.text = element_blank(), panel.grid = element_blank(), axis.ticks = element_blank()) +
+    scale_fill_gradient(low = "wheat", high = "indianred", ...)
+}
 
 
 # End script

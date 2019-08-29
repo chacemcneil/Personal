@@ -61,6 +61,7 @@ library(maps)
 library(plotly)
 library(rpivotTable)
 library(scales)
+library(usmap)
 
 options(width = 5000)
 # dir()
@@ -833,6 +834,8 @@ rpivotTable(mtcars)
 
 ### Maps
 
+#### Markers
+
 Interactive maps can be created easily using the <code>leaflet</code> package. Adding custom functionality, like colored markers, isn't always easy or straight-forward, but most things can be done.
 
 ```{r, echo = FALSE}
@@ -848,6 +851,93 @@ leaflet(options = list(zoomControl = FALSE)) %>%
              icon = awesomeIcons(icon = "ios-close", iconColor = "black", library = "ion", markerColor = ifelse(city$pop > 1e5, "red", "blue")) ) %>%
   addLayersControl(overlayGroups = "Capitals", options = layersControlOptions(collapsed = FALSE))
 
+```
+
+#### Chloropleths
+
+The following static state and county maps are created using the packages <code>usmap</code> and <code>ggsn</code>. (Note the convenient rescaling and repositioning of Alaska and Hawaii.)
+
+```{r, echo = FALSE}
+statemap <- data.table(us_map()) # used to add map scale
+countymap <- data.table(us_map("counties")) # used to add map scale
+
+### State
+dt1 <- as.data.table(copy(state.x77))
+dt1$state <- tolower(rownames(state.x77))
+dt1 <- dt1[,.(state, Population)]
+
+plot_usmap(data = dt1, values = "Population", labels = T)+
+  labs(fill = 'State Population (1975)') + 
+  scale_fill_gradientn(colours=rev(heat.colors(10)),na.value="grey90",
+                       guide = guide_colourbar(barwidth = 25, barheight = 0.4,
+                                               #put legend title on top of legend
+                                               title.position = "top")) +
+  # map scale
+  ggsn::scalebar(data = statemap, dist = 500, dist_unit = "km",
+           border.size = 0.4, st.size = 4,
+           box.fill = c('black','white'),
+           transform = FALSE, model = "WGS84") + 
+  # put legend at the bottom, adjust legend title and text font sizes
+  theme(legend.position = "bottom",
+        legend.title=element_text(size=12), 
+        legend.text=element_text(size=10))
+
+### County
+dt2 <- data.table(countypop)[, list(fips, Population = pop_2015)]
+
+plot_usmap(data = dt2, values = "Population", labels = T)+
+  labs(fill = 'State Population (1975)') + 
+  scale_fill_gradientn(colours=rev(heat.colors(10)),na.value="grey90",
+                       guide = guide_colourbar(barwidth = 25, barheight = 0.4,
+                                               #put legend title on top of legend
+                                               title.position = "top")) +
+  # map scale
+  ggsn::scalebar(data = statemap, dist = 500, dist_unit = "km",
+           border.size = 0.4, st.size = 4,
+           box.fill = c('black','white'),
+           transform = FALSE, model = "WGS84") + 
+  # put legend at the bottom, adjust legend title and text font sizes
+  theme(legend.position = "bottom",
+        legend.title=element_text(size=12), 
+        legend.text=element_text(size=10))
+```
+
+#### US Hex Map
+
+A chloropleth is sometimes misleading. When we don't want the different sizes of the states to get in the way we use a hex map instead.
+
+```{r, echo = FALSE}
+gg_us_hex <- function(data = NULL, mapping = NULL, dc = T) {
+  ## Returns hexagon-shaped polygons to be used in geom_polygon
+  hexgrid <- data.table(StateCd = state.abb,
+                        x_ct = c(15, 1, 6, 12, 4, 7, 22, 19, 17, 16,
+                                 1, 4, 12, 14, 10, 10, 13, 11, 23, 17,
+                                 21, 15, 9, 13, 11, 5, 9, 5, 22, 20,
+                                 7, 19, 18, 7, 16, 9, 3, 18, 23, 17,
+                                 8, 14, 10, 8, 20, 16, 3, 15, 11, 6),
+                        y_ct = c(3, 9, 4, 4, 4, 5, 6, 5, 1, 2,
+                                 1, 6, 6, 6, 6, 4, 5, 3, 9, 5,
+                                 7, 7, 7, 3, 5, 7, 5, 5, 8, 6,
+                                 3, 7, 4, 7, 6, 3, 5, 6, 7, 3,
+                                 6, 4, 2, 4, 8, 4, 7, 5, 7, 6))
+  if(dc){
+    hexgrid <- rbind(hexgrid, data.table(StateCd = "DC", x_ct = 22, y_ct = 4))
+  }
+  hexgrid <- hexgrid[, list(x = x_ct + c(0, -1, -1, 0, 1, 1, 0),
+                            y = y_ct + c(-2, -1, 1, 2, 1, -1, -2)/3), by = list(StateCd, x_ct, y_ct)]
+  hexgrid
+  data <- merge(data, hexgrid, by = "StateCd", all = T)
+  ggplot(data, mapping) +
+    geom_polygon(aes(x = x, y = y, group = StateCd)) +
+    geom_text(aes(x_ct, y_ct, label = StateCd)) +
+    labs(x = "", y = "") +
+    theme(axis.text = element_blank(), panel.grid = element_blank(), axis.ticks = element_blank()) +
+    scale_fill_gradient(labels = dollar, low = "wheat", high = "indianred")
+}
+
+tmp <- data.table(statepop)
+tmp <- tmp[, list(StateCd = abbr, Pop = pop_2015)]
+gg_us_hex(data = tmp, aes(fill = Pop))
 ```
 
 ### D3
