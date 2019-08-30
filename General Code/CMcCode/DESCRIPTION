@@ -1,16 +1,16 @@
 Package: CMcCode
-Title: What the Package Does (one line, title case)
+Title: Frequently Used Functions
 Version: 0.0.0.9000
-Authors@R: person("First", "Last", email = "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
+Authors@R: person("Chace", "McNeil", email = "chacekmcneil@gmail.com", role = c("aut", "cre"))
+Description: This package contains functions that I use frequently.
 Depends:
     R (>= 3.1.0),
 Imports:
     data.table,
-    ggplot2
-Suggests:
+    ggplot2,
+    htmltools,
     pROC
-License: What license is it under?
+License: ...
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.1.9000

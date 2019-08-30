@@ -1,12 +1,15 @@
 ### Collection of functions that create or modify ggplot2 graphs. The included functions are:
-# html_list        Provides the html code for listing elements of a vector
-# html_summary     Creates an htmlTable object for model output
+# html_list               Provides the html code for listing elements of a vector
+# html_dropdown           Writes javascript functions for a dropdown menu
+# html_summary            Creates an htmlTable object for model output
+# html_fixedheader_init   Creates an htmlTable object for model output
 
 
 # Useful things for markdown files
 library(data.table)
 library(ggplot2)
 library(htmlTable)
+library(htmltools)
 library(knitr)
 library(pROC)
 
@@ -52,7 +55,7 @@ html_list <- function(strings, details = NULL, detailpref = "- ", kind = c("ul",
 #' HTML Dropdown Function
 #' 
 #' Creates HTML dropdown list containing the elements of a vector.
-#' @param id Character, id of the dropdown menu.
+#' @param id Character, id of the dropdown menu. Must be unique from other ids
 #' @param labels Vector of values to display in dropdown list. Will be converted to \code{character}
 #' @param values Values to associate with labels. If NULL (default), names of \code{labels} will be used. Can be character or numeric.
 #' @export
@@ -111,6 +114,61 @@ html_summary <- function(mod, names = NULL, caption = NULL, ...) {
   tab[,4] <- round(tab[,4], 4)
   tab[,4] <- ifelse(tab[,4] < 0.0001, "&lt;0.0001", tab[,4])
   htmlTable::htmlTable(tab, caption = caption, ...)
+}
+
+#' HTML Table with Fixed Header
+#' 
+#' Writes CSS and Javascript for a fixed table header for tables of a specified class.
+#' @param classname Default is 'fixedheader'. Class name of tables that should have fixed headers.
+#' @export
+#' @examples
+#' dt <- data.frame(x = 1:100, y = rnorm(100))
+#' # Without fixed header
+#' tab <- htmlTable(dt)
+#' htmltools::tags$div(tab, style = "height: 300px; overflow-y: scroll;")
+#' # With fixed header (only works when knit, otherwise the CSS is not used)
+#' tab <- htmlTable(dt, css.class = "fixedheader")
+#' htmltools::tags$div(tab, style = "height: 300px; overflow-y: scroll;")
+
+fixedheader <- function(classname = "fixedheader") {
+  txt_script <- paste0(
+    '<script>',
+    'HTMLCollection.prototype.forEach = Array.prototype.forEach;',
+    'function fixheaders(table) {',
+    '  var thead = table.getElementsByTagName("thead")[0]',
+    '  if(thead.getElementsByTagName("tr").length > 1) {',
+    '    var th_height = 0;',
+    '    for(i=1; i < thead.getElementsByTagName("tr").length; i++) {',
+    '      th_height += getComputedStyle(thead.getElementsByTagName("tr")[i-1].getElementsByTagName("th")[0]).height;',
+    '      thead.getElementsByTagName("tr")[i].getElementsByTagName("th").forEach(function(item) {item.style.top = th_height;})',
+    '    }',
+    '  }',
+    '}',
+    'document.onreadystatechange = function() {',
+    '  document.getElementsByClassName(\"', classname, '\").forEach(fixheaders);',
+    '};',
+    '</script>')
+  txt_style <- paste(
+    '<style>',
+    paste0('.', classname, ' {'),
+    '  font-size: 15pt;',
+    '}',
+    paste0('.', classname, ' thead tr th {'),
+    '  background: #447;',
+    '  color: #FEE;',
+    '  text-align: center;',
+    '  position: sticky;',
+    '  height: 20pt;',
+    '  top: 0;',
+    '  bottom-border: 2px solid #000',
+    '}',
+    paste0('.', classname, ' tbody tr:nth-child(even) {'),
+    '  background: #DDD;',
+    '}',
+    '</style>', sep = "\n" )
+  txt <- paste(txt_script, txt_style, sep = "\n")
+  class(txt) <- c("html", "character")
+  txt
 }
 
 #' HTML Model Formula Function

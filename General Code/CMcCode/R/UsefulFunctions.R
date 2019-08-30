@@ -96,7 +96,6 @@ ini <- function(print=F) {
 #' Add "Savvy" Functions
 #'
 #' Adds functions that are in the savvy package, which is not accessible outside of Riley1/Riley2
-#' @param
 #' @export
 #' @examples
 #' rsavvy()
@@ -471,7 +470,7 @@ Table <- function(..., along = NULL, prop = FALSE) {
 #' Untable Function
 #' 
 #' Undoes what \code{table} does.
-#' @ tab Table as returned from \code{table}
+#' @param tab Table as returned from \code{table}
 #' @export
 #' @example
 #' data(Titanic)

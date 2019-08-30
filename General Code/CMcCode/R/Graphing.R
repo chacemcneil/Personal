@@ -61,7 +61,7 @@ ss_theme <- (ggplot2::theme_bw() + ggplot2::theme(panel.border = ggplot2::elemen
 #' @param x Vector of \code{character} values to check.
 #' @param col Vector of colors to modify
 #' @param factor Numerical value between 0 and 1 giving how much to modify. 0 is no modification.
-#' @describeIn is.color
+#' @describeIn is.color Checks whether the given input can be interpreted as a color.
 #' @export
 #' @examples
 #' # Checking and formatting colors.
@@ -90,7 +90,7 @@ is.color <- function (x)
   xic
 }
 
-#' @describeIn is.color
+#' @describeIn is.color Changes color to hex format.
 #' @export
 hex <- function(col, alpha = 1)  {
   col <- ifelse(is.color(col), col, NA)
@@ -103,7 +103,7 @@ hex <- function(col, alpha = 1)  {
   hex
 }
 
-#' @describeIn is.color
+#' @describeIn is.color Darkens a color
 #' @export
 darken <- function(col, factor = 1/3) {
   rgb <- col2rgb(col)*(1-factor)/255
@@ -111,7 +111,7 @@ darken <- function(col, factor = 1/3) {
   newcol
 }
 
-#' @describeIn is.color
+#' @describeIn is.color Lightens a color
 #' @export
 lighten <- function(col, factor = 1/3) {
   rgb <- 1- (1-col2rgb(col)/255)*(1-factor)
@@ -308,7 +308,7 @@ ggroc <- function(rc, labels = NULL, print.auc = c("title", "plot"), mark.sens =
   p
 }
 
-#' @describeIn ggroc
+#' @describeIn ggroc Creates a ROC graph using \code{ggplot2}
 #' @export
 
 ggroc2 <- function(..., labels = NULL, print.auc = T, mark.sens = NULL, mark.spec = NULL) {
