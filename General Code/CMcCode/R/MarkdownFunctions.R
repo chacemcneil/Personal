@@ -2,7 +2,7 @@
 # html_list               Provides the html code for listing elements of a vector
 # html_dropdown           Writes javascript functions for a dropdown menu
 # html_summary            Creates an htmlTable object for model output
-# html_fixedheader_init   Creates an htmlTable object for model output
+# fixedheader             Creates an htmlTable object for model output
 
 
 # Useful things for markdown files
@@ -91,7 +91,7 @@ html_dropdown <- function (id, divs, labels = NULL, onchange = paste0(id, "_func
 #' @param names Optional 4-element vector of column names.
 #' @param caption Optional caption for the table.
 #' @export
-#' @example
+#' @examples
 #' # From lm documentation:
 #' ctl <- c(4.17,5.58,5.18,6.11,4.50,4.61,5.17,4.53,5.33,5.14)
 #' trt <- c(4.81,4.17,4.41,3.59,5.87,3.83,6.03,4.89,4.32,4.69)
@@ -129,13 +129,12 @@ html_summary <- function(mod, names = NULL, caption = NULL, ...) {
 #' # With fixed header (only works when knit, otherwise the CSS is not used)
 #' tab <- htmlTable(dt, css.class = "fixedheader")
 #' htmltools::tags$div(tab, style = "height: 300px; overflow-y: scroll;")
-
 fixedheader <- function(classname = "fixedheader") {
-  txt_script <- paste0(
+  txt_script <- paste(
     '<script>',
     'HTMLCollection.prototype.forEach = Array.prototype.forEach;',
     'function fixheaders(table) {',
-    '  var thead = table.getElementsByTagName("thead")[0]',
+    '  var thead = table.getElementsByTagName("thead")[0];',
     '  if(thead.getElementsByTagName("tr").length > 1) {',
     '    var th_height = 0;',
     '    for(i=1; i < thead.getElementsByTagName("tr").length; i++) {',
@@ -145,9 +144,9 @@ fixedheader <- function(classname = "fixedheader") {
     '  }',
     '}',
     'document.onreadystatechange = function() {',
-    '  document.getElementsByClassName(\"', classname, '\").forEach(fixheaders);',
+    paste0('  document.getElementsByClassName(\"', classname, '\").forEach(fixheaders);'),
     '};',
-    '</script>')
+    '</script>', sep = "\n")
   txt_style <- paste(
     '<style>',
     paste0('.', classname, ' {'),
@@ -171,12 +170,30 @@ fixedheader <- function(classname = "fixedheader") {
   txt
 }
 
+#' HTML Scrolling
+#' 
+#' Wraps HTML code in a \code{<div>} tag with style set to limit the space on the page. All overflow content is accessed by scrolling.
+#' @param tab \code{htmlTable} object or other HTML code to insert in scroll window.
+#' @param height Height of the \code{<div>} container on the page. Default is "300px"
+#' @param width Width of the \code{<div>} container on the page. Default is "100%"
+#' @export
+#' @examples
+#' # Create table
+#' tab <- htmlTable(mtcars)
+#' scroll(tab)
+
+scroll <- function (tab, height = "300px", width = "100%") {
+  tab <- paste0("<div style=\"overflow-x: scroll; width: ", width, "; overflow-y: scroll; height: ", height, "\">", tab, "</div>")
+  class(tab) <- c("htmlTable", "character")
+  tab
+}
+
 #' HTML Model Formula Function
 #' 
 #' Creates a formula for a fitted model.
 #' @param mod Model object.
 #' @export
-#' @example
+#' @examples
 #' # From lm documentation:
 #' ctl <- c(4.17,5.58,5.18,6.11,4.50,4.61,5.17,4.53,5.33,5.14)
 #' trt <- c(4.81,4.17,4.41,3.59,5.87,3.83,6.03,4.89,4.32,4.69)
@@ -197,7 +214,7 @@ html_model <- function(mod, caption = NULL, ...) {
 #' @param chunk Name of the chunk where the plot is generated.
 #' @param num If more than one plot are created in a chunk, \code{num} designates which plot to return
 #' @export
-#' @example
+#' @examples
 #' ```{r my_chunk}
 #' barplot(1:5, col = 1:5)
 #' histogram(rnorm(1e3))
@@ -305,7 +322,7 @@ markdown_init <- function(filename, echo = T) {
 #' @param ... \code{ggplot2} objects to transition between. At least 2 needed.
 #' @param n Number of frames between plots. Default is 20.
 #' @export
-#' @example
+#' @examples
 #' 
 gganimate <- function(..., n = 20) {
   lst <- list(...)

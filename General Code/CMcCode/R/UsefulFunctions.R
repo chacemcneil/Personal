@@ -121,7 +121,7 @@ rsavvy <- function() {
 #' Converts 0/1 to Yes/No
 #' @param x Vector of 0s and 1s.
 #' @export
-#' @example
+#' @examples
 #' x <- rbinom(100, 1, .4)
 #' table(x)
 #' table(yn(x))
@@ -184,7 +184,7 @@ ept <- function(txt, env=NULL, drop=T, useDT = T) {
 #' Does not work for character strings containing spaces.
 #' @param vec Vector
 #' @export
-#' @example
+#' @examples
 #' a <- 1
 #' c(a, b)     # Gives error
 #' # All the same
@@ -201,7 +201,7 @@ qu <- function(vec) {
 #' Uses code from \code{dollar} in \code{scales} package, but adds the option to not have even dollars rounded.
 #' @param x Vector of numbers to format
 #' @export
-#' @example
+#' @examples
 #' x <- c(1, 1.5, 150)
 #' dollarfull(x)
 
@@ -473,7 +473,7 @@ Table <- function(..., along = NULL, prop = FALSE) {
 #' Undoes what \code{table} does.
 #' @param tab Table as returned from \code{table}
 #' @export
-#' @example
+#' @examples
 #' data(Titanic)
 #' dim(Titanic)
 #' dt1 <- as.data.table(Titanic)
@@ -802,7 +802,7 @@ moe <- function(x) {
 #' @param oldtz Old time zone. Defaults to "UTC"
 #' @export
 #' @seealso \code{\link{POSIXct}}, \code{\link{OlsonNames}}
-#' @example 
+#' @examples
 #' # Times of vernal equinox
 #' x <- c("2004-03-20 06:49:00", "2005-03-20 12:33:00", "2006-03-20 18:26:00", "2007-03-21 00:07:00", "2008-03-20 05:48:00", 
 #'        "2009-03-20 11:44:00", "2010-03-20 17:32:00", "2011-03-20 23:21:00", "2012-03-20 05:14:00", "2013-03-20 05:02:00") 
@@ -876,7 +876,7 @@ hardcode <- function(x, assign = T, assign_oper = "<-", print = T) {
 #' Generates a \code{data.table} object with center points and polygon information for graphing US states in a hex map.
 #' @export
 #' @param dc Logical, whether or not to include a row for Washinton D.C.
-#' @example
+#' @examples
 #' dt <- data.table(statepop)[, list(StateCd = abbr, pop_2015)]
 #' gg_us_hex(dt, aes(fill = pop_2015))
 
