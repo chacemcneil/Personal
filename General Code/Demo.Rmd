@@ -252,21 +252,46 @@ htmlTable(tab[, list(Item, Ind, Dec1 = round(Dec1, 2), Dec2 = round(Dec2, 2))],
 
 You can also use scrolling to keep tables from using too much space. The following table uses some CSS code to keep the header visible and alternate row colors.
 
+<script>
+HTMLCollection.prototype.forEach = Array.prototype.forEach;
+function fixheaders(table) {
+  var thead = table.getElementsByTagName("thead")[0];
+  if(thead.getElementsByTagName("tr").length > 1) {
+    var th_height = 0;
+    for(i=1; i < thead.getElementsByTagName("tr").length; i++) {
+      th_height += Number(getComputedStyle(thead.getElementsByTagName("tr")[i-1].children[0]).height.match(/[0-9]+/g));
+      thead.getElementsByTagName("tr")[i].getElementsByTagName("th").forEach(function(item) {
+        tem.style.top = th_height + "px";
+      })
+    }
+  }
+}
+document.onreadystatechange = function() {
+  document.getElementsByClassName("fixedheader").forEach(fixheaders);
+};
+</script>
 <style>
 .fixedheader {
   font-size: 15pt;
-  margin-left: auto;
-  margin-right: auto;
 }
-
+.fixedheader thead tr td {
+  background: #FFF;
+  color: #000;
+  text-align: center;
+  position: sticky;
+  height: 15pt;
+  top: 0;
+  bottom-border: 2px solid #000
+}
 .fixedheader thead tr th {
-  background: #A00;
+  background: #447;
   color: #FEE;
   text-align: center;
   position: sticky;
+  height: 20pt;
   top: 0;
+  bottom-border: 2px solid #000
 }
-
 .fixedheader tbody tr:nth-child(even) {
   background: #DDD;
 }
@@ -280,8 +305,8 @@ htmlTable(tmp,
           align = "c", 
           rnames = F,                                           # No numbers on rows
           css.class = "fixedheader",                            # The css just before this chunk makes tables of this class have a fixed header
-          caption = "This table caption does not stay fixed",   # Caption
-          css.table = "margin: 1em auto;"                       # Center table
+          css.table = "margin: 1em auto;",                      # Center table
+          css.cell = "padding-left: 2em; padding-right: 2em;"   # Space on left and right of cells
           )
 ```
 </div>

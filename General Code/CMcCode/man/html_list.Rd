@@ -4,8 +4,8 @@
 \alias{html_list}
 \title{HTML List Function}
 \usage{
-html_list(strings, details = NULL, detailpref = "- ", kind = c("ul",
-  "ol", "dl"), type = c(1, "A", "a", "I", "i"), parent_element = NULL)
+html_list(strings, details = NULL, detailpref = "- ", kind = c("ul", "ol",
+  "dl"), type = c(1, "A", "a", "I", "i"), parent_element = NULL)
 }
 \arguments{
 \item{x}{Vector of values to list. Will be converted to \code{character}}
