@@ -5,8 +5,8 @@
 \alias{ggroc2}
 \title{\code{ggplot2} ROC Curves}
 \usage{
-ggroc(rc, labels = NULL, print.auc = c("title", "plot"), mark.sens = NULL,
-  mark.spec = NULL, ...)
+ggroc(rc, labels = NULL, print.auc = c("title", "plot"),
+  mark.sens = NULL, mark.spec = NULL, ...)
 
 ggroc2(..., labels = NULL, print.auc = T, mark.sens = NULL,
   mark.spec = NULL)
