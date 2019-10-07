@@ -130,6 +130,7 @@
    
    # Javascript
    html <- paste0('
+<div id="svg', id, '"></div>
 <script>
 
 var width',id,'  = ',width,',
@@ -144,7 +145,7 @@ var force',id,' = d3.layout.force()
                            .size([width',id,', height',id,'])
                            .linkStrength(function(link) {return link.strength/10;});
 
-var svg',id,' = d3.select("body").append("svg")
+var svg',id,' = d3.select("#svg',id,'").append("svg")
                                  .attr("width", width',id,')
                                  .attr("height", height',id,')
                                  .on("mousedown",mouseclick',id,');
@@ -233,8 +234,7 @@ function mouseover',id,'(d) {
     var obj = d3.select(this);
     focus',id,'.selectAll("text").remove();
     if(obj.attr("class")=="link") {
-    focus',id,'.transition().duration(',duration,')
-               .attr("transform","translate(" + ((Math.round(obj.attr("x1"))+Math.round(obj.attr("x2")))/2+',offset[1],') + "," + 
+    focus',id,'.attr("transform","translate(" + ((Math.round(obj.attr("x1"))+Math.round(obj.attr("x2")))/2+',offset[1],') + "," + 
                                                 ((Math.round(obj.attr("y1"))+Math.round(obj.attr("y2")))/2+',-offset[2],') + ")");
         plaque',id,'.transition().duration(',duration,').attr("height",',ltb$linespacing*length(ldet$items),')
                                               .attr("y",-',ltb$linespacing*length(ldet$items),')
@@ -259,8 +259,7 @@ function mouseover',id,'(d) {
         obj.transition().duration(',duration,').style("stroke",',links$strokeHL,')
                                                       .style("stroke-width",',links$strokewidthHL,');
     } else {
-    focus',id,'.transition().duration(',duration,')
-               .attr("transform","translate(" + (Math.round(obj.attr("cx"))+',offset[1],') + "," + (Math.round(obj.attr("cy"))+',-offset[2],') + ")");
+    focus',id,'.attr("transform","translate(" + (Math.round(obj.attr("cx"))+',offset[1],') + "," + (Math.round(obj.attr("cy"))+',-offset[2],') + ")");
         plaque',id,'.transition().duration(',duration,').attr("height",',ntb$linespacing*length(ndet$items),')
                                               .attr("y",-',ntb$linespacing*length(ndet$items),')
                                               .style("fill",',ntb$fill,')

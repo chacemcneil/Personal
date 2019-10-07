@@ -29,8 +29,20 @@ div.tabset a {
 code {
   background-color: #EEDDFF;
 }
-.collapse {
-
+a {
+  text-decoration: underline;
+  color: #E0E;
+}
+h3 {
+  padding: 10px;
+  font-weight: 800;
+  background-image: linear-gradient(30deg, #00868B, #00C5CD, #00E5EE, #00F5FF, white, white, white, white, white);
+  font-size: 20px;
+}
+h4 {
+  text-decoration: underline;
+  font-size: 18px
+  font-family: Helvetica;
 }
 </style>
 
@@ -119,7 +131,7 @@ Use \*\* to start and end sections of **bold text**. Use only one \* for *italic
 Links can be created in a couple ways:
 
 * <code>[This link]\(https://www.google.com "Google's Homepage")</code> [This link](https://www.google.com "Google's Homepage") connects to Google and gives a little description when hovering (quoted section can be modified/remove to change tooltip).
-* <code>\<a href="https://www.google.com" title ="Google's Homepage"\>This is the same link\</a\></code> <a href="https://www.google.com" title ="Google's Homepage">This link</a> is the same thing created with an html tag.
+* <code>\<a href="https://www.google.com" title ="Google's Homepage"\>This link\</a\></code> <a href="https://www.google.com" title ="Google's Homepage">This link</a> is the same thing created with an html tag.
 
 #### Tooltips
 
@@ -208,7 +220,7 @@ Options for the <code>type</code> parameter include:
 
 ### Symbols
 
-Certain symbols can also be added to the markdown file using unicode character encoding. Certain characters can be referenced by name (e.g. <code>\&dagger;</code> gives &dagger;), but most require a hexidecimal representation given in the form <code>\&#x0000;</code> or <code>\&#x00000;</code> (zeros replaced by desired unicode). Follow this link (&#x1F8A5; [here](https://unicode-table.com/en/)) for a table of codes (warning: it's huge).
+Certain symbols can also be added to the markdown file using unicode character encoding. Certain characters can be referenced by name (e.g. <code>\&dagger;</code> gives &dagger;), but most require a hexidecimal representation given in the form <code>\&#x0000;</code> or <code>\&#x00000;</code> (zeros replaced by desired unicode). Follow this link (&#x1F8A5; <a href="https://unicode-table.com/en/" target="_blank" rel="noopener noreferrer">here</a>) for a table of codes (warning: it's huge).
 
 
 ## Tables & Graphs
@@ -320,7 +332,7 @@ htmlTable(tmp,
 
 ### Chunk options
 
-Here is a list of convenient chunk options: `r html_list(c("echo (T/F)", "fig.height", "fig.width", "message (T/F)", "warning (T/F)", "results ('asis' interprets output as HTML)"))` Most just control how much extra stuff gets thrown into the document. The chunk for the following graph includes <code>fig.width = 14</code> and <code>fig.height = 3</code> to change the figure size.
+Here is a list of convenient chunk options: `r html_list(c("echo (T/F)", "fig.height", "fig.width", "fig.align", "message (T/F)", "warning (T/F)", "results ('asis' interprets output as HTML)"))` Most just control how much extra stuff gets thrown into the document. The chunk for the following graph includes <code>fig.width = 14</code> and <code>fig.height = 3</code> to change the figure size.
 
 ```{r, fig.width = 14, fig.height = 3, fig.cap = fig$cap("previous_figure", inline = T, center = T)}
 mat <- matrix(rnorm(100), 20, 5)
@@ -468,7 +480,7 @@ function topFunction() {
 </script>
 <button onclick="topFunction()" id="myBtn" title="Return to top" style = "display: none; position: fixed; top: 40px; right: 20px;">Return to Top</button>
 
-Notice that since you are not at the top of the page, there is a button in the upper right that will return the view to the top of the page.
+Notice that when you are not at the top of the page, there is a button in the upper right that will return the view to the top of the page.
 
 This is done by inserting the following HTML and javascript.
 
@@ -535,6 +547,15 @@ function showDivs(n) {
 <div class="w3-content w3-display-container">
   <button class="w3-button w3-black w3-display-left" onclick="plusDivs(-1)">&#10094;</button>
   <button class="w3-button w3-black w3-display-right" onclick="plusDivs(1)">&#10095;</button>
+
+<div class="mySlides" style="border: solid 1px #000; display: table; text-align: center;">
+<div style="font-size: 18pt; color: #44B; display: table-cell; vertical-align: middle; height: 300px; padding: 40px;">
+Click the arrows on the sides to move between slides.
+
+This first slide is not given the same dimensions, so the window shifts based on the size of each individual display.
+</div>
+</div>
+
 ```{r, echo = FALSE, out.extra=list('class = "mySlides"'), fig.align='center'}
 nimadd <- function(x, y) {
   # x and y must have same dimensions
@@ -676,6 +697,8 @@ The following frame is created using
 
 <iframe style="width: 900px; height: 600px;" src = "newfile.html"></iframe>
 
+Other markdown files can also be linked to just like web pages. If this file was compiled here, [this link](newfile.html) will point to the HTML file shown above.
+
 ### Collapsing Sections
 
 The following HTML defines a the style and functionality of buttons used to collapse the sections below.
@@ -683,48 +706,50 @@ The following HTML defines a the style and functionality of buttons used to coll
 ```{r, eval = FALSE, echo = TRUE}
 <style>
 .collapsebtn {
-  font-size: 10px;
+  font-size: 12px;
   border-radius: 6px;
   outline: none;
 }
 </style>
 <script>
-function myClick (d) {
-  var tmp = document.getElementById("" + d.id + "div");
-  tmp.hidden = (tmp.hidden) ? false : true;
-  d.innerHTML = (tmp.hidden) ? "+" : "-";
-}
+$(document).ready(function() {
+  $(".collapsebtn").click(function() {
+    $(this).parent().siblings().slideToggle('fast');
+    $(this).html($(this).html() == "+" ? "-" : "+");
+  })
+})
 </script>
 ```
 
 <style>
 .collapsebtn {
-  font-size: 10px;
+  font-size: 12px;
   border-radius: 6px;
   outline: none;
 }
 </style>
 <script>
-function collapseDiv (d) {
-  var tmp = document.getElementById("" + d.id + "div");
-  tmp.hidden = (tmp.hidden) ? false : true;
-  d.innerHTML = (tmp.hidden) ? "+" : "-";
-}
+$(document).ready(function() {
+  $(".collapsebtn").click(function() {
+    $(this).parent().siblings().slideToggle('500');
+    $(this).html($(this).html() == "+" ? "-" : "+");
+  })
+})
 </script>
 
 After inserting the code above, a <code>\<button\></code> element must be created and linked to a <code>\<div\></code> element. The code below gives an example of how to create a collapsed section (it is not necessary to have the button wrapped in a heading tag). If you want the section expanded by default, omit the <code>hidden</code> attribute in the <code>div</code> tag and replace "+" with "-" in the innerHTML of the <code>button</code> tag. Notice that the ids of the two elements are very similar. The function defined above depends on this similarity to collapse the correct section when the button is clicked.
 
 ```{r, eval = FALSE, echo = TRUE}
-<h4><button id="btn1" class="collapsebtn" onclick="collapseDiv(this)">+</button>Scatterplot</h4>
-<div id = "btn1div" hidden>
+<div>
+<h4><button class="collapsebtn">-</button>Title</h4>
 [R chunks, text and anything else you want to be collapsed]
 </div>
 ```
 
 This might be a little more complex than you want, but the result is nice.
 
-<h4><button id="btn1" class="collapsebtn" onclick="collapseDiv(this)">+</button>Scatterplot</h4>
-<div id = "btn1div" hidden>
+<div>
+<h4><button class="collapsebtn">-</button>Scatterplot</h4>
 ```{r, echo = FALSE}
 n <- 100
 dat <- data.table(expand.grid(Group = c("Treatment", "Control"), Ind = 1:n))
@@ -733,22 +758,22 @@ ggplot(dat, aes(Ind, x, col = Group)) + geom_point(size = 1.2) + labs(col = "")
 ```
 </div>
 
-<h4><button id="btn2" class="collapsebtn" onclick="collapseDiv(this)">+</button>Histogram</h4>
-<div id = "btn2div" hidden>
+<div>
+<h4><button class="collapsebtn">-</button>Histogram</h4>
 ```{r, echo = FALSE}
 ggplot(dat, aes(x, fill = Group)) + geom_histogram(position = "dodge", col = "white", binwidth = .5) + labs(fill = "")
 ```
 </div>
 
-<h4><button id="btn3" class="collapsebtn" onclick="collapseDiv(this)">+</button>Density</h4>
-<div id = "btn3div" hidden>
+<div>
+<h4><button class="collapsebtn">-</button>Density</h4>
 ```{r, echo = FALSE}
 ggplot(dat, aes(x, fill = Group)) + geom_density(lwd = .1, alpha = .4, adjust = 1.5) + labs(fill = "")
 ```
 </div>
 
-<h4><button id="btn4" class="collapsebtn" onclick="collapseDiv(this)">+</button>Table</h4>
-<div id = "btn4div" hidden>
+<div>
+<h4><button class="collapsebtn">-</button>Table</h4>
 ```{r, echo = FALSE}
 htmlTable(dat[, list(Observations = .N, Mean = round(mean(x), 2), StdDev = round(sd(x), 2)), by = Group], rnames = F, align = "lrr", css.cell = "padding-left: 1em; padding-right: 1em;")
 ```
@@ -765,12 +790,12 @@ Be careful with using too many different elements. Using too many of the feature
 
 The <code>plotly</code> package can be used to add interactivity to some graphs. Most <code>ggplot2</code> graphs can be wrapped in the <code>ggplotly</code> function.
 
-```{r}
+```{r, fig.height = 5, fig.width = 12}
 data(USArrests)
 USArrests <- data.table(USArrests, State = row.names(USArrests))
 
-ggplotly(ggplot(USArrests, aes(Murder, Assault)) + geom_point())
-plot_ly(USArrests, x = ~State, y = ~Murder)
+ggplotly(ggplot(USArrests, aes(Murder, Assault)) + geom_point(), width = 900, height = 400)
+plot_ly(USArrests, x = ~State, y = ~Murder, width = 900, height = 400)
 ```
 
 ### Animation
@@ -800,7 +825,7 @@ clock <- clock[, list(Hr_Hnd_x = c(0, Im(exp(2i*pi*(Hour/12 + Minute/720 + Secon
 # }
 ```
 
-Animated plots can also be created using the <code>animation</code> package.
+Animated plots can also be created using the <code>animation</code>  **The plots below rely on the file being compiled in its current location to access externally stored graphs.**
 
 ```{r, echo = FALSE, warning = FALSE, message = FALSE, results = 'asis'}
 
@@ -974,7 +999,7 @@ gg_us_hex(data = tmp, aes(fill = Pop))
 
 ### D3
 
-There are a lot of different graphs and figures that can be made with the D3 javascript library. It is not very easy to implement this in R markdown, but it can be done.
+There are a lot of different graphs and figures that can be made with the D3 javascript library. It is sometimes tricky to implement this in R markdown, but it can be done.
 
 
 <hr style="border-width: 2px; border-color: #AA5512;">

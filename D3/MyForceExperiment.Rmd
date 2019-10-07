@@ -3,7 +3,7 @@ title: "Example Graphs"
 output: html_document
 ---
 
-```{r,echo=FALSE,warning=FALSE,comment=""}
+```{r, include = FALSE}
 library(networkD3)
 library(rjson)
 library(igraph)
@@ -11,7 +11,7 @@ library(igraph)
 # library(xtable)
 # library(ggplot2)
 
-dir()
+# dir()
 
 # setwd("/work/cmcneil/Miscellaneous/Personal/D3")
 source("D3Force.R")
@@ -83,6 +83,11 @@ nodes.df <- as.data.frame(vertex.attributes(ig))
 links.df <- as.data.frame(edge.attributes(ig))   # must include 'target' and 'source' fields referencing row numbers of nodes.df
 graph <- list(v=nodes.df,e=links.df)
 
+## Zero index
+nodes.df$index <- nodes.df$index - 1
+# links.df$source <- links.df$source - 1
+# links.df$target <- links.df$target - 1
+
 # Using formulas, the numerical graph characteristics and textbox output can also be functions of graph characteristics
 html3 <- myForce(ig,
                    duration=100,
@@ -108,14 +113,15 @@ html4 <- myForce(ig,
                    mouseoverlink=F,offset=c(15,-7))
 ```
 
-```{r,echo=FALSE,results='asis'}
-forceNetwork(links.df,nodes.df,"source","target","value","index",Group="group",Nodesize="nodesize",opacity=1)
+```{r, echo=FALSE, results='asis'}
+forceNetwork(links.df, nodes.df, "source","target","value","index",Group="group",Nodesize="nodesize",opacity=1)
 ```
 
-```{r,echo=FALSE,results='asis'}
+```{r, echo = FALSE, results = 'asis'}
 d3init()
 cat(html1)
 cat(html2)
 cat(html3)
 cat(html4)
 ```
+
