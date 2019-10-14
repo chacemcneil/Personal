@@ -58,14 +58,17 @@
              )
            ),
            fluidRow(
-             box(width = 4,
+             box(width = 3,
                uiOutput("param1")
              ),
-             box(width = 4,
+             box(width = 3,
                uiOutput("param2")
              ),
-             box(width = 4,
+             box(width = 3,
                uiOutput("param3")
+             ),
+             box(width = 3,
+                 checkboxInput("cdf", "CDF", value = F)
              )
            ),
            fluidRow(
@@ -101,11 +104,11 @@
              )
            )
            
-           # cmc_rconsole_ui(str = getPassword())
+           # cmc_rconsole_ui(str = readLines("cmc"))
          )
        ),
        tabItem(tabName = "console",
-         cmc_rconsole_ui(str = getPassword())
+         cmc_rconsole_ui(str = readLines("cmc"))
        )
      )
    )
@@ -129,14 +132,17 @@
    text(1, 1, spinner[1], cex = 15)
    spinSpinner()
  }
+ spin2 <- function () {
+    rm(spinSpinner)
+ }
  
  ## Shiny Server function
  server <- function(input, output, session) {
    output$bigplot <- renderPlot({tryCatch({
      dist <- input$distribution
      tmpvals <- vals()
-     if(exists("spinSpinner"))
-       rm(spinSpinner)
+     # if(exists("spinSpinner"))
+     #   rm(spinSpinner)
      
      ## Plot histogram (binomial distribution modified for integers)
      if(dist == "binomial")
@@ -166,21 +172,45 @@
                     binomial = dbinom(xseq, input$binomial_size, input$binomial_prob),
                     negbinomial = dnbinom(xseq, size = input$negbinomial_size, prob = input$negbinomial_prob),
                     tweedie = dtweedie(xseq, mu = input$tweedie_mu, phi = input$tweedie_phi, power = input$tweedie_power))
+     cumdens <- switch(dist,
+                       normal = pnorm(xseq, input$normal_mean, input$normal_sd),
+                       gamma = pgamma(xseq - input$gamma_shift, input$gamma_shape, input$gamma_scale),
+                       beta = pbeta(xseq, input$shape1, input$shape2),
+                       binomial = pbinom(xseq, input$binomial_size, input$binomial_prob),
+                       negbinomial = pnbinom(xseq, size = input$negbinomial_size, prob = input$negbinomial_prob),
+                       tweedie = ptweedie(xseq, mu = input$tweedie_mu, phi = input$tweedie_phi, power = input$tweedie_power))
      
      ## Evaluate and plot distribution over histogram
-     tmpdt <- data.table(x = xseq, y = dens)
-     if(is.integer(tmpvals))
-       ggplot(data.table(Val = tmpvals)) +
-         geom_histogram(aes(Val, y = ..density..), col = "white", fill = "blue", binwidth = 1) +
-         geom_line(data = tmpdt, aes(x, y), size = 1, col = "indianred") + ggthm +
-         labs(title = paste("Sample from", capitalize(input$distribution), "Distribution"))
-     else
-       ggplot(data.table(Val = tmpvals)) +
-         geom_histogram(aes(Val, y = ..density..), col = "white", fill = "blue") +
-         geom_line(data = tmpdt, aes(x, y), size = 1, col = "indianred") + ggthm +
-         labs(title = paste("Sample from", capitalize(input$distribution), "Distribution"))
+     tmpdt <- data.table(x = xseq, y = dens, y2 = cumdens)
+     if(input$cdf) {
+       if(is.integer(tmpvals))
+         ggplot(data.table(Val = tmpvals)) +
+           geom_histogram(aes(Val, y = ..density..), col = "white", fill = "blue", binwidth = 1) +
+           geom_line(data = tmpdt, aes(x, y), size = 1, col = "indianred") +
+           geom_line(data = tmpdt, aes(x, y2), size = 1, col = "slateblue") +
+           geom_hline(xintercept = 1, linetype = 2, col = slateblue, size = .5) + ggthm +
+           labs(title = paste("Sample from", capitalize(input$distribution), "Distribution"))
+       else
+         ggplot(data.table(Val = tmpvals)) +
+           geom_histogram(aes(Val, y = ..density..), col = "white", fill = "blue") +
+           geom_line(data = tmpdt, aes(x, y), size = 1, col = "indianred") +
+           geom_line(data = tmpdt, aes(x, y2), size = 1, col = "slateblue") +
+           geom_hline(xintercept = 1, linetype = 2, col = slateblue, size = .5) + ggthm +
+           labs(title = paste("Sample from", capitalize(input$distribution), "Distribution"))
+     } else {
+       if(is.integer(tmpvals))
+         ggplot(data.table(Val = tmpvals)) +
+           geom_histogram(aes(Val, y = ..density..), col = "white", fill = "blue", binwidth = 1) +
+           geom_line(data = tmpdt, aes(x, y), size = 1, col = "indianred") + ggthm +
+           labs(title = paste("Sample from", capitalize(input$distribution), "Distribution"))
+       else
+         ggplot(data.table(Val = tmpvals)) +
+           geom_histogram(aes(Val, y = ..density..), col = "white", fill = "blue") +
+           geom_line(data = tmpdt, aes(x, y), size = 1, col = "indianred") + ggthm +
+           labs(title = paste("Sample from", capitalize(input$distribution), "Distribution"))
+     }
    },
-   error = spin)})
+   error = spin2)})
    
    output$drawmin <- renderInfoBox({
      distmin = round(min(vals()), 2)
@@ -273,5 +303,4 @@
  
  
 # End script
- 
  

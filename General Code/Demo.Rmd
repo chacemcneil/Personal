@@ -3,6 +3,7 @@ title: "R Markdown Demo"
 output: 
   html_document:
     code_folding: show
+    self_contained: yes
 geometry: margin=0cm
 ---
 
@@ -71,6 +72,7 @@ library(knitr)
 library(leaflet)
 library(maps)
 library(plotly)
+library(RCurl)
 library(rpivotTable)
 library(scales)
 library(usmap)
@@ -699,6 +701,54 @@ The following frame is created using
 
 Other markdown files can also be linked to just like web pages. If this file was compiled here, [this link](newfile.html) will point to the HTML file shown above.
 
+### Embedding PDF files
+
+```{r, echo = FALSE}
+embed_file <- function(fl, filetype = c("pdf", "html", "png", "gif"),
+                           width = "100%", height = "400px") {
+  filetype <- match.arg(filetype)
+  srctype <- switch(filetype,
+                    pdf = "application/pdf",
+                    html = "text/html",
+                    png = "image/png",
+                    gif = "image/gif")
+  filesize <- file.size(fl)
+  if(is.na(filesize))
+    filesize <- 1e5
+  
+  if(filetype == "pdf") {
+    b64 <- base64Encode(readBin(fl, "raw", filesize), "txt")
+    html <- paste0('<iframe src="data:', srctype, ';base64,', b64,
+                   '" style="height: ', height, '; width: ', width, ';"></iframe>')
+  } else if(filetype == "html") {
+    b64 <- base64Encode(readBin(fl, "raw", filesize), "txt")
+    html <- paste0('<iframe src="data:', filetype, ';base64,', b64,
+                   '" style="height: ', height, '; width: ', width, ';"></iframe>')
+  } else if(filetype == "png") {
+    b64 <- base64Encode(readBin(fl, "raw", filesize), "txt")
+    html <- paste0('<image src="data:', filetype, ';base64,', b64,
+                   '" style="height: ', height, '; width: ', width, ';"/>')
+  } else if(filetype == "gif") {
+    html <- 3
+  }
+  
+  class(html) <- c("html", "character")
+  html
+}
+
+src <- "R&D Framework.pdf"
+embed_file(src)
+
+src2 <- "newfile.html"
+embed_file(src2, filetype = "html")
+
+src3 <- paste0("https://d33wubrfki0l68.cloudfront.net/",
+              "d08c35bfe1ba68584788f5cdcad703d0c9d8263f/",
+              "7969a/wp-content/uploads/2014/04/shiny.png")
+embed_file(src3, filetype = "png", width = "50px", height = "60px")
+
+```
+
 ### Collapsing Sections
 
 The following HTML defines a the style and functionality of buttons used to collapse the sections below.
@@ -803,7 +853,7 @@ plot_ly(USArrests, x = ~State, y = ~Murder, width = 900, height = 400)
 <code>plotly</code> can also be used to create animations. (note that it often adds tooltips that show up when hovering, which may not be desired)
 
 ```{r, echo = FALSE, warning = FALSE}
-clock <- data.table(expand.grid(Hour = 1:12, Minute = 0:59, Second = 0:59))
+clock <- data.table(expand.grid(Hour = 1:3, Minute = 0:59, Second = 0:59))
 setkeyv(clock, c("Hour", "Minute", "Second"))
 clock[, Instant := 1:.N]
 clock <- clock[, list(Hr_Hnd_x = c(0, Im(exp(2i*pi*(Hour/12 + Minute/720 + Second/43200)))),
@@ -815,9 +865,9 @@ clock <- clock[, list(Hr_Hnd_x = c(0, Im(exp(2i*pi*(Hour/12 + Minute/720 + Secon
 # if(interactive()) {
     ggplotly(
       ggplot(clock[Hour == 3 & Minute %in% 30:32]) +
-        geom_line(aes(Sec_Hnd_x*.9, Sec_Hnd_y*.9, frame = Instant), col = "red") +
-        geom_line(aes(Min_Hnd_x, Min_Hnd_y, frame = Instant)) +
-        geom_line(aes(Hr_Hnd_x*.6, Hr_Hnd_y*.6, frame = Instant)) +
+        geom_line(aes(Sec_Hnd_x*.9, Sec_Hnd_y*.9), col = "red") +
+        geom_line(aes(Min_Hnd_x, Min_Hnd_y)) +
+        geom_line(aes(Hr_Hnd_x*.6, Hr_Hnd_y*.6)) +
         geom_text(data = clock[Minute == 1 & Second == 1 & Hr_Hnd_x + Hr_Hnd_y != 0], aes(Hr_Hnd_x, Hr_Hnd_y, label = Hour)) +
         labs(x = "", y = "") + scale_x_continuous(breaks = 10) + scale_y_continuous(breaks = 10) + theme(panel.background = element_rect(fill = "aquamarine")),
       width = 400, height = 500
@@ -995,12 +1045,38 @@ gg_us_hex <- function(data = NULL, mapping = NULL, dc = T) {
 tmp <- data.table(statepop)
 tmp <- tmp[, list(StateCd = abbr, Pop = pop_2015)]
 gg_us_hex(data = tmp, aes(fill = Pop))
+
 ```
 
 ### D3
 
 There are a lot of different graphs and figures that can be made with the D3 javascript library. It is sometimes tricky to implement this in R markdown, but it can be done.
 
+### Shiny
+
+```{r, echo = FALSE}
+src <- paste0("https://community.rstudio.com/uploads",
+              "/default/original/1X/c017cef9c13bc",
+              "937df73659d3b5b1411a39c7ed2.png")
+src <- paste0("https://d33wubrfki0l68.cloudfront.net/",
+              "d08c35bfe1ba68584788f5cdcad703d0c9d8263f/",
+              "7969a/wp-content/uploads/2014/04/shiny.png")
+
+img <- paste0("data:image/png;base64,",
+              base64Encode(readBin(src, "raw", 1e5), "txt") )
+```
+
+<table><tr><td style="width: 20%;"><a href=""><image src="`r img`" style="width: 50px; height: 50px;"/></td><td>
+One obvious option for interactively viewing the results of analysis is Shiny. Through a Shiny app, readers can potentially dive deep into the data and even perform some analysis of their own (whether good or bad). 
+</td></tr></table>
+<br>
+<table><tr><td style="width: 50%;">
+Pros:
+`r html_list(c("Interact with raw data", "Many parameters can be adjusted in any combination", "Does not require a file, only a URL"))`
+</td><td>
+Cons:
+`r html_list(c("Potentially too much information", "Users can go looking for their own desired answers", "Requires an active R session"))`
+</td></tr></table>
 
 <hr style="border-width: 2px; border-color: #AA5512;">
 #

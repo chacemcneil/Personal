@@ -13,6 +13,7 @@ gg_us_hex(data, mapping, dc = T, ...)
 Generates a \code{data.table} object with center points and polygon information for graphing US states in a hex map.
 }
 \examples{
+library(usmap)
 dt <- data.table(statepop)[, list(StateCd = abbr, pop_2015)]
 gg_us_hex(dt, aes(fill = pop_2015))
 }

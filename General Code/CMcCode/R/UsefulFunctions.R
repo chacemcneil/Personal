@@ -877,6 +877,7 @@ hardcode <- function(x, assign = T, assign_oper = "<-", print = T) {
 #' @export
 #' @param dc Logical, whether or not to include a row for Washinton D.C.
 #' @examples
+#' library(usmap)
 #' dt <- data.table(statepop)[, list(StateCd = abbr, pop_2015)]
 #' gg_us_hex(dt, aes(fill = pop_2015))
 

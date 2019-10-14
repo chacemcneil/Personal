@@ -24,6 +24,18 @@ library(pROC)
 html_themes <- c("default", "cerulean", "journal", "flatly", "readable", "spacelab", "united", "cosmo", "lumen",  "paper", "sandstone", "simplex", "yeti")
 html_highlights <- c("default", "tango", "pygments", "kate",  "monochrome", "espresso", "zenburn", "haddock", "textmate")
 
+#' Padding Function
+#' 
+#' Used to add padding to left and right \code{htmlTable} cell objects
+#' @param n Size of padding to add. Defaults to 1, representing padding of 1em on left and right.
+#' @export
+#' @example
+#' ## Format \code{htmlTable} object
+#' tab <- data.table(x = 1:10, A = letters[1:10])
+#' htmlTable(tab, css.cell = padding(2))
+padding <- function(n = 1) {
+  paste0("padding-right: ", n, "em; padding-left: ", n, "em;")
+}
 
 #' HTML List Function
 #' 
