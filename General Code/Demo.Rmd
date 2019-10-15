@@ -703,6 +703,8 @@ Other markdown files can also be linked to just like web pages. If this file was
 
 ### Embedding PDF files
 
+PDF files can also be embedded in an HTML document. In this section of the markdown, a PDF file is downloaded from CRAN and stored in the directory of the file. The file is then embedded in this HTML file so that copies of this file will still show the PDF contents without having to copy the PDF file as well. (This does not work for the method of embedding HTML files shown above.)
+
 ```{r, echo = FALSE}
 embed_file <- function(fl, filetype = c("pdf", "html", "png", "gif"),
                            width = "100%", height = "400px") {
@@ -720,33 +722,29 @@ embed_file <- function(fl, filetype = c("pdf", "html", "png", "gif"),
     b64 <- base64Encode(readBin(fl, "raw", filesize), "txt")
     html <- paste0('<iframe src="data:', srctype, ';base64,', b64,
                    '" style="height: ', height, '; width: ', width, ';"></iframe>')
-  } else if(filetype == "html") {
-    b64 <- base64Encode(readBin(fl, "raw", filesize), "txt")
-    html <- paste0('<iframe src="data:', filetype, ';base64,', b64,
-                   '" style="height: ', height, '; width: ', width, ';"></iframe>')
+  # } else if(filetype == "html") {
+  #   b64 <- base64Encode(readBin(fl, "raw", filesize), "txt")
+  #   html <- paste0('<iframe src="data:', filetype, ';base64,', b64,
+  #                  '" style="height: ', height, '; width: ', width, ';"></iframe>')
   } else if(filetype == "png") {
     b64 <- base64Encode(readBin(fl, "raw", filesize), "txt")
     html <- paste0('<image src="data:', filetype, ';base64,', b64,
                    '" style="height: ', height, '; width: ', width, ';"/>')
   } else if(filetype == "gif") {
-    html <- 3
+    b64 <- base64Encode(readBin(fl, "raw", filesize), "txt")
+    html <- paste0('<image src="data:', filetype, ';base64,', b64,
+                   '" style="height: ', height, '; width: ', width, ';"/>')
   }
   
   class(html) <- c("html", "character")
   html
 }
 
-src <- "R&D Framework.pdf"
-embed_file(src)
+if(!"RColorBrewer.pdf" %in% dir())
+  download.file("https://cran.r-project.org/web/packages/RColorBrewer/RColorBrewer.pdf",
+                destfile = "RColorBrewer.pdf", mode = "wb")
 
-src2 <- "newfile.html"
-embed_file(src2, filetype = "html")
-
-src3 <- paste0("https://d33wubrfki0l68.cloudfront.net/",
-              "d08c35bfe1ba68584788f5cdcad703d0c9d8263f/",
-              "7969a/wp-content/uploads/2014/04/shiny.png")
-embed_file(src3, filetype = "png", width = "50px", height = "60px")
-
+embed_file("RColorBrewer.pdf")
 ```
 
 ### Collapsing Sections
@@ -865,10 +863,12 @@ clock <- clock[, list(Hr_Hnd_x = c(0, Im(exp(2i*pi*(Hour/12 + Minute/720 + Secon
 # if(interactive()) {
     ggplotly(
       ggplot(clock[Hour == 3 & Minute %in% 30:32]) +
-        geom_line(aes(Sec_Hnd_x*.9, Sec_Hnd_y*.9), col = "red") +
-        geom_line(aes(Min_Hnd_x, Min_Hnd_y)) +
-        geom_line(aes(Hr_Hnd_x*.6, Hr_Hnd_y*.6)) +
-        geom_text(data = clock[Minute == 1 & Second == 1 & Hr_Hnd_x + Hr_Hnd_y != 0], aes(Hr_Hnd_x, Hr_Hnd_y, label = Hour)) +
+        geom_line(aes(Sec_Hnd_x*.9, Sec_Hnd_y*.9, frame = Instant), col = "red") +
+        geom_line(aes(Min_Hnd_x, Min_Hnd_y, frame = Instant)) +
+        geom_line(aes(Hr_Hnd_x*.6, Hr_Hnd_y*.6, frame = Instant)) +
+        geom_text(data = clock[Hour == 1 & Second == 0 & Minute %in% (5*(0:11)) &
+                                 Hr_Hnd_x + Hr_Hnd_y != 0],
+                  aes(Min_Hnd_x, Min_Hnd_y, label = ifelse(Minute == 0, 12, Minute/5))) +
         labs(x = "", y = "") + scale_x_continuous(breaks = 10) + scale_y_continuous(breaks = 10) + theme(panel.background = element_rect(fill = "aquamarine")),
       width = 400, height = 500
     ) %>% animation_opts(transition = 0, 1000)
@@ -1050,7 +1050,9 @@ gg_us_hex(data = tmp, aes(fill = Pop))
 
 ### D3
 
+<table><tr><td style="width: 20%;"><a href="https://d3js.org/" target="_blank">`r embed_file("https://raw.githubusercontent.com/d3/d3-logo/master/d3.png", filetype = "png", width = "60px", height = "60px")`</a></td><td>
 There are a lot of different graphs and figures that can be made with the D3 javascript library. It is sometimes tricky to implement this in R markdown, but it can be done.
+</td></tr></table>
 
 ### Shiny
 
@@ -1061,12 +1063,9 @@ src <- paste0("https://community.rstudio.com/uploads",
 src <- paste0("https://d33wubrfki0l68.cloudfront.net/",
               "d08c35bfe1ba68584788f5cdcad703d0c9d8263f/",
               "7969a/wp-content/uploads/2014/04/shiny.png")
-
-img <- paste0("data:image/png;base64,",
-              base64Encode(readBin(src, "raw", 1e5), "txt") )
 ```
 
-<table><tr><td style="width: 20%;"><a href=""><image src="`r img`" style="width: 50px; height: 50px;"/></td><td>
+<table><tr><td style="width: 20%;"><a href="https://shiny.rstudio.com" target="_blank">`r embed_file(src, filetype = "png", width = "50px", height = "60px")`</a></td><td>
 One obvious option for interactively viewing the results of analysis is Shiny. Through a Shiny app, readers can potentially dive deep into the data and even perform some analysis of their own (whether good or bad). 
 </td></tr></table>
 <br>
