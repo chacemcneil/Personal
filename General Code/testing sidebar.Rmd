@@ -1,0 +1,44 @@
+---
+title: "Testing sidebar"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    number_sections: false
+---
+
+```{r setup, include=FALSE}
+
+
+
+```
+
+## Overview
+
+
+
+## FI {.tabset .tabset-pills}
+
+### Tab 1
+
+
+### Tab 2
+
+
+### Tab 3
+
+
+## MA
+
+### Tab 1
+
+
+### Tab 2
+
+
+### Tab 3
+
+

@@ -55,14 +55,12 @@ $(document).ready(function(){
 </script>
 
 <!-- These commands are for the animations section -->
-<link rel="stylesheet" href="css/scianimator.css" />
-<script src="js/jquery.scianimator.min.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.3/highlight.min.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.3/languages/r.min.js"></script>
 <script>hljs.initHighlightingOnLoad();</script>
 
 ```{r setup, include=FALSE}
-library(animation)
+# library(animation)
 library(data.table)
 library(ggplot2)
 library(gtools)
@@ -147,7 +145,14 @@ I think there is more functionality here, but I haven't worked with the package 
 
 #### Formulas
 
-Inline formulas are created by starting and ending with \$ or surrounding with escaped parentheses. Example: $x + 4 = 6$ or \(x+4 = 6\). Block formulas are created using \$\$, as in $$ x + 3 = 10$$ More complex formulas can also be made $$x = {-b \pm \sqrt{b^2-4ac} \over 2a}.$$ as well as multi-line equations $$ \begin{array}{} x - 2 & = & {4 \over 2} \times 3 \\ x & = & 2 \times 3 + 2 \\ & = & 8 \end{array}$$ or $$ s_{ij} = \left\{ \begin{array}{} -\frac{1}{2} & \text{if} & x_{ij} < 0 \\ 0 & \text{if} & x_{ij} = 0 \\ \frac{1}{2} & \text{if} & x_{ij} > 0 \end{array}\right.$$
+Inline formulas are created by starting and ending with \$ or surrounding with escaped parentheses. Example: $x + 4 = 6$ or \(x+4 = 6\). Block formulas are created using \$\$, as in 
+$$ x + 3 = 10$$ 
+More complex formulas can also be made 
+$$x = {-b \pm \sqrt{b^2-4ac} \over 2a}.$$
+as well as multi-line equations 
+$$ \begin{array}{} x - 2 & = & {4 \over 2} \times 3 \\ x & = & 2 \times 3 + 2 \\ & = & 8 \end{array}$$
+or 
+$$ s_{ij} = \left\{ \begin{array}{} -\frac{1}{2} & \text{if} & x_{ij} < 0 \\ 0 & \text{if} & x_{ij} = 0 \\ \frac{1}{2} & \text{if} & x_{ij} > 0 \end{array}\right.$$
 
 #### Breaks
 
@@ -200,7 +205,7 @@ Basic list
 <code>html_list(bulleted_list)</code>
 `r html_list(bulleted_list)`
 
-Sub lists (<code>details</code>):
+Sub lists (<code>details</code> parameter):
 
 <code>html_list(bulleted_list, details = list_details)</code>
 `r html_list(bulleted_list, details = list_details)`
@@ -625,22 +630,6 @@ showDivs(slideIndex);
 The following code creates a markdown file and compiles it to create an HTML file. The created file is then shown in it's own frame below.
 
 ```{r}
-newscript <- paste(
-  "---\ntitle: Embedded HTML file\noutput:\n  html_document:\n    code_folding: hide\n---\n",
-  "\n### Table of Contents\nAnother thing that can be done is a table of contents which appears in aside-bar on the left-hand margin. ",
-  "The top of this embedded html file contains the following yaml:\n",
-  "```{r}",
-  "",
-  "```",
-  "```{r}",
-  "library(data.table)",
-  "library(htmlTable)",
-  "htmlTable(data.table(iris)[, list(Samples = .N, Avg_Length = mean(Sepal.Length), Avg_Width = mean(Sepal.Width)), keyby = list(Species)],",
-  " rnames = F, align = \"lr\", css.cell = \"padding-left: 3em; padding-right: 3em;\")",
-  "plot(iris$Sepal.Length, iris$Sepal.Width)",
-  "```\n",
-  sep = "\n"
-)
 newscript <- "
 ---
 title: Embedded HTML file
@@ -875,10 +864,20 @@ clock <- clock[, list(Hr_Hnd_x = c(0, Im(exp(2i*pi*(Hour/12 + Minute/720 + Secon
 # }
 ```
 
-Animated plots can also be created using the <code>animation</code>  **The plots below rely on the file being compiled in its current location to access externally stored graphs.**
+Animated plots can also be created using the <code>animation</code> package. **The plots below rely on the file being compiled in its current location to access externally stored graphs.** The package depends on the <code>magick</code> package, which may not be available in all environments. If this is the case, change the first line in the following R chunk to <code>animation_included = FALSE</code>
 
 ```{r, echo = FALSE, warning = FALSE, message = FALSE, results = 'asis'}
+animation_included = T
 
+if(animation_included) {
+  script <- paste('<link rel="stylesheet" href="css/scianimator.css" />',
+                  '<script src="js/jquery.scianimator.min.js"></script>', sep = "\n")
+  class(script) <- "html"
+  script
+}
+```
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, results = 'asis'}
 # This function makes it easier to create the necessary HTML elements
 # Also notice in the chunk options we have set results = 'asis'
 showAnimation <- function(imgname) {
@@ -887,43 +886,53 @@ showAnimation <- function(imgname) {
         "<script src=\"js/", imgname, ".js\"></script>")
 }
 
-pts <- rnorm(300)
-xpts1 <- seq_along(pts)
-xpts2 <- rank(pts)
-frames <- 20
-
-filename <- "animated_sort.html"
-imgname <- "SortPlot"
-# file.remove(paste0("images/", grep(paste0(imgname, "[[:digit:]]*.png"), dir("images"), value = T)))
-
-saveHTML({
-  for (i in 1:frames) {
-    plot(xpts1 * (frames-i)/(frames-1) + xpts2 * (i-1)/(frames-1), pts, ylab = "Random Values", xlab = "Order", xlim = c(0, length(pts)), main = "Sort")
-  }
-}, interval = .2, img.name = imgname, verbose = F)
-
-cat(showAnimation(imgname))
+if(animation_included) {
+  library(animation)
+  
+  pts <- rnorm(300)
+  xpts1 <- seq_along(pts)
+  xpts2 <- rank(pts)
+  frames <- 20
+  
+  filename <- "animated_sort.html"
+  imgname <- "SortPlot"
+  # file.remove(paste0("images/", grep(paste0(imgname, "[[:digit:]]*.png"), dir("images"), value = T)))
+  
+  saveHTML({
+    for (i in 1:frames) {
+      plot(xpts1 * (frames-i)/(frames-1) + xpts2 * (i-1)/(frames-1), pts, ylab = "Random Values", xlab = "Order", xlim = c(0, length(pts)), main = "Sort")
+    }
+  }, interval = .2, img.name = imgname, verbose = F)
+  
+  cat(showAnimation(imgname))
+}
 ```
 
 
 For longer animations, you may not want the mini icons for each individual frame. These can be removed by setting <code>navigator = F</code> as in the following animation.
 
 ```{r, echo = FALSE, results = 'asis'}
-n <- 100
-dt <- data.table(ind = 1:n,
-                 x = cumsum(rnorm(n)),
-                 y = cumsum(rnorm(n)) )
-dt <- rbind(data.table(ind = 0, x = 0, y = 0), dt)
-
-imgname <- "RandWalk"
-
-saveHTML({
-  for (i in 0:(nrow(dt)-1)) {
-    dt[ind <= i, {plot(x, y, type = "l", xlim = range(dt$x), ylim = range(dt$y), main = "Random Walk"); points(x[i+1], y[i+1]); points(0, 0, pch = 19)}]
-  }
-}, interval = .15, img.name = imgname, filename = imgname, verbose = F, navigator = F)
-
-cat(showAnimation(imgname))
+if(animation_included) {
+  n <- 100
+  dt <- data.table(ind = 1:n,
+                   x = cumsum(rnorm(n)),
+                   y = cumsum(rnorm(n)) )
+  dt <- rbind(data.table(ind = 0, x = 0, y = 0), dt)
+  
+  imgname <- "RandWalk"
+  
+  saveHTML({
+    for (i in 0:(nrow(dt)-1)) {
+      dt[ind <= i, {
+        plot(x, y, type = "l", xlim = range(dt$x), ylim = range(dt$y), main = "Random Walk")
+        points(x[i+1], y[i+1])
+        points(0, 0, pch = 19)
+      }]
+    }
+  }, interval = .15, img.name = imgname, filename = imgname, verbose = F, navigator = F)
+  
+  cat(showAnimation(imgname))
+}
 ```
 
 ### Pivot Tables
@@ -968,6 +977,13 @@ The following static state and county maps are created using the packages <code>
 statemap <- data.table(us_map()) # used to add map scale
 countymap <- data.table(us_map("counties")) # used to add map scale
 
+if("ggsn" %in% row.names(installed.packages())) {
+  scalefun <- ggsn::scalebar
+} else {
+  scalefun <- function(...) {return(NULL)}
+  print("Package ggsn is not installed. Install package to change scalebar format of chloropleths")
+}
+
 ### State
 dt1 <- as.data.table(copy(state.x77))
 dt1$state <- tolower(rownames(state.x77))
@@ -980,7 +996,7 @@ plot_usmap(data = dt1, values = "Population", labels = T)+
                                                #put legend title on top of legend
                                                title.position = "top")) +
   # map scale
-  ggsn::scalebar(data = statemap, dist = 500, dist_unit = "km",
+  scalefun(data = statemap, dist = 500, dist_unit = "km",
            border.size = 0.4, st.size = 4,
            box.fill = c('black','white'),
            transform = FALSE, model = "WGS84") + 
@@ -999,7 +1015,7 @@ plot_usmap(data = dt2, values = "Population", labels = T)+
                                                #put legend title on top of legend
                                                title.position = "top")) +
   # map scale
-  ggsn::scalebar(data = statemap, dist = 500, dist_unit = "km",
+  scalefun(data = statemap, dist = 500, dist_unit = "km",
            border.size = 0.4, st.size = 4,
            box.fill = c('black','white'),
            transform = FALSE, model = "WGS84") + 
