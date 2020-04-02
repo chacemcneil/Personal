@@ -751,9 +751,14 @@ The following HTML defines a the style and functionality of buttons used to coll
 <script>
 $(document).ready(function() {
   $(".collapsebtn").click(function() {
-    $(this).parent().siblings().slideToggle('fast');
+    $(this).parent().siblings().slideToggle('500');
     $(this).html($(this).html() == "+" ? "-" : "+");
-  })
+  }).each(function() {
+    if($(this).html().indexOf("+") > 0) {
+      $(this).html("+");
+      $(this).parent().siblings().slideToggle('500');
+    }
+  });
 })
 </script>
 ```
@@ -770,11 +775,16 @@ $(document).ready(function() {
   $(".collapsebtn").click(function() {
     $(this).parent().siblings().slideToggle('500');
     $(this).html($(this).html() == "+" ? "-" : "+");
-  })
+  }).each(function() {
+    if($(this).html().indexOf("+") > 0) {
+      $(this).html("+");
+      $(this).parent().siblings().slideToggle('500');
+    }
+  });
 })
 </script>
 
-After inserting the code above, a <code>\<button\></code> element must be created and linked to a <code>\<div\></code> element. The code below gives an example of how to create a collapsed section (it is not necessary to have the button wrapped in a heading tag). If you want the section expanded by default, omit the <code>hidden</code> attribute in the <code>div</code> tag and replace "+" with "-" in the innerHTML of the <code>button</code> tag. Notice that the ids of the two elements are very similar. The function defined above depends on this similarity to collapse the correct section when the button is clicked.
+After inserting the code above, a <code>\<button\></code> element must be created and linked to a <code>\<div\></code> element. The code below gives an example of how to create a collapsed section (it is not necessary to have the button wrapped in a heading tag). If you want the section expanded by default, replace "+" with "-" in the innerHTML of the <code>button</code> tag. Notice that the ids of the two elements are very similar. The function defined above depends on this similarity to collapse the correct section when the button is clicked.
 
 ```{r, eval = FALSE, echo = TRUE}
 <div>
@@ -786,7 +796,7 @@ After inserting the code above, a <code>\<button\></code> element must be create
 This might be a little more complex than you want, but the result is nice.
 
 <div>
-<h4><button class="collapsebtn">-</button>Scatterplot</h4>
+<h4><button class="collapsebtn">+</button>Scatterplot</h4>
 ```{r, echo = FALSE}
 n <- 100
 dat <- data.table(expand.grid(Group = c("Treatment", "Control"), Ind = 1:n))
@@ -796,14 +806,14 @@ ggplot(dat, aes(Ind, x, col = Group)) + geom_point(size = 1.2) + labs(col = "")
 </div>
 
 <div>
-<h4><button class="collapsebtn">-</button>Histogram</h4>
+<h4><button class="collapsebtn">+</button>Histogram</h4>
 ```{r, echo = FALSE}
 ggplot(dat, aes(x, fill = Group)) + geom_histogram(position = "dodge", col = "white", binwidth = .5) + labs(fill = "")
 ```
 </div>
 
 <div>
-<h4><button class="collapsebtn">-</button>Density</h4>
+<h4><button class="collapsebtn">+</button>Density</h4>
 ```{r, echo = FALSE}
 ggplot(dat, aes(x, fill = Group)) + geom_density(lwd = .1, alpha = .4, adjust = 1.5) + labs(fill = "")
 ```
