@@ -3,6 +3,7 @@ title: "R Markdown Demo"
 output: 
   html_document:
     code_folding: show
+    self_contained: yes
 geometry: margin=0cm
 ---
 
@@ -29,8 +30,20 @@ div.tabset a {
 code {
   background-color: #EEDDFF;
 }
-.collapse {
-
+a {
+  text-decoration: underline;
+  color: #E0E;
+}
+h3 {
+  padding: 10px;
+  font-weight: 800;
+  background-image: linear-gradient(30deg, #00868B, #00C5CD, #00E5EE, #00F5FF, white, white, white, white, white);
+  font-size: 20px;
+}
+h4 {
+  text-decoration: underline;
+  font-size: 18px
+  font-family: Helvetica;
 }
 </style>
 
@@ -42,14 +55,12 @@ $(document).ready(function(){
 </script>
 
 <!-- These commands are for the animations section -->
-<link rel="stylesheet" href="css/scianimator.css" />
-<script src="js/jquery.scianimator.min.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.3/highlight.min.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.3/languages/r.min.js"></script>
 <script>hljs.initHighlightingOnLoad();</script>
 
 ```{r setup, include=FALSE}
-library(animation)
+# library(animation)
 library(data.table)
 library(ggplot2)
 library(gtools)
@@ -59,6 +70,7 @@ library(knitr)
 library(leaflet)
 library(maps)
 library(plotly)
+library(RCurl)
 library(rpivotTable)
 library(scales)
 library(usmap)
@@ -119,7 +131,7 @@ Use \*\* to start and end sections of **bold text**. Use only one \* for *italic
 Links can be created in a couple ways:
 
 * <code>[This link]\(https://www.google.com "Google's Homepage")</code> [This link](https://www.google.com "Google's Homepage") connects to Google and gives a little description when hovering (quoted section can be modified/remove to change tooltip).
-* <code>\<a href="https://www.google.com" title ="Google's Homepage"\>This is the same link\</a\></code> <a href="https://www.google.com" title ="Google's Homepage">This link</a> is the same thing created with an html tag.
+* <code>\<a href="https://www.google.com" title ="Google's Homepage"\>This link\</a\></code> <a href="https://www.google.com" title ="Google's Homepage">This link</a> is the same thing created with an html tag.
 
 #### Tooltips
 
@@ -133,7 +145,14 @@ I think there is more functionality here, but I haven't worked with the package 
 
 #### Formulas
 
-Inline formulas are created by starting and ending with \$ or surrounding with escaped parentheses. Example: $x + 4 = 6$ or \(x+4 = 6\). Block formulas are created using \$\$, as in $$ x + 3 = 10$$ More complex formulas can also be made $$x = {-b \pm \sqrt{b^2-4ac} \over 2a}.$$ as well as multi-line equations $$ \begin{array}{} x - 2 & = & {4 \over 2} \times 3 \\ x & = & 2 \times 3 + 2 \\ & = & 8 \end{array}$$ or $$ s_{ij} = \left\{ \begin{array}{} -\frac{1}{2} & \text{if} & x_{ij} < 0 \\ 0 & \text{if} & x_{ij} = 0 \\ \frac{1}{2} & \text{if} & x_{ij} > 0 \end{array}\right.$$
+Inline formulas are created by starting and ending with \$ or surrounding with escaped parentheses. Example: $x + 4 = 6$ or \(x+4 = 6\). Block formulas are created using \$\$, as in 
+$$ x + 3 = 10$$ 
+More complex formulas can also be made 
+$$x = {-b \pm \sqrt{b^2-4ac} \over 2a}.$$
+as well as multi-line equations 
+$$ \begin{array}{} x - 2 & = & {4 \over 2} \times 3 \\ x & = & 2 \times 3 + 2 \\ & = & 8 \end{array}$$
+or 
+$$ s_{ij} = \left\{ \begin{array}{} -\frac{1}{2} & \text{if} & x_{ij} < 0 \\ 0 & \text{if} & x_{ij} = 0 \\ \frac{1}{2} & \text{if} & x_{ij} > 0 \end{array}\right.$$
 
 #### Breaks
 
@@ -186,7 +205,7 @@ Basic list
 <code>html_list(bulleted_list)</code>
 `r html_list(bulleted_list)`
 
-Sub lists (<code>details</code>):
+Sub lists (<code>details</code> parameter):
 
 <code>html_list(bulleted_list, details = list_details)</code>
 `r html_list(bulleted_list, details = list_details)`
@@ -208,7 +227,7 @@ Options for the <code>type</code> parameter include:
 
 ### Symbols
 
-Certain symbols can also be added to the markdown file using unicode character encoding. Certain characters can be referenced by name (e.g. <code>\&dagger;</code> gives &dagger;), but most require a hexidecimal representation given in the form <code>\&#x0000;</code> or <code>\&#x00000;</code> (zeros replaced by desired unicode). Follow this link (&#x1F8A5; [here](https://unicode-table.com/en/)) for a table of codes (warning: it's huge).
+Certain symbols can also be added to the markdown file using unicode character encoding. Certain characters can be referenced by name (e.g. <code>\&dagger;</code> gives &dagger;), but most require a hexidecimal representation given in the form <code>\&#x0000;</code> or <code>\&#x00000;</code> (zeros replaced by desired unicode). Follow this link (&#x1F8A5; <a href="https://unicode-table.com/en/" target="_blank" rel="noopener noreferrer">here</a>) for a table of codes (warning: it's huge).
 
 
 ## Tables & Graphs
@@ -320,7 +339,7 @@ htmlTable(tmp,
 
 ### Chunk options
 
-Here is a list of convenient chunk options: `r html_list(c("echo (T/F)", "fig.height", "fig.width", "message (T/F)", "warning (T/F)", "results ('asis' interprets output as HTML)"))` Most just control how much extra stuff gets thrown into the document. The chunk for the following graph includes <code>fig.width = 14</code> and <code>fig.height = 3</code> to change the figure size.
+Here is a list of convenient chunk options: `r html_list(c("echo (T/F)", "fig.height", "fig.width", "fig.align", "message (T/F)", "warning (T/F)", "results ('asis' interprets output as HTML)"))` Most just control how much extra stuff gets thrown into the document. The chunk for the following graph includes <code>fig.width = 14</code> and <code>fig.height = 3</code> to change the figure size.
 
 ```{r, fig.width = 14, fig.height = 3, fig.cap = fig$cap("previous_figure", inline = T, center = T)}
 mat <- matrix(rnorm(100), 20, 5)
@@ -468,7 +487,7 @@ function topFunction() {
 </script>
 <button onclick="topFunction()" id="myBtn" title="Return to top" style = "display: none; position: fixed; top: 40px; right: 20px;">Return to Top</button>
 
-Notice that since you are not at the top of the page, there is a button in the upper right that will return the view to the top of the page.
+Notice that when you are not at the top of the page, there is a button in the upper right that will return the view to the top of the page.
 
 This is done by inserting the following HTML and javascript.
 
@@ -535,6 +554,15 @@ function showDivs(n) {
 <div class="w3-content w3-display-container">
   <button class="w3-button w3-black w3-display-left" onclick="plusDivs(-1)">&#10094;</button>
   <button class="w3-button w3-black w3-display-right" onclick="plusDivs(1)">&#10095;</button>
+
+<div class="mySlides" style="border: solid 1px #000; display: table; text-align: center;">
+<div style="font-size: 18pt; color: #44B; display: table-cell; vertical-align: middle; height: 300px; padding: 40px;">
+Click the arrows on the sides to move between slides.
+
+This first slide is not given the same dimensions, so the window shifts based on the size of each individual display.
+</div>
+</div>
+
 ```{r, echo = FALSE, out.extra=list('class = "mySlides"'), fig.align='center'}
 nimadd <- function(x, y) {
   # x and y must have same dimensions
@@ -602,22 +630,6 @@ showDivs(slideIndex);
 The following code creates a markdown file and compiles it to create an HTML file. The created file is then shown in it's own frame below.
 
 ```{r}
-newscript <- paste(
-  "---\ntitle: Embedded HTML file\noutput:\n  html_document:\n    code_folding: hide\n---\n",
-  "\n### Table of Contents\nAnother thing that can be done is a table of contents which appears in aside-bar on the left-hand margin. ",
-  "The top of this embedded html file contains the following yaml:\n",
-  "```{r}",
-  "",
-  "```",
-  "```{r}",
-  "library(data.table)",
-  "library(htmlTable)",
-  "htmlTable(data.table(iris)[, list(Samples = .N, Avg_Length = mean(Sepal.Length), Avg_Width = mean(Sepal.Width)), keyby = list(Species)],",
-  " rnames = F, align = \"lr\", css.cell = \"padding-left: 3em; padding-right: 3em;\")",
-  "plot(iris$Sepal.Length, iris$Sepal.Width)",
-  "```\n",
-  sep = "\n"
-)
 newscript <- "
 ---
 title: Embedded HTML file
@@ -676,6 +688,54 @@ The following frame is created using
 
 <iframe style="width: 900px; height: 600px;" src = "newfile.html"></iframe>
 
+Other markdown files can also be linked to just like web pages. If this file was compiled here, [this link](newfile.html) will point to the HTML file shown above.
+
+### Embedding PDF files
+
+PDF files can also be embedded in an HTML document. In this section of the markdown, a PDF file is downloaded from CRAN and stored in the directory of the file. The file is then embedded in this HTML file so that copies of this file will still show the PDF contents without having to copy the PDF file as well. (This does not work for the method of embedding HTML files shown above.)
+
+```{r, echo = FALSE}
+embed_file <- function(fl, filetype = c("pdf", "html", "png", "gif"),
+                           width = "100%", height = "400px") {
+  filetype <- match.arg(filetype)
+  srctype <- switch(filetype,
+                    pdf = "application/pdf",
+                    html = "text/html",
+                    png = "image/png",
+                    gif = "image/gif")
+  filesize <- file.size(fl)
+  if(is.na(filesize))
+    filesize <- 1e5
+  
+  if(filetype == "pdf") {
+    b64 <- base64Encode(readBin(fl, "raw", filesize), "txt")
+    html <- paste0('<iframe src="data:', srctype, ';base64,', b64,
+                   '" style="height: ', height, '; width: ', width, ';"></iframe>')
+  # } else if(filetype == "html") {
+  #   b64 <- base64Encode(readBin(fl, "raw", filesize), "txt")
+  #   html <- paste0('<iframe src="data:', filetype, ';base64,', b64,
+  #                  '" style="height: ', height, '; width: ', width, ';"></iframe>')
+  } else if(filetype == "png") {
+    b64 <- base64Encode(readBin(fl, "raw", filesize), "txt")
+    html <- paste0('<image src="data:', filetype, ';base64,', b64,
+                   '" style="height: ', height, '; width: ', width, ';"/>')
+  } else if(filetype == "gif") {
+    b64 <- base64Encode(readBin(fl, "raw", filesize), "txt")
+    html <- paste0('<image src="data:', filetype, ';base64,', b64,
+                   '" style="height: ', height, '; width: ', width, ';"/>')
+  }
+  
+  class(html) <- c("html", "character")
+  html
+}
+
+if(!"RColorBrewer.pdf" %in% dir())
+  download.file("https://cran.r-project.org/web/packages/RColorBrewer/RColorBrewer.pdf",
+                destfile = "RColorBrewer.pdf", mode = "wb")
+
+embed_file("RColorBrewer.pdf")
+```
+
 ### Collapsing Sections
 
 The following HTML defines a the style and functionality of buttons used to collapse the sections below.
@@ -683,48 +743,60 @@ The following HTML defines a the style and functionality of buttons used to coll
 ```{r, eval = FALSE, echo = TRUE}
 <style>
 .collapsebtn {
-  font-size: 10px;
+  font-size: 12px;
   border-radius: 6px;
   outline: none;
 }
 </style>
 <script>
-function myClick (d) {
-  var tmp = document.getElementById("" + d.id + "div");
-  tmp.hidden = (tmp.hidden) ? false : true;
-  d.innerHTML = (tmp.hidden) ? "+" : "-";
-}
+$(document).ready(function() {
+  $(".collapsebtn").click(function() {
+    $(this).parent().siblings().slideToggle('500');
+    $(this).html($(this).html() == "+" ? "-" : "+");
+  }).each(function() {
+    if($(this).html().indexOf("+") > 0) {
+      $(this).html("+");
+      $(this).parent().siblings().slideToggle('500');
+    }
+  });
+})
 </script>
 ```
 
 <style>
 .collapsebtn {
-  font-size: 10px;
+  font-size: 12px;
   border-radius: 6px;
   outline: none;
 }
 </style>
 <script>
-function collapseDiv (d) {
-  var tmp = document.getElementById("" + d.id + "div");
-  tmp.hidden = (tmp.hidden) ? false : true;
-  d.innerHTML = (tmp.hidden) ? "+" : "-";
-}
+$(document).ready(function() {
+  $(".collapsebtn").click(function() {
+    $(this).parent().siblings().slideToggle('500');
+    $(this).html($(this).html() == "+" ? "-" : "+");
+  }).each(function() {
+    if($(this).html().indexOf("+") > 0) {
+      $(this).html("+");
+      $(this).parent().siblings().slideToggle('500');
+    }
+  });
+})
 </script>
 
-After inserting the code above, a <code>\<button\></code> element must be created and linked to a <code>\<div\></code> element. The code below gives an example of how to create a collapsed section (it is not necessary to have the button wrapped in a heading tag). If you want the section expanded by default, omit the <code>hidden</code> attribute in the <code>div</code> tag and replace "+" with "-" in the innerHTML of the <code>button</code> tag. Notice that the ids of the two elements are very similar. The function defined above depends on this similarity to collapse the correct section when the button is clicked.
+After inserting the code above, a <code>\<button\></code> element must be created and linked to a <code>\<div\></code> element. The code below gives an example of how to create a collapsed section (it is not necessary to have the button wrapped in a heading tag). If you want the section expanded by default, replace "+" with "-" in the innerHTML of the <code>button</code> tag. Notice that the ids of the two elements are very similar. The function defined above depends on this similarity to collapse the correct section when the button is clicked.
 
 ```{r, eval = FALSE, echo = TRUE}
-<h4><button id="btn1" class="collapsebtn" onclick="collapseDiv(this)">+</button>Scatterplot</h4>
-<div id = "btn1div" hidden>
+<div>
+<h4><button class="collapsebtn">-</button>Title</h4>
 [R chunks, text and anything else you want to be collapsed]
 </div>
 ```
 
 This might be a little more complex than you want, but the result is nice.
 
-<h4><button id="btn1" class="collapsebtn" onclick="collapseDiv(this)">+</button>Scatterplot</h4>
-<div id = "btn1div" hidden>
+<div>
+<h4><button class="collapsebtn">+</button>Scatterplot</h4>
 ```{r, echo = FALSE}
 n <- 100
 dat <- data.table(expand.grid(Group = c("Treatment", "Control"), Ind = 1:n))
@@ -733,22 +805,22 @@ ggplot(dat, aes(Ind, x, col = Group)) + geom_point(size = 1.2) + labs(col = "")
 ```
 </div>
 
-<h4><button id="btn2" class="collapsebtn" onclick="collapseDiv(this)">+</button>Histogram</h4>
-<div id = "btn2div" hidden>
+<div>
+<h4><button class="collapsebtn">+</button>Histogram</h4>
 ```{r, echo = FALSE}
 ggplot(dat, aes(x, fill = Group)) + geom_histogram(position = "dodge", col = "white", binwidth = .5) + labs(fill = "")
 ```
 </div>
 
-<h4><button id="btn3" class="collapsebtn" onclick="collapseDiv(this)">+</button>Density</h4>
-<div id = "btn3div" hidden>
+<div>
+<h4><button class="collapsebtn">+</button>Density</h4>
 ```{r, echo = FALSE}
 ggplot(dat, aes(x, fill = Group)) + geom_density(lwd = .1, alpha = .4, adjust = 1.5) + labs(fill = "")
 ```
 </div>
 
-<h4><button id="btn4" class="collapsebtn" onclick="collapseDiv(this)">+</button>Table</h4>
-<div id = "btn4div" hidden>
+<div>
+<h4><button class="collapsebtn">-</button>Table</h4>
 ```{r, echo = FALSE}
 htmlTable(dat[, list(Observations = .N, Mean = round(mean(x), 2), StdDev = round(sd(x), 2)), by = Group], rnames = F, align = "lrr", css.cell = "padding-left: 1em; padding-right: 1em;")
 ```
@@ -765,12 +837,12 @@ Be careful with using too many different elements. Using too many of the feature
 
 The <code>plotly</code> package can be used to add interactivity to some graphs. Most <code>ggplot2</code> graphs can be wrapped in the <code>ggplotly</code> function.
 
-```{r}
+```{r, fig.height = 5, fig.width = 12}
 data(USArrests)
 USArrests <- data.table(USArrests, State = row.names(USArrests))
 
-ggplotly(ggplot(USArrests, aes(Murder, Assault)) + geom_point())
-plot_ly(USArrests, x = ~State, y = ~Murder)
+ggplotly(ggplot(USArrests, aes(Murder, Assault)) + geom_point(), width = 900, height = 400)
+plot_ly(USArrests, x = ~State, y = ~Murder, width = 900, height = 400)
 ```
 
 ### Animation
@@ -778,7 +850,7 @@ plot_ly(USArrests, x = ~State, y = ~Murder)
 <code>plotly</code> can also be used to create animations. (note that it often adds tooltips that show up when hovering, which may not be desired)
 
 ```{r, echo = FALSE, warning = FALSE}
-clock <- data.table(expand.grid(Hour = 1:12, Minute = 0:59, Second = 0:59))
+clock <- data.table(expand.grid(Hour = 1:3, Minute = 0:59, Second = 0:59))
 setkeyv(clock, c("Hour", "Minute", "Second"))
 clock[, Instant := 1:.N]
 clock <- clock[, list(Hr_Hnd_x = c(0, Im(exp(2i*pi*(Hour/12 + Minute/720 + Second/43200)))),
@@ -793,17 +865,29 @@ clock <- clock[, list(Hr_Hnd_x = c(0, Im(exp(2i*pi*(Hour/12 + Minute/720 + Secon
         geom_line(aes(Sec_Hnd_x*.9, Sec_Hnd_y*.9, frame = Instant), col = "red") +
         geom_line(aes(Min_Hnd_x, Min_Hnd_y, frame = Instant)) +
         geom_line(aes(Hr_Hnd_x*.6, Hr_Hnd_y*.6, frame = Instant)) +
-        geom_text(data = clock[Minute == 1 & Second == 1 & Hr_Hnd_x + Hr_Hnd_y != 0], aes(Hr_Hnd_x, Hr_Hnd_y, label = Hour)) +
+        geom_text(data = clock[Hour == 1 & Second == 0 & Minute %in% (5*(0:11)) &
+                                 Hr_Hnd_x + Hr_Hnd_y != 0],
+                  aes(Min_Hnd_x, Min_Hnd_y, label = ifelse(Minute == 0, 12, Minute/5))) +
         labs(x = "", y = "") + scale_x_continuous(breaks = 10) + scale_y_continuous(breaks = 10) + theme(panel.background = element_rect(fill = "aquamarine")),
       width = 400, height = 500
     ) %>% animation_opts(transition = 0, 1000)
 # }
 ```
 
-Animated plots can also be created using the <code>animation</code> package.
+Animated plots can also be created using the <code>animation</code> package. **The plots below rely on the file being compiled in its current location to access externally stored graphs.** The package depends on the <code>magick</code> package, which may not be available in all environments. If this is the case, change the first line in the following R chunk to <code>animation_included = FALSE</code>
 
 ```{r, echo = FALSE, warning = FALSE, message = FALSE, results = 'asis'}
+animation_included = T
 
+if(animation_included) {
+  script <- paste('<link rel="stylesheet" href="css/scianimator.css" />',
+                  '<script src="js/jquery.scianimator.min.js"></script>', sep = "\n")
+  class(script) <- "html"
+  script
+}
+```
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, results = 'asis'}
 # This function makes it easier to create the necessary HTML elements
 # Also notice in the chunk options we have set results = 'asis'
 showAnimation <- function(imgname) {
@@ -812,43 +896,53 @@ showAnimation <- function(imgname) {
         "<script src=\"js/", imgname, ".js\"></script>")
 }
 
-pts <- rnorm(300)
-xpts1 <- seq_along(pts)
-xpts2 <- rank(pts)
-frames <- 20
-
-filename <- "animated_sort.html"
-imgname <- "SortPlot"
-# file.remove(paste0("images/", grep(paste0(imgname, "[[:digit:]]*.png"), dir("images"), value = T)))
-
-saveHTML({
-  for (i in 1:frames) {
-    plot(xpts1 * (frames-i)/(frames-1) + xpts2 * (i-1)/(frames-1), pts, ylab = "Random Values", xlab = "Order", xlim = c(0, length(pts)), main = "Sort")
-  }
-}, interval = .2, img.name = imgname, verbose = F)
-
-cat(showAnimation(imgname))
+if(animation_included) {
+  library(animation)
+  
+  pts <- rnorm(300)
+  xpts1 <- seq_along(pts)
+  xpts2 <- rank(pts)
+  frames <- 20
+  
+  filename <- "animated_sort.html"
+  imgname <- "SortPlot"
+  # file.remove(paste0("images/", grep(paste0(imgname, "[[:digit:]]*.png"), dir("images"), value = T)))
+  
+  saveHTML({
+    for (i in 1:frames) {
+      plot(xpts1 * (frames-i)/(frames-1) + xpts2 * (i-1)/(frames-1), pts, ylab = "Random Values", xlab = "Order", xlim = c(0, length(pts)), main = "Sort")
+    }
+  }, interval = .2, img.name = imgname, verbose = F)
+  
+  cat(showAnimation(imgname))
+}
 ```
 
 
 For longer animations, you may not want the mini icons for each individual frame. These can be removed by setting <code>navigator = F</code> as in the following animation.
 
 ```{r, echo = FALSE, results = 'asis'}
-n <- 100
-dt <- data.table(ind = 1:n,
-                 x = cumsum(rnorm(n)),
-                 y = cumsum(rnorm(n)) )
-dt <- rbind(data.table(ind = 0, x = 0, y = 0), dt)
-
-imgname <- "RandWalk"
-
-saveHTML({
-  for (i in 0:(nrow(dt)-1)) {
-    dt[ind <= i, {plot(x, y, type = "l", xlim = range(dt$x), ylim = range(dt$y), main = "Random Walk"); points(x[i+1], y[i+1]); points(0, 0, pch = 19)}]
-  }
-}, interval = .15, img.name = imgname, filename = imgname, verbose = F, navigator = F)
-
-cat(showAnimation(imgname))
+if(animation_included) {
+  n <- 100
+  dt <- data.table(ind = 1:n,
+                   x = cumsum(rnorm(n)),
+                   y = cumsum(rnorm(n)) )
+  dt <- rbind(data.table(ind = 0, x = 0, y = 0), dt)
+  
+  imgname <- "RandWalk"
+  
+  saveHTML({
+    for (i in 0:(nrow(dt)-1)) {
+      dt[ind <= i, {
+        plot(x, y, type = "l", xlim = range(dt$x), ylim = range(dt$y), main = "Random Walk")
+        points(x[i+1], y[i+1])
+        points(0, 0, pch = 19)
+      }]
+    }
+  }, interval = .15, img.name = imgname, filename = imgname, verbose = F, navigator = F)
+  
+  cat(showAnimation(imgname))
+}
 ```
 
 ### Pivot Tables
@@ -893,6 +987,13 @@ The following static state and county maps are created using the packages <code>
 statemap <- data.table(us_map()) # used to add map scale
 countymap <- data.table(us_map("counties")) # used to add map scale
 
+if("ggsn" %in% row.names(installed.packages())) {
+  scalefun <- ggsn::scalebar
+} else {
+  scalefun <- function(...) {return(NULL)}
+  print("Package ggsn is not installed. Install package to change scalebar format of chloropleths")
+}
+
 ### State
 dt1 <- as.data.table(copy(state.x77))
 dt1$state <- tolower(rownames(state.x77))
@@ -905,7 +1006,7 @@ plot_usmap(data = dt1, values = "Population", labels = T)+
                                                #put legend title on top of legend
                                                title.position = "top")) +
   # map scale
-  ggsn::scalebar(data = statemap, dist = 500, dist_unit = "km",
+  scalefun(data = statemap, dist = 500, dist_unit = "km",
            border.size = 0.4, st.size = 4,
            box.fill = c('black','white'),
            transform = FALSE, model = "WGS84") + 
@@ -924,7 +1025,7 @@ plot_usmap(data = dt2, values = "Population", labels = T)+
                                                #put legend title on top of legend
                                                title.position = "top")) +
   # map scale
-  ggsn::scalebar(data = statemap, dist = 500, dist_unit = "km",
+  scalefun(data = statemap, dist = 500, dist_unit = "km",
            border.size = 0.4, st.size = 4,
            box.fill = c('black','white'),
            transform = FALSE, model = "WGS84") + 
@@ -969,12 +1070,37 @@ gg_us_hex <- function(data = NULL, mapping = NULL, dc = T) {
 tmp <- data.table(statepop)
 tmp <- tmp[, list(StateCd = abbr, Pop = pop_2015)]
 gg_us_hex(data = tmp, aes(fill = Pop))
+
 ```
 
 ### D3
 
-There are a lot of different graphs and figures that can be made with the D3 javascript library. It is not very easy to implement this in R markdown, but it can be done.
+<table><tr><td style="width: 20%;"><a href="https://d3js.org/" target="_blank">`r embed_file("https://raw.githubusercontent.com/d3/d3-logo/master/d3.png", filetype = "png", width = "60px", height = "60px")`</a></td><td>
+There are a lot of different graphs and figures that can be made with the D3 javascript library. It is sometimes tricky to implement this in R markdown, but it can be done.
+</td></tr></table>
 
+### Shiny
+
+```{r, echo = FALSE}
+src <- paste0("https://community.rstudio.com/uploads",
+              "/default/original/1X/c017cef9c13bc",
+              "937df73659d3b5b1411a39c7ed2.png")
+src <- paste0("https://d33wubrfki0l68.cloudfront.net/",
+              "d08c35bfe1ba68584788f5cdcad703d0c9d8263f/",
+              "7969a/wp-content/uploads/2014/04/shiny.png")
+```
+
+<table><tr><td style="width: 20%;"><a href="https://shiny.rstudio.com" target="_blank">`r embed_file(src, filetype = "png", width = "50px", height = "60px")`</a></td><td>
+One obvious option for interactively viewing the results of analysis is Shiny. Through a Shiny app, readers can potentially dive deep into the data and even perform some analysis of their own (whether good or bad). 
+</td></tr></table>
+<br>
+<table><tr><td style="width: 50%;">
+Pros:
+`r html_list(c("Interact with raw data", "Many parameters can be adjusted in any combination", "Does not require a file, only a URL"))`
+</td><td>
+Cons:
+`r html_list(c("Potentially too much information", "Users can go looking for their own desired answers", "Requires an active R session"))`
+</td></tr></table>
 
 <hr style="border-width: 2px; border-color: #AA5512;">
 #

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
+
+<title>Title</title>
+
+<style type="text/css">
+body, td {
+   font-family: sans-serif;
+   background-color: white;
+   font-size: 12px;
+   margin: 8px;
+}
+
+tt, code, pre {
+   font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace;
+}
+
+h1 { 
+   font-size:2.2em; 
+}
+
+h2 { 
+   font-size:1.8em; 
+}
+
+h3 { 
+   font-size:1.4em; 
+}
+
+h4 { 
+   font-size:1.0em; 
+}
+
+h5 { 
+   font-size:0.9em; 
+}
+
+h6 { 
+   font-size:0.8em; 
+}
+
+a:visited {
+   color: rgb(50%, 0%, 50%);
+}
+
+pre {	
+   margin-top: 0;
+   max-width: 95%;
+   border: 1px solid #ccc;
+   white-space: pre-wrap;
+}
+
+pre code {
+   display: block; padding: 0.5em;
+}
+
+code.r, code.cpp {
+   background-color: #F8F8F8;
+}
+
+table, td, th {
+  border: none;
+}
+
+blockquote {
+   color:#666666;
+   margin:0;
+   padding-left: 1em;
+   border-left: 0.5em #EEE solid;
+}
+
+hr {
+   height: 0px;
+   border-bottom: none;
+   border-top-width: thin;
+   border-top-style: dotted;
+   border-top-color: #999999;
+}
+
+@media print {
+   * { 
+      background: transparent !important; 
+      color: black !important; 
+      filter:none !important; 
+      -ms-filter: none !important; 
+   }
+
+   body { 
+      font-size:12pt; 
+      max-width:100%; 
+   }
+       
+   a, a:visited { 
+      text-decoration: underline; 
+   }
+
+   hr { 
+      visibility: hidden;
+      page-break-before: always;
+   }
+
+   pre, blockquote { 
+      padding-right: 1em; 
+      page-break-inside: avoid; 
+   }
+
+   tr, img { 
+      page-break-inside: avoid; 
+   }
+
+   img { 
+      max-width: 100% !important; 
+   }
+
+   @page :left { 
+      margin: 15mm 20mm 15mm 10mm; 
+   }
+     
+   @page :right { 
+      margin: 15mm 10mm 15mm 20mm; 
+   }
+
+   p, h2, h3 { 
+      orphans: 3; widows: 3; 
+   }
+
+   h2, h3 { 
+      page-break-after: avoid; 
+   }
+}
+
+</style>
+
+
+
+
+
+</head>
+
+<body>
+<h1>Title</h1>
+
+<script src="http://d3js.org/d3.v2.min.js" charset="utf-8"></script>
+
+<p id="chart">
+
+<svg width="300px" height="300px">
+  <title>Golden Watch</title>
+  <circle cx="150" cy="150" r="140" fill="ghostwhite" stroke="goldenrod" stroke-width="2" />
+  <circle cx="150" cy="150" r="130" fill="none" stroke="goldenrod" stroke-width="3" stroke-dasharray="2,11.613568" transform="rotate(-.12)" />
+  <line y2="-130" stroke="gold" stroke-width="1" transform="translate(150,150) rotate(0)">
+    <animateTransform attributeName="transform" type="rotate" repeatCount="indefinite" dur="60s" by="360" />
+  </line>
+  <line y2="-120" stroke="gold" stroke-width="2" transform="translate(150,150) rotate(0)">
+    <animateTransform attributeName="transform" type="rotate" repeatCount="indefinite" dur="60min" by="360" />
+  </line>
+  <line y2="-110" stroke="gold" stroke-width="3" transform="translate(150,150) rotate(0)">
+    <animateTransform attributeName="transform" type="rotate" repeatCount="indefinite" dur="12h" by="360" />
+  </line>
+</svg>
+<script>
+var g = d3.select("#chart").append("svg").attr("height",500).attr("width",500).append("g");
+var square = g.selectAll("rect").data([{"x":75,"y":50}]).enter().append("rect").attr("x",20).attr("y",20).attr("width",30).attr("height",30).style("fill","lightgreen");
+</script>
+
+</p>
+
+</body>
+
+</html>
+
