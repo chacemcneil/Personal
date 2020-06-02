@@ -4,7 +4,7 @@
 \alias{fixedheaders}
 \title{HTML Table with Fixed Header}
 \usage{
-fixedheaders()
+fixedheaders(header_background = "#447", header_color = "#FEE")
 }
 \arguments{
 \item{classname}{Default is 'fixedheader'. Class name of tables that should have fixed headers.}

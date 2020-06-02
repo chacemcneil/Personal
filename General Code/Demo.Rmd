@@ -957,7 +957,6 @@ gg_us_hex <- function(data = NULL, mapping = NULL, dc = T) {
   }
   hexgrid <- hexgrid[, list(x = x_ct + c(0, -1, -1, 0, 1, 1, 0),
                             y = y_ct + c(-2, -1, 1, 2, 1, -1, -2)/3), by = list(StateCd, x_ct, y_ct)]
-  hexgrid
   data <- merge(data, hexgrid, by = "StateCd", all = T)
   ggplot(data, mapping) +
     geom_polygon(aes(x = x, y = y, group = StateCd)) +

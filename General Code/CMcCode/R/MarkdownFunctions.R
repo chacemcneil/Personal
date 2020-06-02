@@ -129,7 +129,7 @@ html_summary <- function(mod, names = NULL, caption = NULL, ...) {
 #' # With fixed header (only works when knit, otherwise the CSS is not used)
 #' tab <- htmlTable(dt, css.class = "fixedheader")
 #' htmltools::tags$div(tab, style = "height: 300px; overflow-y: scroll;")
-fixedheaders <- function() {
+fixedheaders <- function(header_background = "#447", header_color = "#FEE") {
   txt_script <- paste(
     '<script>',
     '  HTMLCollection.prototype.forEach = Array.prototype.forEach;',
@@ -160,9 +160,9 @@ fixedheaders <- function() {
     '    font-size: 15pt;',
     '  }',
     '.fixedheader thead tr th {',
-    '  background: #447;',
-    '    color: #FEE;',
-    '    text-align: center;',
+    '  background: ', header_background, ';',
+    '  color: ', header_color, ';',
+    '  text-align: center;',
     '  position: sticky;',
     '  height: 20pt;',
     '  top: 0;',
@@ -173,7 +173,7 @@ fixedheaders <- function() {
     '}',
     '.fixedtotal tbody tr:nth-last-child(1) td {',
     '  background: #99B;',
-    '    position: sticky;',
+    '  position: sticky;',
     '  bottom: 0;',
     '}',
     '</style>', sep = "\n" )
