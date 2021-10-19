@@ -196,6 +196,8 @@ html_summary(mod)
 
 #### GPA influenced both SAT scores and whether AP courses were taken
 
+Even after accounting for known factors, it is possible that unknown variables still exist which influence both the outcome variable and the variable of interest. Statistical analyses regularly account for uncertainty (e.g. confidence intervals); however, there is no way to quantify the possible bias resulting from a missing confounder.
+
 ```{r, echo = FALSE}
 
 mod <- lm(AP ~ GPA, data = dt)
@@ -203,7 +205,8 @@ html_summary(mod)
 
 dt$Pred <- predict(mod)
 
-htmlTable(head(dt[, list(GPA, AP = APfact, SAT, Pred = round(Pred, 3))], 15), rnames = F, css.cell = padding(1), align = "rlrr")
+# htmlTable(head(dt[, list(GPA, AP = APfact, SAT, Pred = round(Pred, 3))], 15),
+#           rnames = F, css.cell = padding(1), align = "rlrr")
 ```
 
 

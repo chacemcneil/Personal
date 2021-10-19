@@ -98,48 +98,7 @@
  dev.off()
  
  
- setwd("r:/users/cmcneil/projects/optum")
- load("Data/allv5.rda")               # Created in ModelGLMNET.R
- load("Data/cv_scc_combined.rda")     # Created in ModelGLMNET.R
- load("Data/v8scc.rda",verbose=T)     # Created in ReadLoad.R
  
- # Example of coefficient plot
- plot(cv.scc.combined$mods[[5]]$glmnet.fit)
- #abline(0,1)
- #abline(v=.65)
- 
- # Example of MSE/AUC cross-validation plots.
- plot(allv5$mods[[5]],ylab="MSE") # Just an example
- plot(cv.scc.combined$mods[[5]])
- 
- 
- # Comparison
- library(glmnet)
- library(pROC)
- 
- set.seed(12)
- seeds <- ceiling(runif(115)*1000)
- 
- Y <- v5scc13[,sccs]
- 
- usecols  <- c(sccs,chrs,cpts,drgs,dsdrgs,mtdrgs,labdone,lababnl)
- X <- cbind(as.matrix(v5scc13[,c("Age","Gender")]),as.matrix(v5scc11[,usecols]),as.matrix(v5scc12[,usecols]))
- colnames(X) <- c("Age","Gender",paste0(usecols,"_2011"),paste0(usecols,"_2012"))
- 
- col <- "SCC15"
- ones  <- which(Y[,col]>0)
- zeros <- which(Y[,col]==0)
- train  <- c(sample(ones,floor(length(ones)/2)),sample(zeros,length(ones)))
- test <- setdiff(1:nrow(Y),train)
- 
- df <- data.frame(y=Y[,col]>0,X)
- mod <- glm(y~.,data=df[train,],family="binomial")
- pred <- predict(mod,newdata=df[test,])
- pred.q <- quantile(pred,(0:100)/100)
- rc   <- roc(Y[test,col]>0,as.numeric(cut(as.vector(pred),unique(pred.q),include.lowest=T)),plot=T,print.auc=T)
- 
- vec1 <- coef(allv5$mods[col][[1]])
- vec2 <- coef(mod)
  
  
  

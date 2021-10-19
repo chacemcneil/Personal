@@ -13,10 +13,10 @@
  # Fit LASSO regression model (default)
  mod_lasso <- cv.glmnet(X, y)
  
- # Fit ridge regression model (default)
+ # Fit ridge regression model
  mod_ridge <- cv.glmnet(X, y, alpha = 0)
  
- # Fit blended model (default)
+ # Fit blended model
  mod_blend <- cv.glmnet(X, y, alpha = .2)
  
  ## Plot coefficients relatve to different lambda values
@@ -36,6 +36,8 @@
  
  ## Coefficients associated with selected lambda (mod_cv$lambda.1se)
  coef(mod_cv)
+ 
+ 
  
  
 # End script

@@ -1,0 +1,160 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(networkD3)
+library(rjson)
+library(igraph)
+library(data.table)
+library(xtable)
+library(ggplot2)
+
+setwd("/work/cmcneil/Projects/Network")
+source("D3Force.r")
+suppressMessages(load("Monroe_county_graph.Rd"))
+load("Worcester_county_graph.Rd")
+
+gr111 <- upgrade_graph(gr11)
+gr111b <- upgrade_graph(gr11b)
+
+V(gr111)$type <- as.numeric(V(gr111)$type)
+V(gr111b)$type <- as.numeric(V(gr111b)$type)
+V(gr111)$group <- V(gr111)$type + 1
+V(gr111b)$group <- V(gr111b)$type + 1
+V(gr111)$index <- paste0("Vertex_",V(gr111))
+V(gr111b)$index <- paste0("Vertex_",V(gr111b))
+
+## Wasn't working for some reason
+# E(gr111)$source <- sapply(1:length(E(gr111)), function(i) as.numeric(V(gr111)[inc(E(gr111)[i])])[1]-1 )
+# E(gr111b)$source <- sapply(1:length(E(gr111b)), function(i) as.numeric(V(gr111b)[inc(E(gr111b)[i])])[1]-1 )
+# E(gr111)$target <- sapply(1:length(E(gr111)), function(i) as.numeric(V(gr111)[inc(E(gr111)[i])])[2]-1 )
+# E(gr111b)$target <- sapply(1:length(E(gr111b)), function(i) as.numeric(V(gr111b)[inc(E(gr111b)[i])])[2]-1 )
+for (i in 1:length(E(gr111))) {
+  E(gr111)$source[i] <- as.numeric(V(gr111)[inc(E(gr111)[i])])[1]-1
+  E(gr111)$target[i] <- as.numeric(V(gr111)[inc(E(gr111)[i])])[2]-1
+}
+for (i in 1:length(E(gr111))) {
+  E(gr111b)$source[i] <- as.numeric(V(gr111b)[inc(E(gr111b)[i])])[1]-1
+  E(gr111b)$target[i] <- as.numeric(V(gr111b)[inc(E(gr111b)[i])])[2]-1
+}
+
+E(gr111)$value <- 1
+E(gr111b)$value <- 1
+
+nodes.df_1 <- as.data.frame(vertex.attributes(gr111)) 
+links.df_1 <- as.data.frame(edge.attributes(gr111))   # must include 'target' and 'source' fields referencing row numbers of nodes.df
+nodes.df_2 <- as.data.frame(vertex.attributes(gr111b)) 
+links.df_2 <- as.data.frame(edge.attributes(gr111b))   # must include 'target' and 'source' fields referencing row numbers of nodes.df
+
+nodes.list_1 <- lapply(1:length(V(gr111)),function(i) nodes.df_1[i,])
+links.list_1 <- lapply(1:length(E(gr111)),function(i) links.df_1[i,])
+nodes.list_2 <- lapply(1:length(V(gr111b)),function(i) nodes.df_2[i,])
+links.list_2 <- lapply(1:length(E(gr111b)),function(i) links.df_2[i,])
+
+nodes.df <- as.data.frame(vertex.attributes(gr111)) 
+links.df <- as.data.frame(edge.attributes(gr111))   # must include 'target' and 'source' fields referencing row number
+lst <- list(v=nodes.df,
+            e=links.df)
+lst2 <- list(nodes=nodes.list_2,
+             links=links.list_2)
+
+V(gr111)$strokewidth <- 6
+V(gr111)$strokewidth[V(gr111)$typecare == 'Patient'] <- log(V(gr111)$totalspend[V(gr111)$typecare == 'Patient'])
+V(gr111)$grpcolor <- V(gr111)$color
+
+V(gr111)$revenue <- NA
+V(gr111)$revenue[V(gr111)$typecare != 'Patient'] <- unlist(lapply(V(gr111)$name[V(gr111)$typecare != 'Patient'], function(x) sum(E(gr111)[from(x)]$Spend)))
+
+V(gr111)$strokewidth <- 0
+V(gr111)$strokewidth[V(gr111)$typecare == 'Patient'] <- log(V(gr111)$totalspend[V(gr111)$typecare == 'Patient'])
+V(gr111)$strokewidth[V(gr111)$typecare != 'Patient'] <- log(V(gr111)$revenue[V(gr111)$typecare != 'Patient'])
+V(gr111)$spendrev <- NA
+V(gr111)$spendrev[V(gr111)$typecare == 'Patient'] <- V(gr111)$totalspend[V(gr111b)$typecare == 'Patient']
+V(gr111)$spendrev[V(gr111)$typecare != 'Patient'] <- V(gr111)$revenue[V(gr111b)$typecare != 'Patient']
+
+V(gr111b)$strokewidth <- 6
+V(gr111b)$strokewidth[V(gr111b)$typecare == 'Patient'] <- log(V(gr111b)$totalspend[V(gr111b)$typecare == 'Patient'])
+V(gr111b)$grpcolor <- V(gr111b)$color
+
+V(gr111b)$revenue <- NA
+V(gr111b)$revenue[V(gr111b)$typecare != 'Patient'] <- unlist(lapply(V(gr111b)$name[V(gr111b)$typecare != 'Patient'], function(x) sum(E(gr111b)[from(x)]$Spend)))
+
+V(gr111b)$strokewidth <- 0
+V(gr111b)$strokewidth[V(gr111b)$typecare == 'Patient'] <- log(V(gr111b)$totalspend[V(gr111b)$typecare == 'Patient'])
+V(gr111b)$strokewidth[V(gr111b)$typecare != 'Patient'] <- log(V(gr111b)$revenue[V(gr111b)$typecare != 'Patient'])
+V(gr111b)$spendrev <- NA
+V(gr111b)$spendrev[V(gr111b)$typecare == 'Patient'] <- V(gr111b)$totalspend[V(gr111b)$typecare == 'Patient']
+V(gr111b)$spendrev[V(gr111b)$typecare != 'Patient'] <- V(gr111b)$revenue[V(gr111b)$typecare != 'Patient']
+
+```
+
+```{r label, echo = FALSE, results = 'asis'}
+
+# A lot of the graph characteristics can also be adjusted.
+html2 <- myForceID(gr111,
+                   offset=30,
+                   duration=1200,
+                   nodes=list(charge=-50,
+                              fill=~grpcolor,
+                              fillHL=~grpcolor,
+                              strokewidth=3,
+                              strokewidthHL=1,
+                              radius = ~strokewidth,
+                              radiusHL = ~strokewidth),
+                   links=list(length=30,
+                              strokewidth=~log(Spend)/3,
+                              strokewidthHL=~log(Spend),
+                              stroke=~color,
+                              strokeHL="black"),
+                   nodedetails=list(items=c("ID","Total Spend / Revenue", "Total Svc Days", "Type","Specialty"), expr = list(~name, ~spendrev, ~servicedays, ~typecare, ~Specialty)),
+                   linkdetails=list(items=c("Visits","Total Spend"), expr = list(~nVisits, ~Spend)),
+                   nodetextbox=list(fill="white",
+                                    stroke="navy",
+                                    fillopacity=.9,
+                                    strokeopacity=1,
+                                    textitemcol="red",
+                                    textvaluecol="red"),
+                   linktextbox=list(fill="lightgreen",
+                                    stroke="green",
+                                    fillopacity=.2,
+                                    strokeopacity=.6))
+
+cat(c(d3init(), html2), file = 'testPlot.html')
+
+# A lot of the graph characteristics can also be adjusted.
+html3 <- myForceID(gr111b,
+                   width = 3000,
+                   height = 3000,
+                   offset=30,
+                   duration=1200,
+                   nodes=list(charge=-60,
+                              fill=~grpcolor,
+                              fillHL=~grpcolor,
+                              strokewidth=3,
+                              strokewidthHL=1,
+                              radius = ~strokewidth,
+                              radiusHL = ~strokewidth),
+                   links=list(length=30,
+                              strokewidth=~log(Spend)/3,
+                              strokewidthHL=~log(Spend),
+                              stroke=~color,
+                              strokeHL="black"),
+                   nodedetails=list(items=c("ID","Total Spend / Revenue", "Total Svc Days", "Type","Specialty"), expr = list(~name, ~spendrev, ~servicedays, ~typecare, ~Specialty)),
+                   linkdetails=list(items=c("Visits","Total Spend"), expr = list(~nVisits, ~Spend)),
+                   nodetextbox=list(fill="white",
+                                    stroke="navy",
+                                    fillopacity=.9,
+                                    strokeopacity=1,
+                                    textitemcol="red",
+                                    textvaluecol="red"),
+                   linktextbox=list(fill="lightgreen",
+                                    stroke="green",
+                                    fillopacity=.2,
+                                    strokeopacity=.6))
+
+cat(c(d3init(), html3), file = 'testPlotWorcester.html')
+
+```
+

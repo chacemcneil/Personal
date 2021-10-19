@@ -314,10 +314,24 @@ window.onload = function() {
 .fixedheader tbody tr:nth-child(even) {
   background: #DDD;
 }
+
 .fixedtotal tbody tr:nth-last-child(1) td {
   background: #99B;
   position: sticky;
   bottom: 0;
+}
+
+.fixedfront tbody tr td:first-child {
+  position: sticky;
+  left: 0;
+  background: white;
+  zIndex: -1;
+}
+.fixedfront thead tr th:first-child {
+  position: sticky;
+  background: lightblue;
+  left: 0;
+  z-index: 1;
 }
 </style>
 
@@ -336,6 +350,14 @@ htmlTable(tmp,
           )
 ```
 </div>
+
+There is also functionality to add a fixed first column. The values in the CSS can be changed to alter this as desired.
+
+```{r, echo = FALSE}
+mat <- matrix(1:900, 30, 30)
+colnames(mat) <- paste0("Column ", 1:30)
+htmlTable(mat, css.class = "fixedheader fixedfront")
+```
 
 ### Chunk options
 
@@ -439,7 +461,7 @@ vec <- rnorm(1e3)
 cat(html_dropdown(id = main_id, divs = c(Random = "some_id_1", Increasing = "some_id_2", Decreasing = "some_id_3")))
 ```
 
-At this point you need to insert actual <code>\<div\></code> tags with the correct id.
+At this point you can insert actual <code>\<div\></code> tags with the correct id.
 Note that all but the first section are initially <code>hidden</code>.
 Also note that the following sections could be anywhere in the file, so be careful.
 
@@ -466,6 +488,199 @@ plot(rev(sort(vec)))
 ```
 <<!-- and then end each section -->
 </div>
+
+#### Dropdown menu sections within loop
+
+```{r, echo = FALSE}
+## Functions for creating and printing HTML tags
+print.html_tag <- function(x) {
+  if(!is.null(names(x$params$style))) {
+    style_names <- names(x$params$style)
+    x$params$style <- paste0(sapply(seq_along(style),
+                                    function(i) 
+                                      paste0(style_names[i], ": ", style[[i]], ";")),
+                             collapse = " " )
+  }
+  if(length(x$params$class) > 1)
+    x$params$class <- paste(x$params$class, collapse = " ")
+  if(length(x$innerHTML) > 1)
+    x$innerHTML <- paste0(sapply(x$innerHTML, as.character), collapse = "")
+  
+  lst <- x$attr
+  lst <- lst[!sapply(lst, is.null)]
+  if(length(lst) > 0)
+    lst <- paste0(names(lst), '="', lst, '"')
+  lst <- paste(c(x$tag, lst), collapse = " ")
+  
+  open <- sprintf("<%s%s>", lst, ifelse(x$hidden, " hidden", "") )
+  close <- ifelse(x$close, paste0("</", x$tag, ">"), "")
+  
+  res <- paste0(open, x$innerHTML, close)
+  class(res) <- c("htmlTable", "character")
+  res
+}
+as.character.html_tag <- print.html_tag
+
+htag <- function (tag = "div", ..., attr = list(), hidden = F, closetag = T) {
+  innerHTML <- list(...)
+  if(!is.null(names(innerHTML))) {
+    attr <- c(attr, innerHTML[names(innerHTML) != ""])
+    innerHTML <- innerHTML[names(innerHTML) == ""]
+  }
+  
+  lst <- list(tag = tag,
+              attr = attr,
+              hidden = hidden,
+              closetag = closetag,
+              innerHTML = innerHTML )
+  class(lst) <- c("html_tag")
+  lst
+}
+
+```
+
+To create sections within a loop (or <code>apply</code> function), the same HTML elements must be made within the R chunk. Here that is done by using the <code>knitr</code> function <code>opts_current$get</code> to grab the plots created and embed them within object to be interpretted as HTML.
+
+```{r, results='asis', fig.show="hide", fig.height = 3, fig.width = 6}
+## Set up sample data
+labels <- paste("Group", LETTERS[1:10])
+div_ids <- letters[1:10]
+n <- 200
+
+dat <- data.table(expand.grid(Category = labels, Index = 1:n))
+dat[, Value := rnorm(.N, 5)]
+dat[, Group := sample(1:3, .N, replace = T)]
+
+chunk_plot <- function(num) {
+  sprintf("![](%s%s-%s.png)", opts_current$get("fig.path"), opts_current$get("label"), num)
+}
+
+## Using loop (option 1)
+# for(i in seq_along(labels)) {
+#   tab <- htmlTable(dat[Index == i, .(Count = .N, MeanVal = round(mean(Value), 1)), keyby = .(Group)], rnames = F, align = "lr", css.cell = "padding-left: 2em; padding-right: 2em;")
+#   invisible(print(ggplot(dat[Category == labels[i]], aes(Value)) + geom_histogram(binwidth = 0.2)))
+#   html <- htag("div", id=div_ids[i], hidden = i>1, tab, "This is a random paragraph placeholder....hopefully followed by a graph.",
+#                sprintf("![](%s%s-%s.png)", opts_current$get("fig.path"), opts_current$get("label"), i) )
+#   fullhtml <- paste0(fullhtml, html, sep = "\n")
+# }
+
+## Using lapply function (option 2)
+fullhtml <- do.call(htag, c(tag="div", lapply(seq_along(div_ids), function(i) {
+  tab <- htmlTable(dat[Index == i, .(Count = .N, MeanVal = round(mean(Value), 1)), keyby = .(Group)], rnames = F, align = "lr", css.cell = "padding-left: 2em; padding-right: 2em;")
+  invisible(print(ggplot(dat[Category == labels[i]], aes(Value)) + geom_histogram(binwidth = 0.2)))
+  htag("div", tab, id=div_ids[i], hidden = i>1, chunk_plot(i))
+})))
+
+## HTML elements can be printed inside the chunk using cat/print functions, or outside the chunk using inline R code, as shown below.
+# cat(html_dropdown("test", div_ids, labels))
+# print(fullhtml)
+```
+`r html_dropdown("test", div_ids, labels)`
+`r print(fullhtml)`
+
+### Radio buttons
+
+Similar to a dropdown, sometimes you want to toggle certain options which have may (but don't have to) have a smaller effect. The example below shows counts in a table and allows the user to look at row percentages or column percentages instead.
+
+```{r, echo = FALSE}
+## A different kind of functions for creating HTML tags in character form
+html_tag <- function(tag, .inner = "", .closetag = paste0("</", tag, ">"), .ashtml = T, .tagpad = "\n", .collapse = "\n", ...) {
+  params = c(...)
+  if(sum(names(params) != "") < length(params)) {
+    stop("All tag parameters must be named")
+  }
+  # params <- gsub('"', "'", params) ## Single quotes are ending up as &#39; ...? Workaround: don't enter quotations inside parameters
+  params <- ifelse(is.null(params), "", paste0(" ", names(params), '="', params, '"', collapse = ""))
+  
+  ## Remove equal sign from boolean parameters
+  for(bool in c("checked", "disabled", "hidden", "multiple", "muted", "open", "selected")) {
+    params <- gsub(paste0(bool, '=\"TRUE\"'), bool, params)
+    params <- gsub(paste0(bool, '=\"FALSE\"'), "", params)
+  }
+  
+  ## Collapse all
+  # if(!is.null(.collapse)) {
+    .inner <- paste(.inner, collapse = .collapse)
+  # }
+  html <- paste0("<", tag, params, ">", .tagpad, .inner, .tagpad, .closetag)
+  if(.ashtml)
+    class(html) <- "htmlTable"
+  html
+}
+```
+
+```{r, echo = FALSE}
+html_radio <- function(id, divs, labels = NULL, onchange = NULL, onload = NULL, checked = divs[1]) {
+  if(is.null(labels)) {
+    if(any(names(divs) == ""))
+      stop("Must supply labels or a named vector for div tags.")
+    else labels <- names(divs)
+  }
+  if(is.null(onload)) {
+    onload <- glue::glue('{id}_onload()')
+  }
+  if(is.null(onchange))
+    onchange <- glue::glue("{id}_onchange()")
+  java <- html_tag("script", glue::glue('
+    function {id}_onchange () {{
+      var radioButtons = document.getElementsByName("{id}")
+      for(var i=0; i<radioButtons.length; i++) {{
+        if(radioButtons[i].checked == true) {{
+          document.getElementById(radioButtons[i].value).hidden = false;
+        }} else {{
+          document.getElementById(radioButtons[i].value).hidden = true;
+        }}
+      }}
+    }}
+    //window.onload = function () {{
+    //  document.getElementById("{checked}_id").checked = true;
+    //}}
+  '))
+  buttons <- sapply(seq_along(divs), function(i) html_tag("input", .inner = labels[i], type="radio", name=id, id=paste0(divs[i], "_id"), value=divs[i], .closetag = "<br>", checked=divs[i]==checked))
+  # buttons <- html_tag("input", labels, type="radio", name=id, id=paste0(divs, "_id"), value=divs, .closetag = "<br>", checked=divs==checked, .collapse = NULL)
+  form <- html_tag("form", buttons, onchange = onchange, onload = onload, .ashtml = F)
+  html <- paste(java, form, sep = "\n")
+  browser()
+  html
+}
+```
+
+`r html_radio("rad", c("count", "row_pcnt", "col_pcnt), c("Table of counts", "Percentages by row", "Percentages by column"))`
+
+<div id="count">
+```{r, echo = FALSE}
+set.seed(40)
+n <- 1000
+dt <- data.table(Group = sample(LETTERS[1:5], n, replace = T), Category = sample(paste0("Category&nbsp;", 1:7), n, replace = T))
+tab <- dt[, table(Category, Group)]
+htmlTable(tab, align = "lr", css.cell = padding(2))
+```
+</div>
+
+<div id="row_pcnt" hidden>
+```{r, echo = FALSE}
+rowtab <- tab
+for(i in 1:nrow(tab)) {
+  rowtab[i,] <- percent(tab[i,]/sum(tab[i,]))
+}
+colnames(rowtab) <- colnames(tab)
+row.names(rowtab) <- row.names(tab)
+htmlTable(rowtab, align = "lr", css.cell = padding(2))
+```
+</div>
+
+<div id="col_pcnt" hidden>
+```{r, echo = FALSE}
+coltab <- tab
+for(i in 1:ncol(tab)) {
+  coltab[,i] <- percent(tab[,i]/sum(tab[,i]))
+}
+colnames(coltab) <- colnames(tab)
+row.names(coltab) <- row.names(tab)
+htmlTable(coltab, align = "lr", css.cell = padding(2))
+```
+</div>
+
 
 ### Return to Top Button
 
@@ -559,7 +774,7 @@ function showDivs(n) {
 <div style="font-size: 18pt; color: #44B; display: table-cell; vertical-align: middle; height: 300px; padding: 40px;">
 Click the arrows on the sides to move between slides.
 
-This first slide is not given the same dimensions, so the window shifts based on the size of each individual display.
+Note that this first slide is not given the same dimensions, so the window shifts based on the size of each individual display.
 </div>
 </div>
 

@@ -1,21 +1,27 @@
 # t-SNE exploration
+ library(CMcCode) 
  library(animation) 
  library(ggplot2)
  library(tsne)
  
- setwd("C:/Users/cmcneil/Documents/Projects/Miscellaneous/Personal/tSNE")
+ setwd(gsub("/[^/]*$", "", rstudioapi::getActiveDocumentContext()$path))
+ # setwd("C:/Users/cmcneil/Documents/Projects/Miscellaneous/Personal/tSNE")
  
- source('~/Projects/Miscellaneous/Personal/General Code/UsefulFunctions.R')
+ # source('~/Projects/Miscellaneous/Personal/General Code/UsefulFunctions.R')
  
  # Iris data example
  colors = rainbow(length(unique(iris$Species)))
  names(colors) = unique(iris$Species)
  ecb = function(x,y){ plot(x,t='n'); text(x,labels=iris$Species, col=colors[iris$Species]) }
+ 
+ ## Creates multiple plots as algorithm converges to a "best separation" of points
  tsne_iris = tsne(iris[,1:4], epoch_callback = ecb, perplexity=50)
  
- ## Plots
- 
- animate <- function(pts, filename, color = "black", pch = 19, loop = F, navigator = F, interval = .5, epoch = 50, max_iter = 1e3, perplexity = 30, ...) {
+ ## Plots combined and saved in HTML animation file
+ animate <- function(pts, color = "black", filename, pch = 19, loop = F,
+                     navigator = F, interval = .5, epoch = 50,
+                     max_iter = 1e3, perplexity = 30, ...) {
+   
    oldfiles <- grep(paste0("^", filename), dir("Images"), value = T)
    file.remove(paste0(filename, ".html"))
    sapply(paste0("Images/", oldfiles), file.remove)
@@ -43,8 +49,8 @@
  
  divec <- rep(1:2, each = 50)
  vec <- rep(1:4, each = 25)
- animate(cbind(rnorm(100,,.1) + divec, vec), vec, "Sample")
- animate(cbind(rnorm(100,,.1) + divec, rnorm(100) + vec), vec, "Sample2")
+ animate(cbind(rnorm(100,,.1) + divec, vec), vec, "Sample_")
+ animate(cbind(rnorm(100,,.1) + divec, rnorm(100) + vec), vec, "Sample2_")
  animate(cbind(rnorm(100,,.1) + divec, divec), vec, "TwoGroups")
  animate(cbind(rnorm(100), rnorm(100)), vec, "Random")
  animate(cbind((1:100), (1:100)), vec, "String")
