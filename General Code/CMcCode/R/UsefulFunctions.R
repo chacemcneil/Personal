@@ -27,6 +27,7 @@
 # convert.tz          Convert times between time zones
 # hardcode            Generate code that creates the given object as is (currently only vectors).
 # gg_us_hex           Creates a data.table object for plotting US states in a hex map
+# setwd_curr          Sets the working directory to the location of the current file
 
 ## Use the following code to update package
 # library(devtools)
@@ -910,6 +911,18 @@ gg_us_hex <- function(data, mapping, dc = T, ...) {
     scale_fill_gradient(low = "wheat", high = "indianred", ...)
 }
 
+#' Set working directory to file location
+#' 
+#' Finds the location of the current code file and sets it as the working directory.
+#' The function cannot be run from the console.
+#' @export
+setwd_curr <- function() {
+  dir <- dirname(rstudioapi::getActiveDocumentContext()$path)
+  if(dir == "")
+    cat("setwd_curr() cannot be called from main console.\nCurrent working directory: ", getwd())
+  else
+    setwd(dir)
+}
 
 # End script
  

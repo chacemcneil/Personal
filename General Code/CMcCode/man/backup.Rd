@@ -14,6 +14,8 @@ revert(obj)
 }
 \description{
 Creates a backup of an object. Useful when tweaking code.
+
+Revert function
 }
 \section{Functions}{
 \itemize{

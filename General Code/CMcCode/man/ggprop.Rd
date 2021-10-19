@@ -4,10 +4,9 @@
 \alias{ggprop}
 \title{Check Predicted Probabilities and Linearity of Means}
 \usage{
-ggprop(data, mapping, link = binomial(), predicted = T,
-  stat = "identity", position = "identity", bins = 10, bound = T,
-  ..., pt... = NULL, na.rm = FALSE, show.legend = NA,
-  inherit.aes = TRUE)
+ggprop(data, mapping, link = binomial(), predicted = T, stat = "identity",
+  position = "identity", bins = 10, bound = T, ..., pt... = NULL,
+  na.rm = FALSE, show.legend = NA, inherit.aes = TRUE)
 }
 \arguments{
 \item{data}{\code{data.frame} as passed to \code{ggplot}()}

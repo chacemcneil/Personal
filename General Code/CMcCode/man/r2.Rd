@@ -14,6 +14,8 @@ adjr2(model)
 }
 \description{
 Calculates the R^2 (or adjusted R^2) statistic of a model. Uses correlation of predicted values to actual values.
+
+R Squared and Adjusted R Squared Functions
 }
 \section{Functions}{
 \itemize{
