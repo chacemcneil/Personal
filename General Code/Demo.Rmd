@@ -566,7 +566,8 @@ chunk_plot <- function(num) {
 
 ## Using lapply function (option 2)
 fullhtml <- do.call(htag, c(tag="div", lapply(seq_along(div_ids), function(i) {
-  tab <- htmlTable(dat[Index == i, .(Count = .N, MeanVal = round(mean(Value), 1)), keyby = .(Group)], rnames = F, align = "lr", css.cell = "padding-left: 2em; padding-right: 2em;")
+  tab <- dat[Index == i, .(Count = .N, MeanVal = round(mean(Value), 1)), keyby = .(Group)]
+  tab <- htmlTable(tab, rnames = F, align = "lr", css.cell = "padding-left: 2em; padding-right: 2em;")
   invisible(print(ggplot(dat[Category == labels[i]], aes(Value)) + geom_histogram(binwidth = 0.2)))
   htag("div", tab, id=div_ids[i], hidden = i>1, chunk_plot(i))
 })))
